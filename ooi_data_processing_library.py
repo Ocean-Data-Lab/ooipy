@@ -89,7 +89,7 @@ def _freq_dependent_sensitivity_correct(N):
     return sens_interpolated(f)
 
 
-def get_noise_data(start_time, end_time, node='/LJ01D', fmin=20.0, fmax=30000.0, print_exceptions=False):
+def get_acoustic_data(start_time, end_time, node='/LJ01D', fmin=20.0, fmax=30000.0, print_exceptions=False):
     '''
     Get noise data for specific time frame and node:
 
@@ -204,7 +204,7 @@ def compute_spectrogram(start_time, end_time, node='/LJ01D', win='hann', L=4096,
     time_specgram = []
            
     # get noise data for entire time period
-    noise = get_noise_data(start_time, end_time, node=node)
+    noise = get_acoustic_data(start_time, end_time, node=node)
         
     if noise == None:
         return np.array([]), np.array([]), np.array([])
@@ -398,7 +398,7 @@ def save_spectrogram(spectrogram, t=None, f=None, filename='spectrogram.pickle')
     with open(filename, 'wb') as outfile:
         pickle.dump(dct, outfile)
 
-def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, avg_time=None, overlap=0.5,
+def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, overlap=0.5,
     avg_method='median', fmin=20.0, fmax=30000.0):
     '''
     Compute power spectral density estimates using Welch's method.
@@ -423,7 +423,7 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, a
     '''
     # get noise data segment for each entry in rain_event
     # each noise data segemnt contains usually 1 min of data
-    noise = get_noise_data(start_time, end_time, node)
+    noise = get_acoustic_data(start_time, end_time, node)
     if noise == None:
         return np.array([]), np.array([])
     fs = noise[0].stats.sampling_rate
@@ -439,7 +439,7 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, a
     
     return f, Pxx
 
-def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ01D', win='hann', L=4096, avg_time=None, overlap=0.5,
+def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ01D', win='hann', L=4096, overlap=0.5,
     avg_method='median', fmin=20.0, fmax=30000.0):
     '''
     Same as compute_psd_welch but using the multiprocessing library.
@@ -474,13 +474,13 @@ def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ0
         start_end_list = []
         for k in range(n_seg - 1):
             start_end_list.append((start_time + k * datetime.timedelta(seconds=split),
-                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, avg_time, overlap, avg_method, fmin, fmax))
+                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, overlap, avg_method, fmin, fmax))
         start_end_list.append((start_time + (n_seg-1) * datetime.timedelta(seconds=split), end_time,
-            node, win, L, avg_time, overlap, avg_method, fmin, fmax))
+            node, win, L, overlap, avg_method, fmin, fmax))
     else:
         start_end_list = []
         for row in split:
-            start_end_list.append((row[0], row[1], node, win, L, avg_time, overlap, avg_method, fmin, fmax))
+            start_end_list.append((row[0], row[1], node, win, L, overlap, avg_method, fmin, fmax))
 
     with mp.get_context("spawn").Pool(n_process) as p:
         psd_list = p.starmap(compute_psd_welch, start_end_list)
