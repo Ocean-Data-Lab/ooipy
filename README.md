@@ -7,6 +7,10 @@ ooi_data_processing_library.py contains functions for processing and visualizing
 The demo.ipynb provides examples on how to use the functions in the library.
 
 ## Dependancies
+
+I've seen repos in the past that have a conda enviroment in the repo that let's you create a new enviroment with all of the dependancies. I don't know how to do this, but it would be cool to do some day.
+
+
 - numpy
 - json
 - os
