@@ -16,7 +16,6 @@ import matplotlib.dates as mdates
 import matplotlib.colors as colors
 import matplotlib
 import datetime
-import requests
 import urllib
 import time
 import pandas as pd
