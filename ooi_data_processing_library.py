@@ -16,20 +16,13 @@ import matplotlib.dates as mdates
 import matplotlib.colors as colors
 import matplotlib
 import datetime
-from scipy import signal
-import requests
 import urllib
-import datetime
 import time
 import pandas as pd
 import sys
 from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import pickle
-
-# This is a test.
-# This is another test.
-
 
 
 def _web_crawler_noise(day_str, node):
