@@ -395,7 +395,7 @@ def save_spectrogram(spectrogram, t=None, f=None, filename='spectrogram.pickle')
         pickle.dump(dct, outfile)
 
 def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, overlap=0.5,
-    avg_method='median', fmin=20.0, fmax=30000.0):
+    avg_method='median', fmin=20.0, fmax=30000.0, interpolate=None, scale='log'):
     '''
     Compute power spectral density estimates using Welch's method.
 
@@ -413,6 +413,11 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, o
     overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
         avg_time is None.
     avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
+    interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
+        divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
+    scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
+        returned
+
 
     return ([float], [float]): tuple including time, and spectral level. If no noise date is available,
         function returns two empty numpy arrays.
@@ -424,14 +429,25 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, o
         return np.array([]), np.array([])
     fs = noise[0].stats.sampling_rate
 
+    # compute nfft if zero padding is desired
+    if interpolate != None:
+        if fs / L > interpolate:
+            nfft = fs / interpolate
+            # allow for non-standard Fourier frequencies by multiplying the time domain signal with complex
+            # exponential and adjust frequency axis (length of frequency vector changes as no frequencies smaller
+            # zero or greater Nyquist are allowed)
+
     # compute Welch median for entire data segment
     f, Pxx = signal.welch(x = noise[0].data, fs = fs, window=win, nperseg=L, noverlap = int(L * overlap),
-        nfft=L, average=avg_method)
+        nfft=nfft, average=avg_method)
 
     if len(Pxx) != int(L/2) + 1:
         return np.array([]), np.array([])
     else:
-        Pxx = 10*np.log10(Pxx*np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+        if scale == 'log':
+            Pxx = 10*np.log10(Pxx*np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+        else:
+            Pxx = Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10) / np.power(10, -128.9/10)
     
     return f, Pxx
 
