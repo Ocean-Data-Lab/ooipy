@@ -18,7 +18,8 @@ cd OOI-data-processing-Python
 - Install Conda Packages
   - we have provided a .yml to create a new conda enviroment. Navigate to ./conda_envs and create a new environemnt given your operating system
   ```bash
-  conda env create -f ooi_<operating_system>.yml
+  cd conda_envs
+  conda env create -f ooi_linux.yml
   ```
 
 ### Demo
