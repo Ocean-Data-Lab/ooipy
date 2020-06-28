@@ -395,7 +395,7 @@ def save_spectrogram(spectrogram, t=None, f=None, filename='spectrogram.pickle')
         pickle.dump(dct, outfile)
 
 def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, overlap=0.5,
-    avg_method='median', fmin=20.0, fmax=30000.0):
+    avg_method='median', fmin=20.0, fmax=30000.0, interpolate=None, scale='log'):
     '''
     Compute power spectral density estimates using Welch's method.
 
@@ -413,6 +413,11 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, o
     overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
         avg_time is None.
     avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
+    interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
+        divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
+    scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
+        returned
+
 
     return ([float], [float]): tuple including time, and spectral level. If no noise date is available,
         function returns two empty numpy arrays.
@@ -424,19 +429,31 @@ def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, o
         return np.array([]), np.array([])
     fs = noise[0].stats.sampling_rate
 
+    # compute nfft if zero padding is desired
+    if interpolate != None:
+        if fs / L > interpolate:
+            nfft = int(fs / interpolate)
+        else: nfft = L
+    else: nfft = L
+
     # compute Welch median for entire data segment
     f, Pxx = signal.welch(x = noise[0].data, fs = fs, window=win, nperseg=L, noverlap = int(L * overlap),
-        nfft=L, average=avg_method)
+        nfft=nfft, average=avg_method)
 
-    if len(Pxx) != int(L/2) + 1:
+    if len(Pxx) != int(nfft/2) + 1:
         return np.array([]), np.array([])
+
+    if scale == 'log':
+        Pxx = 10*np.log10(Pxx*np.power(10, _freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10)) - 128.9
+    elif scale == 'lin':
+        Pxx = Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10) * np.power(10, -128.9/10)
     else:
-        Pxx = 10*np.log10(Pxx*np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+        raise Exception('scale has to be either "lin" or "log".')
     
     return f, Pxx
 
 def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ01D', win='hann', L=4096, overlap=0.5,
-    avg_method='median', fmin=20.0, fmax=30000.0):
+    avg_method='median', fmin=20.0, fmax=30000.0, interpolate=None, scale='log'):
     '''
     Same as compute_psd_welch but using the multiprocessing library.
 
@@ -459,6 +476,10 @@ def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ0
     overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
         avg_time is None.
     avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
+    interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
+        divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
+    scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
+        returned
 
     return ([float], [float]): tuple including frequency indices and PSD estimates, where each PSD estimate. The PSD estimate
         of each segment is stored in a separate row. 
@@ -470,13 +491,15 @@ def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ0
         start_end_list = []
         for k in range(n_seg - 1):
             start_end_list.append((start_time + k * datetime.timedelta(seconds=split),
-                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, overlap, avg_method, fmin, fmax))
+                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, overlap, avg_method,
+                fmin, fmax, interpolate, scale))
         start_end_list.append((start_time + (n_seg-1) * datetime.timedelta(seconds=split), end_time,
-            node, win, L, overlap, avg_method, fmin, fmax))
+            node, win, L, overlap, avg_method, fmin, fmax, interpolate, scale))
     else:
         start_end_list = []
         for row in split:
-            start_end_list.append((row[0], row[1], node, win, L, overlap, avg_method, fmin, fmax))
+            start_end_list.append((row[0], row[1], node, win, L, overlap, avg_method, fmin, fmax,
+                interpolate, scale))
 
     with mp.get_context("spawn").Pool(n_process) as p:
         psd_list = p.starmap(compute_psd_welch, start_end_list)
