@@ -24,155 +24,198 @@ from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import pickle
 
+class OOIHyrophoneData:
 
-def _web_crawler_noise(day_str, node):
-    '''
-    get URLs for a specific day from OOI raw data server
+    def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
+        fmax=None, apply_filter=True, print_exceptions=None):
 
-    day_str (str): date for which URLs are requested; format: yyyy/mm/dd, e.g. 2016/07/15
-    node (str): specifies the hydrophone; see bolow for possible values
+        self.starttime = starttime
+        self.endtime = endtime
+        self.node = node
+        self.fmin = fmin
+        self.fmax = fmax
+        self.apply_filter = apply_filter
+        self.print_exceptions = print_exceptions
+        self.data_available = None
 
-    return ([str]): list of URLs, each URL refers to one data file. If no data is avauilable for
-        specified date, None is returned.
-    '''
+        if self.starttime == None or self.endtime == None or self.node == None:
+            self.data = None
+        else:
+            self.get_acoustic_data(self.starttime, self.endtime, self.node, fmin=self.fmin, fmax=self.fmax)
 
-    if node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
-        array = '/CE02SHBP'
-        instrument = '/11-HYDBBA106'
-    if node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
-        array = '/RS01SLBS'
-        instrument = '/09-HYDBBA102'
-    if node == '/PC01A': #Oregan Slope Base Shallow
-        array = '/RS01SBPS'
-        instrument = '/08-HYDBBA103'
-    if node == '/PC03A': #Axial Base Shallow Profiler
-        array = '/RS03AXPS'
-        instrument = '/08-HYDBBA303'
-    if node == '/LJ01C': #Oregon Offshore Base Seafloor
-        array = '/CE04OSBP'
-        instrument = '/11-HYDBBA105'
+
+    def __web_crawler_noise(self, day_str):
+        '''
+        get URLs for a specific day from OOI raw data server
+
+        day_str (str): date for which URLs are requested; format: yyyy/mm/dd, e.g. 2016/07/15
+
+        return ([str]): list of URLs, each URL refers to one data file. If no data is avauilable for
+            specified date, None is returned.
+        '''
+
+        if self.node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
+            array = '/CE02SHBP'
+            instrument = '/11-HYDBBA106'
+        if self.node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
+            array = '/RS01SLBS'
+            instrument = '/09-HYDBBA102'
+        if self.node == '/PC01A': #Oregan Slope Base Shallow
+            array = '/RS01SBPS'
+            instrument = '/08-HYDBBA103'
+        if self.node == '/PC03A': #Axial Base Shallow Profiler
+            array = '/RS03AXPS'
+            instrument = '/08-HYDBBA303'
+        if self.node == '/LJ01C': #Oregon Offshore Base Seafloor
+            array = '/CE04OSBP'
+            instrument = '/11-HYDBBA105'
+            
+        mainurl = 'https://rawdata.oceanobservatories.org/files'+array+self.node+instrument+day_str
+        try:
+            mainurlpage =requests.get(mainurl, timeout=60)
+        except:
+            print('Timeout URL request')
+            return None
+        webpage = html.fromstring(mainurlpage.content)
+        suburl = webpage.xpath('//a/@href') #specify that only request .mseed files
+
+        FileNum = len(suburl)
+        data_url_list = []
+        for filename in suburl[6:FileNum]:
+            data_url_list.append(str(mainurl + filename[2:]))
+            
+        return data_url_list
+
+    def _freq_dependent_sensitivity_correct(self, N):
+        #TODO
+        '''
+        Apply a frequency dependent sensitivity correction to the acoustic data (in frequency domain).
+
+        N (int): length of the data segment
+
+        return (np.array): array with correction coefficient for every frequency 
+        '''
+        f_calib = [0, 13500, 27100, 40600, 54100]
+        sens_calib = [169, 169.4, 168.1, 169.7, 171.5]
+        sens_interpolated = interpolate.InterpolatedUnivariateSpline(f_calib, sens_calib)
+        f = np.linspace(0, 32000, N)
         
-    mainurl = 'https://rawdata.oceanobservatories.org/files'+array+node+instrument+day_str
-    try:
-        mainurlpage =requests.get(mainurl, timeout=60)
-    except:
-        print('Timeout URL request')
-        return None
-    webpage = html.fromstring(mainurlpage.content)
-    suburl = webpage.xpath('//a/@href') #specify that only request .mseed files
+        return sens_interpolated(f)
 
-    FileNum = len(suburl)
-    data_url_list = []
-    for filename in suburl[6:FileNum]:
-        data_url_list.append(str(mainurl + filename[2:]))
+
+    def get_acoustic_data(self, starttime, endtime, node, fmin=20.0, fmax=30000.0):
+        '''
+        Get noise data for specific time frame and node:
+
+        start_time (datetime.datetime): time of the first noise sample
+        end_time (datetime.datetime): time of the last noise sample
+        node (str): hydrophone
+        fmin (float): lower cutoff frequency of hydrophone's bandpass filter
+        fmax (float): higher cutoff frequency of hydrophones bandpass filter
+        print_exceptions (bool): whether or not exeptions are printed in the terminal line
+
+        return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
+            between start_time and end_time. Returns None if no data are available for specified time frame
+
+        '''
+
+        self.starttime = starttime
+        self.endtime = endtime
+        self.node = node
+        self.fmin = fmin
+        self.fmax = fmax
         
-    return data_url_list
-
-def _freq_dependent_sensitivity_correct(N):
-    #TODO
-    '''
-    Apply a frequency dependent sensitivity correction to the acoustic data (in frequency domain).
-
-    N (int): length of the data segment
-
-    return (np.array): array with correction coefficient for every frequency 
-    '''
-    f_calib = [0, 13500, 27100, 40600, 54100]
-    sens_calib = [169, 169.4, 168.1, 169.7, 171.5]
-    sens_interpolated = interpolate.InterpolatedUnivariateSpline(f_calib, sens_calib)
-    f = np.linspace(0, 32000, N)
-    
-    return sens_interpolated(f)
-
-
-def get_acoustic_data(start_time, end_time, node='/LJ01D', fmin=20.0, fmax=30000.0, print_exceptions=False):
-    '''
-    Get noise data for specific time frame and node:
-
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter
-    print_exceptions (bool): whether or not exeptions are printed in the terminal line
-
-    return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
-        between start_time and end_time. Returns None if no data are available for specified time frame
-
-    '''
-    
-    # get URLs
-    day_start = UTCDateTime(start_time.year, start_time.month, start_time.day, 0, 0, 0)
-    data_url_list = _web_crawler_noise(day_start.strftime("/%Y/%m/%d/"), node)
-    if data_url_list == None: return None
-    
-    day_start = day_start + 24*3600
-    while day_start < end_time:
-        data_url_list.extend(_web_crawler_noise(day_start.strftime("/%Y/%m/%d/"), node))
+        # get URLs
+        day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
+        data_url_list = self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/"))
+        if data_url_list == None:
+            if self.print_exceptions:
+                print('No data available for specified day and node. Please change the day or use a differnt node')
+            self.data = None
+            self.data_available = False
+        
         day_start = day_start + 24*3600
-    
-    # if too many files for one day -> skip day (otherwise program takes too long to terminate)
-    if len(data_url_list) > 1000:
-        return None
-     
-    # keep only .mseed files
-    del_list = []
-    for i in range(len(data_url_list)):
-        url = data_url_list[i].split('.')
-        if url[len(url) - 1] != 'mseed':
-            del_list.append(i)
-    data_url_list = np.delete(data_url_list, del_list)
-            
-    st_all = None
-
-    # only acquire data for desired time
-    for i in range(len(data_url_list)):
-        # get UTC time of current and next item in URL list
-        utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
-        if i != len(data_url_list) - 1:
-            utc_time_url_stop = UTCDateTime(data_url_list[i+1].split('YDH')[1][1:].split('.mseed')[0])
-        else: 
-            utc_time_url_stop = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
-            utc_time_url_stop.hour = 23
-            utc_time_url_stop.minute = 59
-            utc_time_url_stop.second = 59
-            utc_time_url_stop.microsecond = 999999
-            
-        # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= start_time and utc_time_url_start < end_time) or \
-            (utc_time_url_stop >= start_time and utc_time_url_stop < end_time) or  \
-            (utc_time_url_start <= start_time and utc_time_url_stop >= end_time):
-            
-            try:
-                st = read(data_url_list[i],apply_calib=True)
-            except:
-                if print_exceptions: print("Data are broken")
-                return None
-            
-            # slice stream to get desired data
-            st = st.slice(UTCDateTime(start_time), UTCDateTime(end_time))
-            
-            if st_all == None: st_all = st
-            else: 
-                st_all += st
-                st_all.merge(fill_value ='interpolate',method=1)
+        while day_start < self.endtime:
+            data_url_list.extend(self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/")))
+            day_start = day_start + 24*3600
+        
+        # if too many files for one day -> skip day (otherwise program takes too long to terminate)
+        if len(data_url_list) > 1000:
+            if self.print_exceptions:
+                print('Too many files for specified day. Cannot request data as web crawler cannot terminate.')
+            self.data = None
+            self.data_available = False
+        
+        # keep only .mseed files
+        del_list = []
+        for i in range(len(data_url_list)):
+            url = data_url_list[i].split('.')
+            if url[len(url) - 1] != 'mseed':
+                del_list.append(i)
+        data_url_list = np.delete(data_url_list, del_list)
                 
-    if st_all != None:
-        if len(st_all) == 0:
-            if print_exceptions: print('No data available for selected time frame.')
-            return None
+        st_all = None
 
-    try:
-        st_all = st_all.split()
-        st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-        return st_all
-    except:
-        if st_all == None:
-            if print_exceptions: print('No data available for selected time frame.')
-            return None
-        else: 
-            if print_exceptions: print('Other exception')
-            return None
+        # only acquire data for desired time
+        for i in range(len(data_url_list)):
+            # get UTC time of current and next item in URL list
+            utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
+            if i != len(data_url_list) - 1:
+                utc_time_url_stop = UTCDateTime(data_url_list[i+1].split('YDH')[1][1:].split('.mseed')[0])
+            else: 
+                utc_time_url_stop = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
+                utc_time_url_stop.hour = 23
+                utc_time_url_stop.minute = 59
+                utc_time_url_stop.second = 59
+                utc_time_url_stop.microsecond = 999999
+                
+            # if current segment contains desired data, store data segment
+            if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
+                (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
+                (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
+                
+                try:
+                    st = read(data_url_list[i], apply_calib=True)
+                except:
+                    if self.print_exceptions:
+                        print("Data are broken")
+                    self.data = None
+                    self.data_available = False
+                
+                # slice stream to get desired data
+                st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
+                
+                if st_all == None: st_all = st
+                else: 
+                    st_all += st
+                    st_all.merge(fill_value ='interpolate', method=1)
+                    
+        if st_all != None:
+            if len(st_all) == 0:
+                if self.print_exceptions:
+                    print('No data available for selected time frame.')
+                self.data = None
+                self.data_available = False
+
+        try:
+            st_all = st_all.split()
+            if self.apply_filter:
+                if self.fmin == None:
+                    fmin = 0.0
+                if self.fmax == None:
+                    fmax = st_all[0].stats.sampling_rate
+                st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+            self.data = st_all
+            self.data_available = True
+        except:
+            if st_all == None:
+                if self.print_exceptions:
+                    print('No data available for selected time frame.')
+            else: 
+                if self.print_exceptions:
+                    print('Other exception')
+            self.data = None
+            self.data_available = False
 
 def compute_spectrogram(start_time, end_time, node='/LJ01D', win='hann', L=4096, avg_time=None, overlap=0.5, fmin=20.0, fmax=30000.0):
     '''
