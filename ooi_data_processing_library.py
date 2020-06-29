@@ -43,6 +43,10 @@ class OOIHyrophoneData:
         else:
             self.get_acoustic_data(self.starttime, self.endtime, self.node, fmin=self.fmin, fmax=self.fmax)
 
+        self.spectrogram = None
+        self.psd = None
+        self.psd_list = None
+
 
     def __web_crawler_noise(self, day_str):
         '''
@@ -105,7 +109,7 @@ class OOIHyrophoneData:
 
     def get_acoustic_data(self, starttime, endtime, node, fmin=20.0, fmax=30000.0):
         '''
-        Get noise data for specific time frame and node:
+        Get acoustic data for specific time frame and node:
 
         start_time (datetime.datetime): time of the first noise sample
         end_time (datetime.datetime): time of the last noise sample
@@ -133,6 +137,7 @@ class OOIHyrophoneData:
                 print('No data available for specified day and node. Please change the day or use a differnt node')
             self.data = None
             self.data_available = False
+            return None
         
         day_start = day_start + 24*3600
         while day_start < self.endtime:
@@ -145,6 +150,7 @@ class OOIHyrophoneData:
                 print('Too many files for specified day. Cannot request data as web crawler cannot terminate.')
             self.data = None
             self.data_available = False
+            return None
         
         # keep only .mseed files
         del_list = []
@@ -181,6 +187,7 @@ class OOIHyrophoneData:
                         print("Data are broken")
                     self.data = None
                     self.data_available = False
+                    return None
                 
                 # slice stream to get desired data
                 st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
@@ -196,17 +203,19 @@ class OOIHyrophoneData:
                     print('No data available for selected time frame.')
                 self.data = None
                 self.data_available = False
+                return None
 
         try:
-            st_all = st_all.split()
+            #st_all = st_all.split()
             if self.apply_filter:
                 if self.fmin == None:
                     fmin = 0.0
                 if self.fmax == None:
                     fmax = st_all[0].stats.sampling_rate
                 st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-            self.data = st_all
+            self.data = st_all[0]
             self.data_available = True
+            return st_all
         except:
             if st_all == None:
                 if self.print_exceptions:
@@ -216,428 +225,579 @@ class OOIHyrophoneData:
                     print('Other exception')
             self.data = None
             self.data_available = False
+            return None
 
-def compute_spectrogram(start_time, end_time, node='/LJ01D', win='hann', L=4096, avg_time=None, overlap=0.5, fmin=20.0, fmax=30000.0):
-    '''
-    Compute spectrogram of acoustic signal. For each time step of the spectrogram either a modified periodogram (avg_time=None)
-    or a power spectral density estimate using Welch's method is computed.
+    def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=20.0, fmax=30000.0):
+        '''
+        Same as function get acoustic data but using multiprocessing.
+        '''
 
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter
-    win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
-        possible window functions
-    L (int): length of each data block for computing the FFT
-    avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
-        time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
-        to avoid memory overflows and facilitate visualization.
-    overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
-        avg_time is None.
+        self.node = node
+        self.fmin = fmin
+        self.fmax = fmax
 
-    return ([datetime.datetime], [float], [float]): tuple including time, frequency, and spectral level.
-        If no noise date is available, function returns three empty numpy arrays
-    '''
-    specgram = []
-    time_specgram = []
-           
-    # get noise data for entire time period
-    noise = get_acoustic_data(start_time, end_time, node=node)
+        # entire time frame is divided into n_process parts of equal length 
+        if n_process == None:
+            N  = mp.cpu_count()
+        else:
+            N = n_process
+
+        seconds_per_process = (endtime - starttime).total_seconds() / N
+
+        get_data_list = [(starttime + datetime.timedelta(seconds=i * seconds_per_process),
+            starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
+            node, fmin, fmin) for i in range(N)]
         
-    if noise == None:
-        return np.array([]), np.array([]), np.array([])
+        # create pool of processes require one part of the data in each process
+        apply_filter_temp = self.apply_filter
+        self.apply_filter = False
+        with mp.get_context("spawn").Pool(N) as p:
+            try:
+                data_list = p.starmap(self.get_acoustic_data, get_data_list)
+            except:
+                if self.print_exceptions:
+                    print('Data cannot be requested.')
+                self.data = None
+                self.data_available = False
+                self.starttime = starttime
+                self.endtime = endtime
+                return self.data
 
-    # sampling frequency
-    fs = noise[0].stats.sampling_rate
+        if None in data_list:
+            if self.print_exceptions:
+                print('No data available for specified time and node')
+            self.data = None
+            self.data_available = False
+            data = None
+        else:
+            # merge data segments together
+            data = data_list[0]
+            for d in data_list[1:]:
+                data = data + d
+            self._data_segmented = data
+            data.merge(fill_value='interpolate', method=1)
 
-    # number of time steps
-    if avg_time == None: K = int(len(noise[0].data) / L)
-    else: K = int(np.ceil(len(noise[0].data) / (avg_time * fs)))
+            # apply bandpass filter to data if desired
+            if apply_filter_temp:
+                if self.fmin == None:
+                    fmin = 0.0
+                if self.fmax == None:
+                    fmax = data[0].stats.sampling_rate
+                data = data.filter("bandpass", freqmin=fmin, freqmax=fmax)
 
-    # compute spectrogram. For avg_time=None (periodogram for each time step), the last data samples are ignored if 
-    # len(noise[0].data) != k * L
-    if avg_time == None:
-        for k in range(K - 1):
-            f, Pxx = signal.periodogram(x = noise[0].data[k*L:(k+1)*L], fs=fs, window=win)
-            if len(Pxx) != int(L/2)+1:
-                return np.array([]), np.array([]), np.array([])
-            else:
-                Pxx = 10*np.log10(Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
-                specgram.append(Pxx)
-                time_specgram.append(start_time + datetime.timedelta(seconds=k*L / fs))
+            self.data = data[0]
+            self.data_available = True
 
-    else:
-        for k in range(K - 1):
-            f, Pxx = signal.welch(x = noise[0].data[k*int(fs*avg_time):(k+1)*int(fs*avg_time)],
-                fs=fs, window=win, nperseg=L, noverlap = int(L * overlap), nfft=L, average='median')
-            if len(Pxx) != int(L/2)+1:
-                return np.array([]), np.array([]), np.array([])
-            else:
-                Pxx = 10*np.log10(Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
-                specgram.append(Pxx)
-                time_specgram.append(start_time + datetime.timedelta(seconds=k*avg_time))
+        self.starttime = starttime
+        self.endtime = endtime
+        return data
 
-        # compute PSD for residual segment if segment has more than L samples
-        if len(noise[0].data[int((K - 1) * fs * avg_time):]) >= L:
-            f, Pxx = signal.welch(x = noise[0].data[int((K - 1) * fs * avg_time):],
-                fs=fs, window=win, nperseg=L, noverlap = int(L * overlap), nfft=L, average='median')
-            if len(Pxx) != int(L/2)+1:
-                return np.array([]), np.array([]), np.array([])
-            else:
-                Pxx = 10*np.log10(Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
-                specgram.append(Pxx)
-                time_specgram.append(start_time + datetime.timedelta(seconds=(K-1)*avg_time))
- 
-    if len(time_specgram) == 0:
-        return np.array([]), np.array([]), np.array([])
-    else:
-        return time_specgram, f, specgram
+    def compute_spectrogram(self, win='hann', L=4096, avg_time=None, overlap=0.5):
+        '''
+        Compute spectrogram of acoustic signal. For each time step of the spectrogram either a modified periodogram (avg_time=None)
+        or a power spectral density estimate using Welch's method is computed.
 
-def compute_spectrogram_mp(start_time, end_time, split, n_process=None, node='/LJ01D', win='hann', L=4096,
-    avg_time=None, overlap=0.5, fmin=20.0, fmax=30000.0):
-    '''
-    Same as function compute_spectrogram but using the multiprocessing library. This function is intended to
-    be used when analyzing a large amount of data.
+        win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
+            possible window functions
+        L (int): length of each data block for computing the FFT
+        avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
+            time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
+            to avoid memory overflows and facilitate visualization.
+        overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
+            avg_time is None.
 
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    split (float or [datetime.datetime]): time period between start_time and end_time is split into parts of length
-        split seconds (if float). The last segment can be shorter than split seconds. Alternatively split can be set as
-        an list with N start-end time tuples where N is the number of segments. 
-    n_process (int): number of processes in the pool. Default (None) means that n_process is equal to the number
-        of CPU cores.
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter
-    win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
-        possible window functions
-    L (int): length of each data block for computing the FFT
-    avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
-        time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
-        to avoid memory overflows and facilitate visualization.
-    overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
-        avg_time is None.
+        return ([datetime.datetime], [float], [float]): tuple including time, frequency, and spectral level.
+            If no noise date is available, function returns three empty numpy arrays
+        '''
+        specgram = []
+        time = []
+            
+        if self.data == None:
+            if self.print_exceptions:
+                print('Data object is empty. Spectrogram cannot be computed')
+            self.spectrogram = None
+            return self
 
-    return ([datetime.datetime], [float], [float]): tuple including time, frequency, and spectral level.
-        If no noise date is available, function returns three empty numpy arrays
-    '''
+        # sampling frequency
+        fs = self.data.stats.sampling_rate
 
-    # create array with N start and end time values
-    if type(split) == float or type(split) == int:
-        n_seg = int(np.ceil((end_time - start_time).total_seconds() / split))
-        start_end_list = []
-        for k in range(n_seg - 1):
-            start_end_list.append((start_time + k * datetime.timedelta(seconds=split),
-                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, avg_time, overlap, fmin, fmax))
-        start_end_list.append((start_time + (n_seg-1) * datetime.timedelta(seconds=split), end_time,
-            node, win, L, avg_time, overlap, fmin, fmax))
-    else:
-        start_end_list = []
-        for row in start_end_list:
-            start_end_list.append((row[0], row[1], node, win, L, avg_time, overlap, fmin, fmax))
+        # number of time steps
+        if avg_time == None:
+            nbins = int(len(self.data.data) / L)
+        else:
+            nbins = int(np.ceil(len(self.data.data) / (avg_time * fs)))
 
-    with mp.get_context("spawn").Pool(n_process) as p:
-        try:
-            specgram_list = p.starmap(compute_spectrogram, start_end_list)
-            ## concatenate all small spectrograms to obtain final spectrogram
-            specgram = []
-            time_specgram = []
-            f = specgram_list[0][1]
-            for i in range(len(specgram_list)):
-                time_specgram.extend(np.array(specgram_list[i][0]))
-                specgram.extend(specgram_list[i][2])
-        except:
-            return np.array([]), np.array([]), np.array([])
+        # compute spectrogram. For avg_time=None (periodogram for each time step), the last data samples are ignored if 
+        # len(noise[0].data) != k * L
+        if avg_time == None:
+            for n in range(nbins - 1):
+                f, Pxx = signal.periodogram(x = self.data.data[n*L:(n+1)*L], fs=fs, window=win)
+                if len(Pxx) != int(L/2)+1:
+                    if self.print_exceptions:
+                        print('Error while computing periodogram for segment', n)
+                    self.spectrogram = None
+                    return self
+                else:
+                    Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+                    specgram.append(Pxx)
+                    time.append(self.starttime + datetime.timedelta(seconds=n*L / fs))
 
-    if len(time_specgram) == 0:
-        return np.array([]), np.array([]), np.array([])
-    else:
-        return np.array(time_specgram), f, np.array(specgram)
+        else:
+            for n in range(nbins - 1):
+                f, Pxx = signal.welch(x = self.data.data[n*int(fs*avg_time):(n+1)*int(fs*avg_time)],
+                    fs=fs, window=win, nperseg=L, noverlap = int(L * overlap), nfft=L, average='median')
+                if len(Pxx) != int(L/2)+1:
+                    if self.print_exceptions:
+                        print('Error while computing Welch estimate for segment', n)
+                    self.spectrogram = None
+                    return self
+                else:
+                    Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+                    specgram.append(Pxx)
+                    time.append(self.starttime + datetime.timedelta(seconds=n*avg_time))
 
-# TODO: allow for visualization of ancillary data. Create SpecgramVisu class?
-def visualize_spectrogram(spectrogram, t=[], f=[], plot_spec=True, save_spec=False,
-    filename='spectrogram.png', title='spectrogram', xlabel='time', xlabel_rot=70, ylabel='frequency',
-    fmin=0, fmax=32, vmin=20, vmax=80, vdelta=1.0, vdelta_cbar=5, figsize=(16,9), dpi=96):
-    '''
-    Basic visualization of spectrogram based on matplotlib. The function offers two options: Plot spectrogram
-    in Python (plot_spec = True) and save specrogram plot in directory (save_spec = True). Spectrograms are
-    plotted in dB re 1µ Pa^2/Hz.
-
-    spectrogram (N x M numpy.array(float)): numpy array with N rows (one row for each time step) and M columns
-        (one column for each frequency value)
-    t (N x 1 array like): indices on horizontal (time) axis.
-    f (M x 1 array like): indices of vertical (frequency) axis.
-    plot_spec (bool): whether or not spectrogram is plotted using Python
-    save_spec (bool): whether or not spectrogram plot is saved
-    filename (str): directory where spectrogram plot is saved. Use ending ".png" or ".pdf" to save as PNG or PDF
-        file. This value will be ignored if save_spec=False
-    title (str): title of plot
-    ylabel (str): label of vertical axis
-    xlabel (str): label of horizontal axis
-    xlabel_rot (float): rotation of xlabel. This is useful if xlabel are longer strings for example when using
-        datetime.datetime objects.
-    fmin (float): minimum frequency (unit same as f) that is displayed
-    fmax (float): maximum frequency (unit same as f) that is displayed
-    vmin (float): minimum value (dB) of spectrogram that is colored. All values below are diplayed in white.
-    vmax (float): maximum value (dB) of spectrogram that is colored. All values above are diplayed in white.
-    vdelta (float): color resolution
-    vdelta_cbar (int): label ticks in colorbar are in vdelta_cbar steps
-    figsize (tuple(int)): size of figure
-    dpi (int): dots per inch
-    '''
-
-    #set backend for plotting/saving:
-    if not plot_spec: matplotlib.use('Agg')
-
-    font = {'size'   : 22}
-    matplotlib.rc('font', **font)
-
-    if len(t) != len(spectrogram):
-        t = np.linspace(0, len(spectrogram) - 1, len(spectrogram))
-    if len(f) != len(spectrogram[0]):
-        f = np.linspace(0, len(spectrogram[0]) - 1, len(spectrogram[0]))
-
-    cbarticks = np.arange(vmin,vmax+vdelta,vdelta)
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    im = ax.contourf(t, f, np.transpose(spectrogram), cbarticks, norm=colors.Normalize(vmin=vmin, vmax=vmax), cmap=plt.cm.jet)  
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.ylim([fmin, fmax])
-    plt.xticks(rotation=xlabel_rot)
-    plt.title(title)
-    plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax+vdelta, vdelta_cbar))
-    plt.tick_params(axis='y')
-
-    if type(t[0]) == datetime.datetime:
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%y-%m-%d %H:%M'))
+            # compute PSD for residual segment if segment has more than L samples
+            if len(self.data.data[int((nbins - 1) * fs * avg_time):]) >= L:
+                f, Pxx = signal.welch(x = self.data.data[int((nbins - 1) * fs * avg_time):],
+                    fs=fs, window=win, nperseg=L, noverlap = int(L * overlap), nfft=L, average='median')
+                if len(Pxx) != int(L/2)+1:
+                    if self.print_exceptions:
+                        print('Error while computing Welch estimate residual segment')
+                    self.spectrogram = None
+                    return self
+                else:
+                    Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
+                    specgram.append(Pxx)
+                    time.append(self.starttime + datetime.timedelta(seconds=(nbins-1)*avg_time))
     
-    if save_spec:
-        plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+        if len(time) == 0:
+            if self.print_exceptions:
+                print('Spectrogram does not contain any data')
+            self.spectrogram = None
+            return self
+        else:
+            self.spectrogram = Spectrogram(np.array(time), np.array(f), np.array(specgram))
+            return self
 
-    if plot_spec: plt.show()
-    else: plt.close(fig)
+    def compute_spectrogram_mp(self, split=None, n_process=None, win='hann', L=4096, avg_time=None, overlap=0.5):
+        '''
+        Same as function compute_spectrogram but using multiprocessing. This function is intended to
+        be used when analyzing large data sets.
 
-def save_spectrogram(spectrogram, t=None, f=None, filename='spectrogram.pickle'):
-    '''
-    Save spectrogram in pickle file.
+        split (float or [datetime.datetime]): time period between start_time and end_time is split into parts of length
+            split seconds (if float). The last segment can be shorter than split seconds. Alternatively split can be set as
+            an list with N start-end time tuples where N is the number of segments. 
+        n_process (int): number of processes in the pool. Default (None) means that n_process is equal to the number
+            of CPU cores.
+        win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
+            possible window functions
+        L (int): length of each data block for computing the FFT
+        avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
+            time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
+            to avoid memory overflows and facilitate visualization.
+        overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
+            avg_time is None.
 
-    spectrogram (N x M numpy.array(float)): numpy array with N rows (one row for each time step) and M columns
-        (one column for each frequency value)
-    t (N x 1 array like): indices on horizontal (time) axis.
-    f (M x 1 array like): indices of vertical (frequency) axis.
-    filename (str): directory where spectrogram data is saved. Ending has to be ".pickle".
-    '''
+        return ([datetime.datetime], [float], [float]): tuple including time, frequency, and spectral level.
+            If no noise date is available, function returns three empty numpy arrays
+        '''
 
-    dct = {
-        't': t,
-        'f': f,
-        'spectrogram': spectrogram
-        }
-    with open(filename, 'wb') as outfile:
-        pickle.dump(dct, outfile)
+        # create array with N start and end time values
+        if n_process == None:
+            N  = mp.cpu_count()
+        else:
+            N = n_process
 
-def compute_psd_welch(start_time, end_time, node='/LJ01D', win='hann', L=4096, overlap=0.5,
-    avg_method='median', fmin=20.0, fmax=30000.0, interpolate=None, scale='log'):
-    '''
-    Compute power spectral density estimates using Welch's method.
-
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter
-    win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
-        possible window functions
-    L (int): length of each data block for computing the FFT
-    avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
-        time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
-        to avoid memory overflows and facilitate visualization.
-    overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
-        avg_time is None.
-    avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
-    interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
-        divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
-    scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
-        returned
+        ooi_hyd_data_list = []
+        # processa data using same segmentation as for get_acoustic_data_mp. This can save time compared to
+        # doing the segmentation from scratch
+        if split == None:
+            for i in range(N):
+                tmp_obj = OOIHyrophoneData(starttime=self._data_segmented[i][0].stats.starttime.datetime,
+                    endtime=self._data_segmented[i][0].stats.endtime.datetime)
+                tmp_obj.data = self._data_segmented[i][0]
+                ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
+        # do segmentation from scratch
+        else:
+            n_seg = int(np.ceil((self.endtime - self.starttime).total_seconds() / split))
+            seconds_per_process = (self.endtime - self.starttime).total_seconds() / n_seg
+            for k in range(n_seg - 1):
+                starttime = self.starttime + datetime.timedelta(seconds=k * seconds_per_process)
+                endtime = self.starttime + datetime.timedelta(seconds=(k+1) * seconds_per_process)
+                tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=endtime)
+                tmp_obj.data = self.data.slice(starttime=starttime, endtime=endtime)
+                ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
 
-    return ([float], [float]): tuple including time, and spectral level. If no noise date is available,
-        function returns two empty numpy arrays.
-    '''
-    # get noise data segment for each entry in rain_event
-    # each noise data segemnt contains usually 1 min of data
-    noise = get_acoustic_data(start_time, end_time, node)
-    if noise == None:
-        return np.array([]), np.array([])
-    fs = noise[0].stats.sampling_rate
+            starttime = self.starttime + datetime.timedelta(seconds=(n_seg - 1) * seconds_per_process)
+            tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=self.endtime)
+            tmp_obj.data = self.data.slice(starttime=starttime, endtime=self.endtime)
+            ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
-    # compute nfft if zero padding is desired
-    if interpolate != None:
-        if fs / L > interpolate:
-            nfft = int(fs / interpolate)
+        with mp.get_context("spawn").Pool(n_process) as p:
+            try:
+                specgram_list = p.starmap(self.__spectrogram_mp_helper, ooi_hyd_data_list)
+                ## concatenate all small spectrograms to obtain final spectrogram
+                specgram = []
+                time_specgram = []
+                for i in range(len(specgram_list)):
+                    time_specgram.extend(specgram_list[i].time)
+                    specgram.extend(specgram_list[i].values)
+                self.spectrogram = Spectrogram(np.array(time_specgram), specgram_list[0].freq, np.array(specgram))
+                return self
+            except:
+                if self.print_exceptions:
+                    print('Cannot compute spectrogram')
+                self.spectrogram = None
+                return self
+
+    def __spectrogram_mp_helper(self, ooi_hyd_data_obj, win, L, avg_time, overlap):
+        ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap)
+        return ooi_hyd_data_obj.spectrogram
+
+
+    def compute_psd_welch(self, win='hann', L=4096, overlap=0.5, avg_method='median', interpolate=None, scale='log'):
+        '''
+        Compute power spectral density estimates using Welch's method.
+
+        win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
+            possible window functions
+        L (int): length of each data block for computing the FFT
+        avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
+            time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
+            to avoid memory overflows and facilitate visualization.
+        overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
+            avg_time is None.
+        avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
+        interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
+            divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
+        scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
+            returned
+
+
+        return ([float], [float]): tuple including time, and spectral level. If no noise date is available,
+            function returns two empty numpy arrays.
+        '''
+        # get noise data segment for each entry in rain_event
+        # each noise data segemnt contains usually 1 min of data
+        if self.data == None:
+            if self.print_exceptions:
+                print('Data object is empty. PSD cannot be computed')
+            self.psd = None
+            return self
+        fs = self.data.stats.sampling_rate
+
+        # compute nfft if zero padding is desired
+        if interpolate != None:
+            if fs / L > interpolate:
+                nfft = int(fs / interpolate)
+            else: nfft = L
         else: nfft = L
-    else: nfft = L
 
-    # compute Welch median for entire data segment
-    f, Pxx = signal.welch(x = noise[0].data, fs = fs, window=win, nperseg=L, noverlap = int(L * overlap),
-        nfft=nfft, average=avg_method)
+        # compute Welch median for entire data segment
+        f, Pxx = signal.welch(x = self.data.data, fs = fs, window=win, nperseg=L, noverlap = int(L * overlap),
+            nfft=nfft, average=avg_method)
 
-    if len(Pxx) != int(nfft/2) + 1:
-        return np.array([]), np.array([])
+        if len(Pxx) != int(nfft/2) + 1:
+            if self.print_exceptions:
+                print('PSD cannot be computed.')
+            self.psd = None
+            return self
 
-    if scale == 'log':
-        Pxx = 10*np.log10(Pxx*np.power(10, _freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10)) - 128.9
-    elif scale == 'lin':
-        Pxx = Pxx * np.power(10, _freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10) * np.power(10, -128.9/10)
-    else:
-        raise Exception('scale has to be either "lin" or "log".')
-    
-    return f, Pxx
+        if scale == 'log':
+            Pxx = 10*np.log10(Pxx*np.power(10, self._freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10)) - 128.9
+        elif scale == 'lin':
+            Pxx = Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(nfft/2 + 1))/10) * np.power(10, -128.9/10)
+        else:
+            raise Exception('scale has to be either "lin" or "log".')
+        
+        self.psd = Psd(f, Pxx)
+        return self
 
-def compute_psd_welch_mp(start_time, end_time, split, n_process=None, node='/LJ01D', win='hann', L=4096, overlap=0.5,
-    avg_method='median', fmin=20.0, fmax=30000.0, interpolate=None, scale='log'):
-    '''
-    Same as compute_psd_welch but using the multiprocessing library.
+    def compute_psd_welch_mp(self, split, n_process=None, win='hann', L=4096, overlap=0.5, avg_method='median',
+        interpolate=None, scale='log'):
+        '''
+        Same as compute_psd_welch but using the multiprocessing library.
 
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    split (float or [datetime.datetime]): time period between start_time and end_time is split into parts of length
-        split seconds (if float). The last segment can be shorter than split seconds. Alternatively split can be set as
-        an list with N start-end time tuples where N is the number of segments. 
-    n_process (int): number of processes in the pool. Default (None) means that n_process is equal to the number
-        of CPU cores.
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter
-    win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
-        possible window functions
-    L (int): length of each data block for computing the FFT
-    avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
-        time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
-        to avoid memory overflows and facilitate visualization.
-    overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
-        avg_time is None.
-    avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
-    interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
-        divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
-    scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
-        returned
+        split (float or [datetime.datetime]): time period between start_time and end_time is split into parts of length
+            split seconds (if float). The last segment can be shorter than split seconds. Alternatively split can be set as
+            an list with N start-end time tuples where N is the number of segments. 
+        n_process (int): number of processes in the pool. Default (None) means that n_process is equal to the number
+            of CPU cores.
+        win (str): window function used to taper the data. Default is Hann-window. See scipy.signal.get_window for a list of
+            possible window functions
+        L (int): length of each data block for computing the FFT
+        avg_time (float): time in seconds that is covered in one time step of the spectrogram. Default value is None and one
+            time step covers L samples. If signal covers a long time period it is recommended to use a higher value for avg_time
+            to avoid memory overflows and facilitate visualization.
+        overlap (float): percentage of overlap between adjecent blocks if Welch's method is used. Parameter is ignored if
+            avg_time is None.
+        avg_method (str): method for averaging when using Welch's method. Either 'mean' or 'median' can be used
+        interpolate (float): resolution in frequency domain in Hz. If not specified, the resolution will be sampling frequency fs
+            divided by L. If interpolate is samller than fs/L, the PSD will be interpolated using zero-padding
+        scale (str): 'log': PSD in logarithmic scale (dB re 1µPa^2/H) is returned. 'lin': PSD in linear scale (1µPa^2/H) is
+            returned
 
-    return ([float], [float]): tuple including frequency indices and PSD estimates, where each PSD estimate. The PSD estimate
-        of each segment is stored in a separate row. 
-    '''
+        return ([float], [float]): tuple including frequency indices and PSD estimates, where each PSD estimate. The PSD estimate
+            of each segment is stored in a separate row. 
+        '''
 
-    # create array with N start and end time values
-    if type(split) == float or type(split) == int:
-        n_seg = int(np.ceil((end_time - start_time).total_seconds() / split))
-        start_end_list = []
-        for k in range(n_seg - 1):
-            start_end_list.append((start_time + k * datetime.timedelta(seconds=split),
-                start_time + (k+1) * datetime.timedelta(seconds=split), node, win, L, overlap, avg_method,
-                fmin, fmax, interpolate, scale))
-        start_end_list.append((start_time + (n_seg-1) * datetime.timedelta(seconds=split), end_time,
-            node, win, L, overlap, avg_method, fmin, fmax, interpolate, scale))
-    else:
-        start_end_list = []
-        for row in split:
-            start_end_list.append((row[0], row[1], node, win, L, overlap, avg_method, fmin, fmax,
-                interpolate, scale))
+        # create array with N start and end time values
+        if n_process == None:
+            N  = mp.cpu_count()
+        else:
+            N = n_process
 
-    with mp.get_context("spawn").Pool(n_process) as p:
-        psd_list = p.starmap(compute_psd_welch, start_end_list)
-        f = psd_list[0][0]
-        psds = []
-        for i in range(len(psd_list)):
-            psds.append(np.array(psd_list[i][1]))
+        ooi_hyd_data_list = []
+        # processa data using same segmentation as for get_acoustic_data_mp. This can save time compared to
+        # doing the segmentation from scratch
+        if split == None:
+            for i in range(N):
+                tmp_obj = OOIHyrophoneData(starttime=self._data_segmented[i][0].stats.starttime.datetime,
+                    endtime=self._data_segmented[i][0].stats.endtime.datetime)
+                tmp_obj.data = self._data_segmented[i][0]
+                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+        # do segmentation from scratch
+        elif type(split) == int or type(split) == float:
+            n_seg = int(np.ceil((self.endtime - self.starttime).total_seconds() / split))
+            seconds_per_process = (self.endtime - self.starttime).total_seconds() / n_seg
+            for k in range(n_seg - 1):
+                starttime = self.starttime + datetime.timedelta(seconds=k * seconds_per_process)
+                endtime = self.starttime + datetime.timedelta(seconds=(k+1) * seconds_per_process)
+                tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=endtime)
+                tmp_obj.data = self.data.slice(starttime=starttime, endtime=endtime)
+                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+            # treat last segment separately as its length may differ from other segments
+            starttime = self.starttime + datetime.timedelta(seconds=(n_seg - 1) * seconds_per_process)
+            tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=self.endtime)
+            tmp_obj.data = self.data.slice(starttime=starttime, endtime=self.endtime)
+            ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+        # use segmentation specified by split
+        else:
+            ooi_hyd_data_list = []
+            for row in split:
+                tmp_obj = OOIHyrophoneData(starttime=row[0], endtime=row[1])
+                tmp_obj.data = self.data.slice(starttime=row[0], endtime=row[1])
+                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
-    return f, np.array(psds)
+        with mp.get_context("spawn").Pool(n_process) as p:
+            try:
+                self.psd_list = p.starmap(self.__psd_mp_helper, ooi_hyd_data_list)
+            except:
+                if self.print_exceptions:
+                    print('Cannot compute PSd list')
+                self.psd_list = None
 
-def save_psd(psd, f=[], filename='psd.json', ancillary_data=[], ancillary_data_label=[]):
-    '''
-    Save PSD estimates along with with ancillary data (stored in dictionary) in json file.
+        return self
 
-    psd ([float]): power spectral density estimate
-    f ([float]): frequency indices
-    filename (str): directory for saving the data
-    ancillary_data ([array like]): list of ancillary data
-    ancillary_data_label ([str]): labels for ancillary data used as keys in the output dictionary.
-        Array has same length as ancillary_data array.
-    '''
-
-    if len(f) != len(psd):
-        f = np.linspace(0, len(psd)-1, len(psd))
-
-    if type(psd) != list:
-        psd = psd.tolist()
-
-    if type(f) != list:
-        f = f.tolist()
-
-    dct = {
-        'psd': psd,
-        'f': f
-        }
-
-    if len(ancillary_data) != 0:
-        for i in range(len(ancillary_data)):
-            if type(ancillary_data[i]) != list:
-                dct[ancillary_data_label[i]] = ancillary_data[i].tolist()
-            else:
-                 dct[ancillary_data_label[i]] = ancillary_data[i]
-
-    with open(filename, 'w+') as outfile:
-        json.dump(dct, outfile)
-
-def visualize_psd(psd, f=[], plot_psd=True, save_psd=False,
-    filename='psd.png', title='PSD', xlabel='frequency', xlabel_rot=0, ylabel='spectral level',
-    fmin=0, fmax=32, vmin=20, vmax=80, figsize=(16,9), dpi=96):
+    def __psd_mp_helper(self, ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
+        ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
+        return ooi_hyd_data_obj.psd
 
 
-    '''
-    Basic visualization of PSD estimate based on matplotlib. The function offers two options: Plot PSD
-    in Python (plot_psd = True) and save PSD plot in directory (save_psd = True). PSDs are
-    plotted in dB re 1µ Pa^2/Hz.
+class Spectrogram:
+    """
+    A class used to represent a spectrogram object.
 
-    psd (numpy.array(float)): PSD values
-    f (array like): indices of vertical (frequency) axis.
-    plot_psd (bool): whether or not PSD is plotted using Python
-    save_psd (bool): whether or not PSD plot is saved
-    filename (str): directory where PSD plot is saved. Use ending ".png" or ".pdf" to save as PNG or PDF
-        file. This value will be ignored if save_psd=False
-    title (str): title of plot
-    ylabel (str): label of vertical axis
-    xlabel (str): label of horizontal axis
-    xlabel_rot (float): rotation of xlabel. This is useful if xlabel are longer strings.
-    fmin (float): minimum frequency (unit same as f) that is displayed
-    fmax (float): maximum frequency (unit same as f) that is displayed
-    vmin (float): minimum value (dB) of PSD.
-    vmax (float): maximum value (dB) of PSD.
-    figsize (tuple(int)): size of figure
-    dpi (int): dots per inch
-    '''
+    Attributes
+    ----------
+    time : 1-D array of float or datetime objects
+        Indices of time-bins of spectrogam.
+    freq : 1-D array of float
+        Indices of frequency-bins of spectrogram.
+    values : 2-D array of float
+        Values of the spectrogram. For each time-frequency-bin pair there has to be one entry in values.
+        That is, if time has  length N and freq length M, values is a NxM array.
 
-    #set backend for plotting/saving:
-    if not plot_psd: matplotlib.use('Agg')
+    Methods
+    -------
 
-    font = {'size'   : 22}
-    matplotlib.rc('font', **font)
+    """
+    def __init__(self, time, freq, values):
+        self.time = time
+        self.freq = freq
+        self.values = values
 
-    if len(f) != len(psd):
-        f = np.linspace(0, len(psd) - 1, len(psd))
+    # TODO: allow for visualization of ancillary data. Create SpecgramVisu class?
+    def visualize(self, plot_spec=True, save_spec=False, filename='spectrogram.png', title='spectrogram',
+        xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0, fmax=32, vmin=20, vmax=80, vdelta=1.0,
+        vdelta_cbar=5, figsize=(16,9), dpi=96):
+        '''
+        Basic visualization of spectrogram based on matplotlib. The function offers two options: Plot spectrogram
+        in Python (plot_spec = True) and save specrogram plot in directory (save_spec = True). Spectrograms are
+        plotted in dB re 1µ Pa^2/Hz.
 
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    plt.semilogx(f, psd)  
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.xlim([fmin, fmax])
-    plt.ylim([vmin, vmax])
-    plt.xticks(rotation=xlabel_rot)
-    plt.title(title)
-    plt.grid(True)
-    
-    if save_psd:
-        plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+        plot_spec (bool): whether or not spectrogram is plotted using Python
+        save_spec (bool): whether or not spectrogram plot is saved
+        filename (str): directory where spectrogram plot is saved. Use ending ".png" or ".pdf" to save as PNG or PDF
+            file. This value will be ignored if save_spec=False
+        title (str): title of plot
+        ylabel (str): label of vertical axis
+        xlabel (str): label of horizontal axis
+        xlabel_rot (float): rotation of xlabel. This is useful if xlabel are longer strings for example when using
+            datetime.datetime objects.
+        fmin (float): minimum frequency (unit same as f) that is displayed
+        fmax (float): maximum frequency (unit same as f) that is displayed
+        vmin (float): minimum value (dB) of spectrogram that is colored. All values below are diplayed in white.
+        vmax (float): maximum value (dB) of spectrogram that is colored. All values above are diplayed in white.
+        vdelta (float): color resolution
+        vdelta_cbar (int): label ticks in colorbar are in vdelta_cbar steps
+        figsize (tuple(int)): size of figure
+        dpi (int): dots per inch
+        '''
 
-    if plot_psd: plt.show()
-    else: plt.close(fig)
+        #set backend for plotting/saving:
+        if not plot_spec: matplotlib.use('Agg')
+
+        font = {'size'   : 22}
+        matplotlib.rc('font', **font)
+
+        if len(self.time) != len(self.values):
+            t = np.linspace(0, len(self.values) - 1, len(self.values))
+        else:
+            t = self.time
+        if len(self.freq) != len(self.values[0]):
+            f = np.linspace(0, len(self.values[0]) - 1, len(self.values[0]))
+        else:
+            f = self.freq
+
+        cbarticks = np.arange(vmin,vmax+vdelta,vdelta)
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        im = ax.contourf(t, f, np.transpose(self.values), cbarticks, norm=colors.Normalize(vmin=vmin, vmax=vmax), cmap=plt.cm.jet)  
+        plt.ylabel(ylabel)
+        plt.xlabel(xlabel)
+        plt.ylim([fmin, fmax])
+        plt.xticks(rotation=xlabel_rot)
+        plt.title(title)
+        plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax+vdelta, vdelta_cbar))
+        plt.tick_params(axis='y')
+
+        if type(t[0]) == datetime.datetime:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%y-%m-%d %H:%M'))
+        
+        if save_spec:
+            plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+
+        if plot_spec: plt.show()
+        else: plt.close(fig)
+
+    def save(self, filename='spectrogram.pickle'):
+        '''
+        Save spectrogram in pickle file.
+
+        filename (str): directory where spectrogram data is saved. Ending has to be ".pickle".
+        '''
+
+        dct = {
+            't': self.time,
+            'f': self.freq,
+            'spectrogram': self.values
+            }
+        with open(filename, 'wb') as outfile:
+            pickle.dump(dct, outfile)
+
+
+class Psd:
+    """
+    A calss used to represent a PSD object
+
+    Attributes
+    ----------
+    freq : array of float
+        Indices of frequency-bins of PSD.
+    values : array of float
+        Values of the PSD.
+
+    Methods
+    -------
+
+    """
+    def __init__(self, freq, values):
+        self.freq = freq
+        self.values = values
+
+    def visualize(self, plot_psd=True, save_psd=False, filename='psd.png', title='PSD', xlabel='frequency',
+        xlabel_rot=0, ylabel='spectral level', fmin=0, fmax=32, vmin=20, vmax=80, figsize=(16,9), dpi=96):
+        '''
+        Basic visualization of PSD estimate based on matplotlib. The function offers two options: Plot PSD
+        in Python (plot_psd = True) and save PSD plot in directory (save_psd = True). PSDs are
+        plotted in dB re 1µ Pa^2/Hz.
+
+        plot_psd (bool): whether or not PSD is plotted using Python
+        save_psd (bool): whether or not PSD plot is saved
+        filename (str): directory where PSD plot is saved. Use ending ".png" or ".pdf" to save as PNG or PDF
+            file. This value will be ignored if save_psd=False
+        title (str): title of plot
+        ylabel (str): label of vertical axis
+        xlabel (str): label of horizontal axis
+        xlabel_rot (float): rotation of xlabel. This is useful if xlabel are longer strings.
+        fmin (float): minimum frequency (unit same as f) that is displayed
+        fmax (float): maximum frequency (unit same as f) that is displayed
+        vmin (float): minimum value (dB) of PSD.
+        vmax (float): maximum value (dB) of PSD.
+        figsize (tuple(int)): size of figure
+        dpi (int): dots per inch
+        '''
+
+        #set backend for plotting/saving:
+        if not plot_psd: matplotlib.use('Agg')
+
+        font = {'size'   : 22}
+        matplotlib.rc('font', **font)
+
+        if len(self.freq) != len(self.values):
+            f = np.linspace(0, len(self.values)-1, len(self.values))
+        else:
+            f = self.freq
+
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        plt.semilogx(f, self.values)  
+        plt.ylabel(ylabel)
+        plt.xlabel(xlabel)
+        plt.xlim([fmin, fmax])
+        plt.ylim([vmin, vmax])
+        plt.xticks(rotation=xlabel_rot)
+        plt.title(title)
+        plt.grid(True)
+        
+        if save_psd:
+            plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+
+        if plot_psd: plt.show()
+        else: plt.close(fig)
+
+    def save(self, filename='psd.json', ancillary_data=[], ancillary_data_label=[]):
+        '''
+        Save PSD estimates along with with ancillary data (stored in dictionary) in json file.
+
+        filename (str): directory for saving the data
+        ancillary_data ([array like]): list of ancillary data
+        ancillary_data_label ([str]): labels for ancillary data used as keys in the output dictionary.
+            Array has same length as ancillary_data array.
+        '''
+
+        if len(self.freq) != len(self.values):
+            f = np.linspace(0, len(self.values)-1, len(self.values))
+        else:
+            f = self.freq
+
+        if type(self.values) != list:
+            values = self.values.tolist()
+
+        if type(f) != list:
+            f = f.tolist()
+
+        dct = {
+            'psd': values,
+            'f': f
+            }
+
+        if len(ancillary_data) != 0:
+            for i in range(len(ancillary_data)):
+                if type(ancillary_data[i]) != list:
+                    dct[ancillary_data_label[i]] = ancillary_data[i].tolist()
+                else:
+                    dct[ancillary_data_label[i]] = ancillary_data[i]
+
+        with open(filename, 'w+') as outfile:
+            json.dump(dct, outfile)
