@@ -551,7 +551,7 @@ class OOIHyrophoneData:
         ooi_hyd_data_list = []
         # processa data using same segmentation as for get_acoustic_data_mp. This can save time compared to
         # doing the segmentation from scratch
-        if split == None:
+        if type(split) == type(None):
             for i in range(N):
                 tmp_obj = OOIHyrophoneData(starttime=self._data_segmented[i][0].stats.starttime.datetime,
                     endtime=self._data_segmented[i][0].stats.endtime.datetime)
@@ -577,7 +577,7 @@ class OOIHyrophoneData:
             ooi_hyd_data_list = []
             for row in split:
                 tmp_obj = OOIHyrophoneData(starttime=row[0], endtime=row[1])
-                tmp_obj.data = self.data.slice(starttime=row[0], endtime=row[1])
+                tmp_obj.data = self.data.slice(starttime=UTCDateTime(row[0]), endtime=UTCDateTime(row[1]))
                 ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
         with mp.get_context("spawn").Pool(n_process) as p:
