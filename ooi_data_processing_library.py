@@ -554,7 +554,7 @@ class OOIHyrophoneData:
         if type(split) == type(None):
             for i in range(N):
                 tmp_obj = OOIHyrophoneData(starttime=self._data_segmented[i][0].stats.starttime.datetime,
-                    endtime=self._data_segmented[i][0].stats.endtime.datetime)
+                    endtime=self._data_segmented[i][0].stats.endtime.datetime, print_exceptions=self.print_exceptions)
                 tmp_obj.data = self._data_segmented[i][0]
                 ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # do segmentation from scratch
