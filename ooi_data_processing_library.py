@@ -274,7 +274,7 @@ class OOIHyrophoneData:
             data = data_list[0]
             for d in data_list[1:]:
                 data = data + d
-            self._data_segmented = data
+            self._data_segmented = data_list
             data.merge(fill_value='interpolate', method=1)
 
             # apply bandpass filter to data if desired
@@ -436,7 +436,7 @@ class OOIHyrophoneData:
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                specgram_list = p.starmap(self.__spectrogram_mp_helper, ooi_hyd_data_list)
+                specgram_list = p.starmap(self._spectrogram_mp_helper, ooi_hyd_data_list)
                 ## concatenate all small spectrograms to obtain final spectrogram
                 specgram = []
                 time_specgram = []
@@ -451,7 +451,7 @@ class OOIHyrophoneData:
                 self.spectrogram = None
                 return self
 
-    def __spectrogram_mp_helper(self, ooi_hyd_data_obj, win, L, avg_time, overlap):
+    def _spectrogram_mp_helper(self, ooi_hyd_data_obj, win, L, avg_time, overlap):
         ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap)
         return ooi_hyd_data_obj.spectrogram
 
@@ -565,12 +565,12 @@ class OOIHyrophoneData:
                 starttime = self.starttime + datetime.timedelta(seconds=k * seconds_per_process)
                 endtime = self.starttime + datetime.timedelta(seconds=(k+1) * seconds_per_process)
                 tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=endtime)
-                tmp_obj.data = self.data.slice(starttime=starttime, endtime=endtime)
+                tmp_obj.data = self.data.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
                 ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
             # treat last segment separately as its length may differ from other segments
             starttime = self.starttime + datetime.timedelta(seconds=(n_seg - 1) * seconds_per_process)
             tmp_obj = OOIHyrophoneData(starttime=starttime, endtime=self.endtime)
-            tmp_obj.data = self.data.slice(starttime=starttime, endtime=self.endtime)
+            tmp_obj.data = self.data.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.endtime))
             ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # use segmentation specified by split
         else:
@@ -582,7 +582,7 @@ class OOIHyrophoneData:
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                self.psd_list = p.starmap(self.__psd_mp_helper, ooi_hyd_data_list)
+                self.psd_list = p.starmap(self._psd_mp_helper, ooi_hyd_data_list)
             except:
                 if self.print_exceptions:
                     print('Cannot compute PSd list')
@@ -590,7 +590,7 @@ class OOIHyrophoneData:
 
         return self
 
-    def __psd_mp_helper(self, ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
+    def _psd_mp_helper(self, ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
         ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
         return ooi_hyd_data_obj.psd
 
