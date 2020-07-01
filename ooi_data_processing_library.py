@@ -436,7 +436,7 @@ class OOIHyrophoneData:
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                specgram_list = p.starmap(self._spectrogram_mp_helper, ooi_hyd_data_list)
+                specgram_list = p.starmap(_spectrogram_mp_helper, ooi_hyd_data_list)
                 ## concatenate all small spectrograms to obtain final spectrogram
                 specgram = []
                 time_specgram = []
@@ -450,11 +450,6 @@ class OOIHyrophoneData:
                     print('Cannot compute spectrogram')
                 self.spectrogram = None
                 return self
-
-    def _spectrogram_mp_helper(self, ooi_hyd_data_obj, win, L, avg_time, overlap):
-        ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap)
-        return ooi_hyd_data_obj.spectrogram
-
 
     def compute_psd_welch(self, win='hann', L=4096, overlap=0.5, avg_method='median', interpolate=None, scale='log'):
         '''
@@ -582,7 +577,7 @@ class OOIHyrophoneData:
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                self.psd_list = p.starmap(self._psd_mp_helper, ooi_hyd_data_list)
+                self.psd_list = p.starmap(_psd_mp_helper, ooi_hyd_data_list)
             except:
                 if self.print_exceptions:
                     print('Cannot compute PSd list')
@@ -590,9 +585,13 @@ class OOIHyrophoneData:
 
         return self
 
-    def _psd_mp_helper(self, ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
-        ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
-        return ooi_hyd_data_obj.psd
+def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
+        ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap)
+        return ooi_hyd_data_obj.spectrogram
+
+def _psd_mp_helper(ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
+    ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
+    return ooi_hyd_data_obj.psd
 
 
 class Spectrogram:
