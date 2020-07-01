@@ -6,28 +6,21 @@ ooi_data_processing_library.py contains functions for processing and visualizing
 
 The demo.ipynb provides examples on how to use the functions in the library.
 
-## Dependancies
+## Getting Started
+### Installation
 
-I've seen repos in the past that have a conda enviroment in the repo that let's you create a new enviroment with all of the dependancies. I don't know how to do this, but it would be cool to do some day.
+- Clone this repo:
+```bash
+git clone https://github.com/FelixSchwock/OOI-data-processing-Python
+cd OOI-data-processing-Python
+```
 
+- Install Conda Packages
+  - we have provided a .yml to create a new conda enviroment. Navigate to ./conda_envs and create a new environemnt given your operating system
+  ```bash
+  cd conda_envs
+  conda env create -f ooi_linux.yml
+  ```
 
-- numpy
-- json
-- os
--  matplotlib
-- obspy
-- math
-- requests
-- lmxl
-- scipy
-- datetime
-- urllib
-- time
-- pandas
-- sys
-- thredds_crawler
-- multiprocessing
-- pickle
-
-
-# Test
+### Demo
+  - demo.ipynb provides examples of some of the most used functions in the library
