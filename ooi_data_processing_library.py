@@ -31,10 +31,15 @@ class OOIHydrophoneData:
         
         ''' 
         Initialize Class OOIHydrophoneData
-        
-        starttime - indicates start time for acquiring data
-        endtime - indicates end time for acquiring data
-        node - indicates hydrophone location as listed below
+
+        Attributes
+        ----------
+        starttime : datetime.datetime
+            indicates start time for acquiring data
+        endtime : datetime.datetime
+            indicates end time for acquiring data
+        node : str
+            indicates hydrophone location as listed below
             ____________________________________________
             |Node Name |        Hydrophone Name        |
             |__________|_______________________________|
@@ -49,12 +54,58 @@ class OOIHydrophoneData:
             |'/LJ01C'  | Oregon Offshore Base Seafloor |
             |__________|_______________________________|
        
-       fmin - indicates minimum frequency in bandpass filter
-       fmax - indicates maximum frequency in bandpass filter
-       apply_filter - indicates whether or not to filter data
-       print_exceptions - indicates whether or not to print errors
-       limit_seed_files - indicates if number of seed files per data retrieval should be limited
-        
+        fmin : int or float
+            indicates minimum frequency in bandpass filter
+        fmax : int or float
+            indicates maximum frequency in bandpass filter
+        apply_filter : bool
+            indicates whether or not to filter data
+        print_exceptions : bool
+            indicates whether or not to print errors
+        data_available : bool
+            indicates if data is available for specified start-/end time and node
+        limit_seed_files : bool
+            indicates if number of seed files per data retrieval should be limited
+        data : obspy.core.trace.Trace
+            object containg the acoustic data between start and end time for the specified node
+        spectrogram : Spectrogram
+            spectrogram of data.data. Spectral level, time, and frequency bins can be acccessed by
+            spectrogram.values, spectrogram.time, and spectrogram.freq
+        psd : Psd
+            power spectral density estimate of data.data. Spectral level and frequency bins can be
+            accessed by psd.values and psd.freq
+        psd_list : list of Psd
+            the data object is divided into N segments and for each segment a separate power spectral
+            desity estimate is computed and stored in psd_list. The number of segments N is determined
+            by the split parameter in compute_psd_welch_mp
+
+        Private Attributes
+        ------------------
+        _data_segmented : list of obspy.core.stream.Stream
+            data segmented in multiple sub-streams. Used to reduce computation time in
+            compute_spectrogram_mp if split = None.
+
+        Methods
+        -------
+        get_acoustic_data(starttime, endtime, node, fmin=20.0, fmax=30000.0)
+            Fetches hydrophone data form OOI server
+        get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=20.0, fmax=30000.0)
+            Same as get_acoustic_data but using multiprocessing to parallelize data fetching
+        compute_spectrogram(win='hann', L=4096, avg_time=None, overlap=0.5)
+            Computes spectrogram for data attribute.
+        compute_spectrogram_mp(split=None, n_process=None, win='hann', L=4096, avg_time=None, overlap=0.5)
+            Same as compute_spectrogram but using multiprocessing to parallelize computations.
+        compute_psd_welch(win='hann', L=4096, overlap=0.5, avg_method='median', interpolate=None, scale='log')
+            Compute power spectral density estimate for data attribute.
+        compute_psd_welch_mp(split, n_process=None, win='hann', L=4096, overlap=0.5, avg_method='median', interpolate=None, scale='log')
+            Same as compute_psd_welch but using multiprocessing to parallelize computations.
+
+        Private Methods
+        ---------------
+        __web_crawler_noise(day_str)
+            Fetches URLs from OOI raw data server for specific day.
+        _freq_dependent_sensitivity_correct(N)
+            TODO: applies frequency dependent sensitivity correction to hydrohone data 
         '''
         self.starttime = starttime
         self.endtime = endtime
@@ -639,7 +690,12 @@ class Spectrogram:
 
     Methods
     -------
-
+    visualize(plot_spec=True, save_spec=False, filename='spectrogram.png', title='spectrogram',
+    xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0, fmax=32, vmin=20, vmax=80, vdelta=1.0,
+    vdelta_cbar=5, figsize=(16,9), dpi=96)
+        Visualizes spectrogram using matplotlib.
+    save(filename='spectrogram.pickle')
+        Saves spectrogram in .pickle file.
     """
     def __init__(self, time, freq, values):
         self.time = time
@@ -738,7 +794,11 @@ class Psd:
 
     Methods
     -------
-
+    visualize(plot_psd=True, save_psd=False, filename='psd.png', title='PSD', xlabel='frequency',
+    xlabel_rot=0, ylabel='spectral level', fmin=0, fmax=32, vmin=20, vmax=80, figsize=(16,9), dpi=96)
+        Visualizes PSD estimate using matplotlib.
+    save(filename='psd.json', ancillary_data=[], ancillary_data_label=[])
+        Saves PSD estimate and ancillary data in .json file.
     """
     def __init__(self, freq, values):
         self.freq = freq
