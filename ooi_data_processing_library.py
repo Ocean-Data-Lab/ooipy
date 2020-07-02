@@ -24,11 +24,38 @@ from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import pickle
 
-class OOIHyrophoneData:
+class OOIHydrophoneData:
 
     def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
-        fmax=None, apply_filter=True, print_exceptions=None):
-
+        fmax=None, apply_filter=True, print_exceptions=None, limit_seed_files=True):
+        
+        ''' 
+        Initialize Class OOIHydrophoneData
+        
+        starttime - indicates start time for acquiring data
+        endtime - indicates end time for acquiring data
+        node - indicates hydrophone location as listed below
+            ____________________________________________
+            |Node Name |        Hydrophone Name        |
+            |__________|_______________________________|
+            |'/LJ01D'  | Oregon Shelf Base Seafloor    |
+            |__________|_______________________________|
+            |'/LJ01A   | Oregon Slope Base Seafloore   |
+            |__________|_______________________________|
+            |'/PC01A'  | Oregan Slope Base Shallow     |
+            |__________|_______________________________|
+            |'/PC03A'  | Axial Base Shallow Profiler   |
+            |__________|_______________________________|
+            |'/LJ01C'  | Oregon Offshore Base Seafloor |
+            |__________|_______________________________|
+       
+       fmin - indicates minimum frequency in bandpass filter
+       fmax - indicates maximum frequency in bandpass filter
+       apply_filter - indicates whether or not to filter data
+       print_exceptions - indicates whether or not to print errors
+       limit_seed_files - indicates if number of seed files per data retrieval should be limited
+        
+        '''
         self.starttime = starttime
         self.endtime = endtime
         self.node = node
@@ -37,6 +64,7 @@ class OOIHyrophoneData:
         self.apply_filter = apply_filter
         self.print_exceptions = print_exceptions
         self.data_available = None
+        self.limit_seed_files = limit_seed_files
 
         if self.starttime == None or self.endtime == None or self.node == None:
             self.data = None
@@ -144,13 +172,14 @@ class OOIHyrophoneData:
             data_url_list.extend(self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/")))
             day_start = day_start + 24*3600
         
-        # if too many files for one day -> skip day (otherwise program takes too long to terminate)
-        if len(data_url_list) > 1000:
-            if self.print_exceptions:
-                print('Too many files for specified day. Cannot request data as web crawler cannot terminate.')
-            self.data = None
-            self.data_available = False
-            return None
+        if self.limit_seed_files:
+            # if too many files for one day -> skip day (otherwise program takes too long to terminate)
+            if len(data_url_list) > 1000:
+                if self.print_exceptions:
+                    print('Too many files for specified day. Cannot request data as web crawler cannot terminate.')
+                self.data = None
+                self.data_available = False
+                return None
         
         # keep only .mseed files
         del_list = []
