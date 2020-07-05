@@ -739,9 +739,9 @@ class Spectrogram:
         v = self.values[::res_reduction_time,::res_reduction_freq]
 
         if len(self.time) != len(self.values):
-            t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_freq))
+            t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_time))
         else:
-            t = self.time[::res_reduction_freq]
+            t = self.time[::res_reduction_time]
 
         if len(self.freq) != len(self.values[0]):
             f = np.linspace(0, len(self.values[0]) - 1, int(len(self.values[0]) / res_reduction_freq))
