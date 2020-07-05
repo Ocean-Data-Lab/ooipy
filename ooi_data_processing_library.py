@@ -705,7 +705,7 @@ class Spectrogram:
     # TODO: allow for visualization of ancillary data. Create SpecgramVisu class?
     def visualize(self, plot_spec=True, save_spec=False, filename='spectrogram.png', title='spectrogram',
         xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0, fmax=32, vmin=20, vmax=80, vdelta=1.0,
-        vdelta_cbar=5, figsize=(16,9), dpi=96):
+        vdelta_cbar=5, figsize=(16,9), dpi=96, res_reduction_time=1, res_reduction_freq=1):
         '''
         Basic visualization of spectrogram based on matplotlib. The function offers two options: Plot spectrogram
         in Python (plot_spec = True) and save specrogram plot in directory (save_spec = True). Spectrograms are
@@ -736,18 +736,21 @@ class Spectrogram:
         font = {'size'   : 22}
         matplotlib.rc('font', **font)
 
+        v = self.values[::res_reduction_time,::res_reduction_freq]
+
         if len(self.time) != len(self.values):
-            t = np.linspace(0, len(self.values) - 1, len(self.values))
+            t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_freq))
         else:
-            t = self.time
+            t = self.time[::res_reduction_freq]
+
         if len(self.freq) != len(self.values[0]):
-            f = np.linspace(0, len(self.values[0]) - 1, len(self.values[0]))
+            f = np.linspace(0, len(self.values[0]) - 1, int(len(self.values[0]) / res_reduction_freq))
         else:
-            f = self.freq
+            f = self.freq[::res_reduction_freq]
 
         cbarticks = np.arange(vmin,vmax+vdelta,vdelta)
         fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-        im = ax.contourf(t, f, np.transpose(self.values), cbarticks, norm=colors.Normalize(vmin=vmin, vmax=vmax), cmap=plt.cm.jet)  
+        im = ax.contourf(t, f, np.transpose(v), cbarticks, norm=colors.Normalize(vmin=vmin, vmax=vmax), cmap=plt.cm.jet)  
         plt.ylabel(ylabel)
         plt.xlabel(xlabel)
         plt.ylim([fmin, fmax])
