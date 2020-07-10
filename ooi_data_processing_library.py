@@ -27,7 +27,7 @@ import pickle
 class OOIHydrophoneData:
 
     def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
-        fmax=None, apply_filter=True, print_exceptions=None, limit_seed_files=True):
+        fmax=None, print_exceptions=None, limit_seed_files=True):
         
         ''' 
         Initialize Class OOIHydrophoneData
@@ -55,11 +55,9 @@ class OOIHydrophoneData:
             |__________|_______________________________|
        
         fmin : int or float
-            indicates minimum frequency in bandpass filter
+            indicates minimum frequency in bandpass filter. Default value is None, which results in unfiltered signal
         fmax : int or float
-            indicates maximum frequency in bandpass filter
-        apply_filter : bool
-            indicates whether or not to filter data
+            indicates maximum frequency in bandpass filter. Default value is None, which results in unfiltered signal
         print_exceptions : bool
             indicates whether or not to print errors
         data_available : bool
@@ -112,7 +110,6 @@ class OOIHydrophoneData:
         self.node = node
         self.fmin = fmin
         self.fmax = fmax
-        self.apply_filter = apply_filter
         self.print_exceptions = print_exceptions
         self.data_available = None
         self.limit_seed_files = limit_seed_files
@@ -186,15 +183,15 @@ class OOIHydrophoneData:
         return sens_interpolated(f)
 
 
-    def get_acoustic_data(self, starttime, endtime, node, fmin=20.0, fmax=30000.0):
+    def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None):
         '''
         Get acoustic data for specific time frame and node:
 
         start_time (datetime.datetime): time of the first noise sample
         end_time (datetime.datetime): time of the last noise sample
         node (str): hydrophone
-        fmin (float): lower cutoff frequency of hydrophone's bandpass filter
-        fmax (float): higher cutoff frequency of hydrophones bandpass filter
+        fmin (float): lower cutoff frequency of hydrophone's bandpass filter. Default is None which results in no filtering.
+        fmax (float): higher cutoff frequency of hydrophones bandpass filter. Default is None which results in no filtering.
         print_exceptions (bool): whether or not exeptions are printed in the terminal line
 
         return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
@@ -246,6 +243,7 @@ class OOIHydrophoneData:
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
             utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
+
             if i != len(data_url_list) - 1:
                 utc_time_url_stop = UTCDateTime(data_url_list[i+1].split('YDH')[1][1:].split('.mseed')[0])
             else: 
@@ -284,15 +282,12 @@ class OOIHydrophoneData:
                 self.data = None
                 self.data_available = False
                 return None
-
+        
         try:
             #st_all = st_all.split()
-            if self.apply_filter:
-                if self.fmin == None:
-                    fmin = 0.0
-                if self.fmax == None:
-                    fmax = st_all[0].stats.sampling_rate
+            if (self.fmin != None and self.fmax != None):
                 st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+                print('filtered')
             self.data = st_all[0]
             self.data_available = True
             return st_all
@@ -307,7 +302,7 @@ class OOIHydrophoneData:
             self.data_available = False
             return None
 
-    def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=20.0, fmax=30000.0):
+    def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=None, fmax=None):
         '''
         Same as function get acoustic data but using multiprocessing.
         '''
@@ -329,8 +324,6 @@ class OOIHydrophoneData:
             node, fmin, fmin) for i in range(N)]
         
         # create pool of processes require one part of the data in each process
-        apply_filter_temp = self.apply_filter
-        self.apply_filter = False
         with mp.get_context("spawn").Pool(N) as p:
             try:
                 data_list = p.starmap(self.get_acoustic_data, get_data_list)
@@ -357,16 +350,11 @@ class OOIHydrophoneData:
             self._data_segmented = data_list
             data.merge(fill_value='interpolate', method=1)
 
-            # apply bandpass filter to data if desired
-            if apply_filter_temp:
-                if self.fmin == None:
-                    fmin = 0.0
-                if self.fmax == None:
-                    fmax = data[0].stats.sampling_rate
-                data = data.filter("bandpass", freqmin=fmin, freqmax=fmax)
-
-            self.data = data[0]
-            self.data_available = True
+        # apply bandpass filter to data if desired
+        if (self.fmin != None and self.fmax != None):
+            st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+        self.data = data[0]
+        self.data_available = True
 
         self.starttime = starttime
         self.endtime = endtime
