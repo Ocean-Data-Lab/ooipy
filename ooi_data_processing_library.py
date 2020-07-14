@@ -1,4 +1,4 @@
-
+# Import all dependancies
 import numpy as np
 import json
 import os
@@ -23,6 +23,11 @@ import sys
 from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import pickle
+import obspy
+import scipy
+import progressbar
+from datetime import timedelta
+
 
 class OOIHydrophoneData:
 
@@ -880,3 +885,225 @@ class Psd:
 
         with open(filename, 'w+') as outfile:
             json.dump(dct, outfile)
+
+
+
+
+
+class Hydrophone_Xcorr:
+
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None):
+        '''
+        Initialize Class Hydrophone_Xcorr
+
+        node1 - Node of Reference Hydrophone
+        node2 - Node of Second Hydrophone
+        W - cross correlation window in seconds
+        verbose - print updates
+        '''
+        
+        self.node1 = node1
+        self.node2 = node2
+        self.W = W
+        self.verbose = verbose
+        self.avg_time = avg_time
+
+        self.Fs = 64000
+        self.Ts = 1/self.Fs
+        self.fmin = fmin
+        self.fmax = fmax
+        
+        hydrophone_locations = {'/LJ01D':[44.63714, -124.30598], '/LJ01C':[44.36943, -124.95357], '/PC01A':[44.52897, -125.38967], '/LJ01A':[44.51512, -125.38992], '/LJ03A':[45.81668, -129.75435], '/PC03A':[45.83049, -129.75327]}
+        D, T = self.distance_between_hydrophones(hydrophone_locations[node1],hydrophone_locations[node2])
+        print('Distance Between Hydrophones: ',D,' meters')
+        print('Estimate Time Delay Between Hydrophones: ',T,' seconds')
+        
+   
+    # Calculate Distance Between 2 Hydrophones
+    # function from https://www.geeksforgeeks.org/program-distance-two-points-earth/
+    def distance_between_hydrophones(self, coord1, coord2): 
+        '''
+        distance_between_hydrophones(coord1, coord2) - calculates the distance in meters between two global cooridinates
+        
+        Inputs:
+        coord1 - numpy array of shape [2,1] containing latitude and longitude of point 1
+        coord2 - numpy array of shape [2,1] containing latitude and longitude of point 2
+        
+        Outpus:
+        D - distance between 2 points
+        time - sound delay between two points given fixed speed of sound in ocean to be 1480 m/s
+        
+        '''
+        from math import radians, cos, sin, asin, sqrt 
+        # The math module contains a function named 
+        # radians which converts from degrees to radians. 
+        lon1 = radians(coord1[1]) 
+        lon2 = radians(coord2[1]) 
+        lat1 = radians(coord1[0]) 
+        lat2 = radians(coord2[0]) 
+
+        # Haversine formula  
+        dlon = lon2 - lon1  
+        dlat = lat2 - lat1 
+        a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+
+        c = 2 * asin(sqrt(a))  
+
+        # Radius of earth in kilometers. Use 3956 for miles 
+        r = 6371000
+
+        D = c*r
+        time = D/1480
+        # calculate the result 
+        return(D, time)
+    
+    def get_audio_avg_period(self, start_time):
+
+        '''
+        Downloads, and Reshapes Data from OOI server for given average period and start time
+        
+        Inputs:
+        avg_time - amount of time the cross correlations are averaged over (minutes)
+        start_time - indicates UTC time that data starts with
+        verbose - select printed updates
+        
+        return audio data of shape (B,N) where B = avg_time*60/W and N = W*Fs 
+        '''
+        flag = False
+        avg_time = self.avg_time
+        verbose = self.verbose
+        W = self.W
+        fmax = self.fmax
+        fmin = self.fmin
+        
+        avg_time_seconds = avg_time * 60
+        
+        if avg_time_seconds % W != 0:
+            print('Error: Average Time Must Be Interval of Window')
+            return None
+        # Initialze Two Classes for Two Hydrophones
+        ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
+        ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
+
+        # Calculate end_time
+        end_time = start_time + timedelta(minutes=avg_time)
+
+        if verbose: print('Getting Audio from Node 1...')
+        
+        stopwatch_start = time.time()
+        #Audio from Node 1
+        ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
+
+        if verbose: print('Getting Audio from Node 2...')
+        #Audio from Node 2
+        ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
+        #Combine Data into Stream
+        data_stream = obspy.Stream(traces=[ooi1.data, ooi2.data])
+        
+        stopwatch_end = time.time()
+        print('Time to Download Data from Server: ',stopwatch_end-stopwatch_start)
+        
+        if data_stream[0].data.shape != data_stream[1].data.shape:
+            print('Data streams are not the same length. Flag to be added later')
+            # TODO: Set up flag structure of some kind
+            
+        
+        # Make Data Zero Mean
+        data_stream[0].data = data_stream[0].data - np.mean(data_stream[0].data) 
+        data_stream[1].data = data_stream[1].data - np.mean(data_stream[1].data)
+               
+        # Cut off extra points if present
+        h1_data = data_stream[0].data[:avg_time*60*self.Fs]
+        h2_data = data_stream[1].data[:avg_time*60*self.Fs]
+        
+        '''
+        #Trip Flag and Skip if not enough points
+        if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs) or (data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
+            print('Entire Average Period Skipped due to insufficient data')
+            print('Expected Length: ',avg_time*60*self.Fs)
+            print(data_stream[0].data.shape[0])
+            print(data_stream[1].data.shape[0])
+            flag = True
+            h1_reshaped = None
+            h2_reshaped = None
+            return h1_reshaped, h2_reshaped, flag
+        '''
+        if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs)):
+            print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
+            h1_data = np.pad(data_stream[0].data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
+
+        if ((data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
+            print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
+            h2_data = np.pad(data_stream[1].data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
+        
+        h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
+        h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
+        
+        #if (h1_reshaped == None or h2_reshaped == None):
+        #    return False, False
+        return h1_reshaped, h2_reshaped, flag
+    
+    
+    def xcorr_over_avg_period(self, h1, h2):
+        '''
+        finds cross correlation over average period and avereages all correlations
+        
+        Inputs:
+        h1 - audio data from hydrophone 1
+        h2 - audio data from hydrophone 2
+        
+        Output - avg_xcorr of shape (N) where N = W*Fs
+        '''
+        verbose = self.verbose
+        avg_time = self.avg_time
+        M = h1.shape[1]
+        N = h2.shape[1]
+
+        xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
+        bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        if verbose: bar.start()
+        stopwatch_start = time.time()
+        for k in range(h1.shape[0]):
+            xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
+            if verbose: bar.update(k+1)
+        
+        avg_xcorr = np.average(xcorr,axis=0)
+        stopwatch_end = time.time()
+        print('Time to Calculate Cross Correlation of 1 period: ',stopwatch_end-stopwatch_start)
+        return avg_xcorr
+    
+ 
+    def avg_over_mult_periods(self, num_periods, start_time):
+        '''
+        Computes average over num_periods of averaging periods
+        
+        Inputs:
+        num_periods - number of periods to average over
+        start_time - start time for data
+        
+        Outputs:
+        xcorr - average xcorr over num_periods of averaging
+        '''
+        verbose = self.verbose
+        
+        first_loop = True
+        for k in range(num_periods):
+            stopwatch_start = time.time()
+            if verbose: print('Time Period: ',k + 1)
+            
+            h1, h2, flag = self.get_audio_avg_period(start_time)
+            if flag:
+                pass
+            else:
+                # Compute Cross Correlation for Each Window and Average
+                if first_loop:
+                    xcorr = self.xcorr_over_avg_period(h1, h2)
+                    first_loop = False
+                else:
+                    xcorr += self.xcorr_over_avg_period(h1, h2)
+
+                start_time = start_time + timedelta(minutes=self.avg_time)
+            stopwatch_end = time.time()
+            print('Time to Complete 1 period: ',stopwatch_end - stopwatch_start)
+            
+        return xcorr
