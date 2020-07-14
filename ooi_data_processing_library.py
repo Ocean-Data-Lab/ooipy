@@ -321,7 +321,7 @@ class OOIHydrophoneData:
 
         get_data_list = [(starttime + datetime.timedelta(seconds=i * seconds_per_process),
             starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
-            node, fmin, fmin) for i in range(N)]
+            node, fmin, fmax) for i in range(N)]
         
         # create pool of processes require one part of the data in each process
         with mp.get_context("spawn").Pool(N) as p:
@@ -341,24 +341,24 @@ class OOIHydrophoneData:
                 print('No data available for specified time and node')
             self.data = None
             self.data_available = False
-            data = None
+            st_all = None
         else:
             # merge data segments together
-            data = data_list[0]
+            st_all = data_list[0]
             for d in data_list[1:]:
-                data = data + d
+                st_all = st_all + d
             self._data_segmented = data_list
-            data.merge(fill_value='interpolate', method=1)
+            st_all.merge(fill_value='interpolate', method=1)
 
-        # apply bandpass filter to data if desired
-        if (self.fmin != None and self.fmax != None):
-            st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-        self.data = data[0]
-        self.data_available = True
+            # apply bandpass filter to st_all if desired
+            if (self.fmin != None and self.fmax != None):
+                st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+            self.data = st_all[0]
+            self.data_available = True
 
         self.starttime = starttime
         self.endtime = endtime
-        return data
+        return st_all
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None, overlap=0.5):
         '''
