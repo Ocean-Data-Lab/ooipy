@@ -210,6 +210,8 @@ class OOIHydrophoneData:
         self.fmin = fmin
         self.fmax = fmax
         
+        self.data_gap = False
+        
         # get URLs
         day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
         data_url_list = self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/"))
@@ -248,7 +250,7 @@ class OOIHydrophoneData:
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
             utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
-
+            
             if i != len(data_url_list) - 1:
                 utc_time_url_stop = UTCDateTime(data_url_list[i+1].split('YDH')[1][1:].split('.mseed')[0])
             else: 
@@ -271,15 +273,18 @@ class OOIHydrophoneData:
                     self.data = None
                     self.data_available = False
                     return None
-                
                 # slice stream to get desired data
                 st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
                 
                 if st_all == None: st_all = st
                 else: 
                     st_all += st
-                    st_all.merge(fill_value ='interpolate', method=1)
-                    
+                    # Returns Masked Array if there are data gaps
+                    st_all.merge(method=1)
+
+        if isinstance(st_all[0].data, np.ma.core.MaskedArray):
+            self.data_gap = True
+            if self.print_exceptions: print('Data has Gaps')
         if st_all != None:
             if len(st_all) == 0:
                 if self.print_exceptions:
