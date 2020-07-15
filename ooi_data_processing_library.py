@@ -81,6 +81,12 @@ class OOIHydrophoneData:
             the data object is divided into N segments and for each segment a separate power spectral
             desity estimate is computed and stored in psd_list. The number of segments N is determined
             by the split parameter in compute_psd_welch_mp
+        data_gap : bool
+            specifies if data retrieved has gaps in it
+        data_gap_mode : int
+            specifies how to handle gapped data
+            mode 0 (default) - linearly interpolates between gap
+            mode 1 - returns numpy masked array
 
         Private Attributes
         ------------------
@@ -118,6 +124,8 @@ class OOIHydrophoneData:
         self.print_exceptions = print_exceptions
         self.data_available = None
         self.limit_seed_files = limit_seed_files
+        self.data_gap = False
+        self.data_gap_mode = 0
 
         if self.starttime == None or self.endtime == None or self.node == None:
             self.data = None
@@ -203,7 +211,7 @@ class OOIHydrophoneData:
             between start_time and end_time. Returns None if no data are available for specified time frame
 
         '''
-
+   
         self.starttime = starttime
         self.endtime = endtime
         self.node = node
@@ -280,11 +288,18 @@ class OOIHydrophoneData:
                 else: 
                     st_all += st
                     # Returns Masked Array if there are data gaps
-                    st_all.merge(method=1)
+                    if self.data_gap_mode == 0:
+                        st_all.merge(fill_value ='interpolate', method=1)
+                    elif self.data_gap_mode == 1:
+                        st_all.merge(method=1)
+                    else:
+                        if self.print_exceptions: print('Invalid Data Gap Mode')
+                        return None
 
         if isinstance(st_all[0].data, np.ma.core.MaskedArray):
             self.data_gap = True
-            if self.print_exceptions: print('Data has Gaps')
+            if self.print_exceptions: print('Data has Gaps') #Note this will only trip if masked array is returned
+                                                             #interpolated is treated as if there is no gap
         if st_all != None:
             if len(st_all) == 0:
                 if self.print_exceptions:
@@ -316,11 +331,9 @@ class OOIHydrophoneData:
         '''
         Same as function get acoustic data but using multiprocessing.
         '''
-
         self.node = node
         self.fmin = fmin
         self.fmax = fmax
-
         # entire time frame is divided into n_process parts of equal length 
         if n_process == None:
             N  = mp.cpu_count()
@@ -358,7 +371,11 @@ class OOIHydrophoneData:
             for d in data_list[1:]:
                 st_all = st_all + d
             self._data_segmented = data_list
-            st_all.merge(fill_value='interpolate', method=1)
+            st_all.merge(method=1)
+
+            if isinstance(st_all[0].data, np.ma.core.MaskedArray):
+                self.data_gap = True
+                if self.print_exceptions: print('Data has gaps')
 
             # apply bandpass filter to st_all if desired
             if (self.fmin != None and self.fmax != None):
@@ -897,7 +914,7 @@ class Psd:
 
 class Hydrophone_Xcorr:
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None):
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None, mp = True):
         '''
         Initialize Class Hydrophone_Xcorr
 
@@ -905,6 +922,9 @@ class Hydrophone_Xcorr:
         node2 - Node of Second Hydrophone
         W - cross correlation window in seconds
         verbose - print updates
+        fmin
+        fmax
+        mp
         '''
         
         self.node1 = node1
@@ -912,6 +932,7 @@ class Hydrophone_Xcorr:
         self.W = W
         self.verbose = verbose
         self.avg_time = avg_time
+        self.mp = mp
 
         self.Fs = 64000
         self.Ts = 1/self.Fs
@@ -989,19 +1010,23 @@ class Hydrophone_Xcorr:
         # Initialze Two Classes for Two Hydrophones
         ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
         ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
+        ooi1.data_gap_mode=1
+        ooi2.data_gap_mode=1
 
         # Calculate end_time
         end_time = start_time + timedelta(minutes=avg_time)
 
         if verbose: print('Getting Audio from Node 1...')
-        
         stopwatch_start = time.time()
+        
         #Audio from Node 1
-        ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
+        if self.mp: ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
+        else: ooi1.get_acoustic_data(start_time, end_time, node=self.node1)
 
         if verbose: print('Getting Audio from Node 2...')
         #Audio from Node 2
-        ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
+        if self.mp: ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
+        else: ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
         #Combine Data into Stream
         data_stream = obspy.Stream(traces=[ooi1.data, ooi2.data])
         
@@ -1016,11 +1041,22 @@ class Hydrophone_Xcorr:
         # Make Data Zero Mean
         data_stream[0].data = data_stream[0].data - np.mean(data_stream[0].data) 
         data_stream[1].data = data_stream[1].data - np.mean(data_stream[1].data)
-               
+
+                      
         # Cut off extra points if present
         h1_data = data_stream[0].data[:avg_time*60*self.Fs]
         h2_data = data_stream[1].data[:avg_time*60*self.Fs]
+
+        # Set fill value to zero and fill in mask if there are gaps
+        if ooi1.data_gap:
+            h1_data.fill_value = 0
+            h1_data = np.ma.filled(h1_data)
+        if ooi2.data_gap:
+            h2_data.fill_value = 0
+            h2_data = np.ma.filled(h2_data)
         
+        print('Shape of node 1 data: ',h1_data.shape)
+        print('Shape of node 2 data: ',h2_data.shape)
         '''
         #Trip Flag and Skip if not enough points
         if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs) or (data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
@@ -1066,8 +1102,9 @@ class Hydrophone_Xcorr:
 
         xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
         bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-        if verbose: bar.start()
+        
         stopwatch_start = time.time()
+        if verbose: bar.start()
         for k in range(h1.shape[0]):
             xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
             if verbose: bar.update(k+1)
