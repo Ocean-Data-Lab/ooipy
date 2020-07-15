@@ -1055,8 +1055,8 @@ class Hydrophone_Xcorr:
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
         
-        print('Shape of node 1 data: ',h1_data.shape)
-        print('Shape of node 2 data: ',h2_data.shape)
+        if verbose: print('Shape of node 1 data: ',h1_data.shape)
+        if vervose: print('Shape of node 2 data: ',h2_data.shape)
         '''
         #Trip Flag and Skip if not enough points
         if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs) or (data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
