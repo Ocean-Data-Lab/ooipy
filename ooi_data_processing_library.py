@@ -1049,33 +1049,25 @@ class Hydrophone_Xcorr:
 
         # Set fill value to zero and fill in mask if there are gaps
         if ooi1.data_gap:
+            print('data gap 1')
             h1_data.fill_value = 0
             h1_data = np.ma.filled(h1_data)
         if ooi2.data_gap:
+            print('data gap 2')
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
-        
+            print(type(h2_data))
+                    
         if verbose: print('Shape of node 1 data: ',h1_data.shape)
         if verbose: print('Shape of node 2 data: ',h2_data.shape)
-        '''
-        #Trip Flag and Skip if not enough points
-        if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs) or (data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
-            print('Entire Average Period Skipped due to insufficient data')
-            print('Expected Length: ',avg_time*60*self.Fs)
-            print(data_stream[0].data.shape[0])
-            print(data_stream[1].data.shape[0])
-            flag = True
-            h1_reshaped = None
-            h2_reshaped = None
-            return h1_reshaped, h2_reshaped, flag
-        '''
-        if ((data_stream[0].data.shape[0] < avg_time*60*self.Fs)):
+            
+        if ((h1_data.shape[0] < avg_time*60*self.Fs)):
             print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
-            h1_data = np.pad(data_stream[0].data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
+            h1_data = np.pad(h1_data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
 
-        if ((data_stream[1].data.shape[0] < avg_time*60*self.Fs)):
+        if ((h2_data.shape[0] < avg_time*60*self.Fs)):
             print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
-            h2_data = np.pad(data_stream[1].data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
+            h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         
         h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
         h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
