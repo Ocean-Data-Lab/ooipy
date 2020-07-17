@@ -380,6 +380,7 @@ class OOIHydrophoneData:
             # apply bandpass filter to st_all if desired
             if (self.fmin != None and self.fmax != None):
                 st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+                print('data filtered')
             self.data = st_all[0]
             self.data_available = True
 
@@ -909,9 +910,6 @@ class Psd:
             json.dump(dct, outfile)
 
 
-
-
-
 class Hydrophone_Xcorr:
 
     def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None, mp = True):
@@ -995,6 +993,18 @@ class Hydrophone_Xcorr:
         
         return audio data of shape (B,N) where B = avg_time*60/W and N = W*Fs 
         '''
+        # Frequency Design Functions
+        def butter_bandpass(lowcut, highcut, fs, order=5):
+            nyq = 0.5 * fs
+            low = lowcut / nyq
+            high = highcut / nyq
+            b, a = signal.butter(order, [low, high], btype='band')
+            return b, a
+        def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+            b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+            y = signal.lfilter(b, a, data)
+            return y
+        
         flag = False
         avg_time = self.avg_time
         verbose = self.verbose
@@ -1008,8 +1018,8 @@ class Hydrophone_Xcorr:
             print('Error: Average Time Must Be Interval of Window')
             return None
         # Initialze Two Classes for Two Hydrophones
-        ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
-        ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, fmin=fmin, fmax=fmax)
+        ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
+        ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
         ooi1.data_gap_mode=1
         ooi2.data_gap_mode=1
 
@@ -1022,11 +1032,12 @@ class Hydrophone_Xcorr:
         #Audio from Node 1
         if self.mp: ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
         else: ooi1.get_acoustic_data(start_time, end_time, node=self.node1)
-
+        
         if verbose: print('Getting Audio from Node 2...')
         #Audio from Node 2
         if self.mp: ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
         else: ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
+        
         #Combine Data into Stream
         data_stream = obspy.Stream(traces=[ooi1.data, ooi2.data])
         
@@ -1037,11 +1048,9 @@ class Hydrophone_Xcorr:
             print('Data streams are not the same length. Flag to be added later')
             # TODO: Set up flag structure of some kind
             
-        
         # Make Data Zero Mean
         data_stream[0].data = data_stream[0].data - np.mean(data_stream[0].data) 
         data_stream[1].data = data_stream[1].data - np.mean(data_stream[1].data)
-
                       
         # Cut off extra points if present
         h1_data = data_stream[0].data[:avg_time*60*self.Fs]
@@ -1049,14 +1058,11 @@ class Hydrophone_Xcorr:
 
         # Set fill value to zero and fill in mask if there are gaps
         if ooi1.data_gap:
-            print('data gap 1')
             h1_data.fill_value = 0
             h1_data = np.ma.filled(h1_data)
         if ooi2.data_gap:
-            print('data gap 2')
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
-            print(type(h2_data))
                     
         if verbose: print('Shape of node 1 data: ',h1_data.shape)
         if verbose: print('Shape of node 2 data: ',h2_data.shape)
@@ -1069,11 +1075,14 @@ class Hydrophone_Xcorr:
             print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
             h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         
+        # Filter Data
+        if (fmin != None) and (fmax != None):
+            h1_data = butter_bandpass_filter(h1_data, fmin, fmax, data_stream[0].stats.sampling_rate)
+            h2_data = butter_bandpass_filter(h2_data, fmin, fmax, data_stream[1].stats.sampling_rate)
+        
         h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
         h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
-        
-        #if (h1_reshaped == None or h2_reshaped == None):
-        #    return False, False
+              
         return h1_reshaped, h2_reshaped, flag
     
     
