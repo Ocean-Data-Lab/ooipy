@@ -998,7 +998,7 @@ class Hydrophone_Xcorr:
             nyq = 0.5 * fs
             low = lowcut / nyq
             high = highcut / nyq
-            b, a = signal.butter(order, [low, high], btype='band')
+            b, a = signal.butter(order, [high], btype='lowpass')
             return b, a
         def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
             b, a = butter_bandpass(lowcut, highcut, fs, order=order)
