@@ -912,17 +912,68 @@ class Psd:
 
 class Hydrophone_Xcorr:
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None, mp = True):
-        '''
-        Initialize Class Hydrophone_Xcorr
 
-        node1 - Node of Reference Hydrophone
-        node2 - Node of Second Hydrophone
-        W - cross correlation window in seconds
-        verbose - print updates
-        fmin
-        fmax
-        mp
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None, mp = True, ckpts=True):
+        ''' 
+        Initialize Class OOIHydrophoneData
+
+        Attributes
+        ----------
+        starttime : datetime.datetime
+            indicates start time for acquiring data
+
+        node1 : str
+            indicates location of reference hydrophone (see table 1 for valid inputs)
+        node2 : str
+            indicates location of compared hydrophone (see table 1 for valid inputs)
+        avg_time : int or float
+            indicates length of data pulled from server for one averaging period (minutes)
+        W : int or float
+            indicates cross correlation window (seconds)
+        verbose : bool
+            indicates whether to print updates or not
+        fmin : int or float
+            indicates the lower cutoff frequency of applied bandpass filter. If None, then no filter is applied
+        fmax : int or float
+            indicates the upper cutoff frequency of applied bandpass filter. If None, then no filter is applied
+        mp : bool
+            indicates if multiprocessing functions should be used
+        ckpts : bool
+            indicates if checkpoints are saved in working directory ./ckpts
+       
+        Private Attributes
+        ------------------
+        None at this time
+
+        Methods
+        -------
+        distance_between_hydrophones(self, coord1, coord2)
+            Calculates the distance in meteres between hydrophones
+        get_audio_avg_period(self, start_time)
+            Pulls avg_period amount of data from server
+        xcorr_over_avg_period(self, h1, h2)
+            Computes cross-correlation for window of length W, averaged over avg_period
+        avg_over_mult_periods(self, num_periods, start_time, ckpts=True)
+            runs xcorr_over_avg_period() for num_periods amount of periods
+  
+        Private Methods
+        ---------------
+        None at this time
+
+        TABLE 1:
+            ____________________________________________
+            |Node Name |        Hydrophone Name        |
+            |__________|_______________________________|
+            |'/LJ01D'  | Oregon Shelf Base Seafloor    |
+            |__________|_______________________________|
+            |'/LJ01A   | Oregon Slope Base Seafloore   |
+            |__________|_______________________________|
+            |'/PC01A'  | Oregan Slope Base Shallow     |
+            |__________|_______________________________|
+            |'/PC03A'  | Axial Base Shallow Profiler   |
+            |__________|_______________________________|
+            |'/LJ01C'  | Oregon Offshore Base Seafloor |
+            |__________|_______________________________|
         '''
         
         self.node1 = node1
@@ -931,7 +982,7 @@ class Hydrophone_Xcorr:
         self.verbose = verbose
         self.avg_time = avg_time
         self.mp = mp
-
+        self.ckpts = ckpts
         self.Fs = 64000
         self.Ts = 1/self.Fs
         self.fmin = fmin
@@ -987,12 +1038,17 @@ class Hydrophone_Xcorr:
         Downloads, and Reshapes Data from OOI server for given average period and start time
         
         Inputs:
-        avg_time - amount of time the cross correlations are averaged over (minutes)
         start_time - indicates UTC time that data starts with
-        verbose - select printed updates
-        
-        return audio data of shape (B,N) where B = avg_time*60/W and N = W*Fs 
+       
+        Outputs:
+        h1_reshaped : float
+            hydrophone data from node 1 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+        h2_reshaped : float
+            hydrophone data from node 2 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+        flag : bool
+            TODO flag stucture to be added later
         '''
+
         # Frequency Design Functions
         def butter_bandpass(lowcut, highcut, fs, order=5):
             nyq = 0.5 * fs
@@ -1102,10 +1158,12 @@ class Hydrophone_Xcorr:
         N = h2.shape[1]
 
         xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
-        bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        
         
         stopwatch_start = time.time()
-        if verbose: bar.start()
+        if verbose:
+            bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+            bar.start()
         for k in range(h1.shape[0]):
             xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
             if verbose: bar.update(k+1)
@@ -1149,4 +1207,11 @@ class Hydrophone_Xcorr:
             stopwatch_end = time.time()
             print('Time to Complete 1 period: ',stopwatch_end - stopwatch_start)
             
+            #Save Checkpoints for every average period
+            filename = './ckpts/ckpt_' + str(k) + '.pkl'
+            
+            with open(filename,'wb') as f:
+                pickle.dump(xcorr, f)
+                pickle.dump(k,f)
+
         return xcorr
