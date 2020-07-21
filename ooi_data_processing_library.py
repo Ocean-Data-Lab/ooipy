@@ -975,7 +975,9 @@ class Hydrophone_Xcorr:
             |'/LJ01C'  | Oregon Offshore Base Seafloor |
             |__________|_______________________________|
         '''
+        hydrophone_locations = {'/LJ01D':[44.63714, -124.30598], '/LJ01C':[44.36943, -124.95357], '/PC01A':[44.52897, -125.38967], '/LJ01A':[44.51512, -125.38992], '/LJ03A':[45.81668, -129.75435], '/PC03A':[45.83049, -129.75327]}
         
+        self.hydrophone_locations = hydrophone_locations
         self.node1 = node1
         self.node2 = node2
         self.W = W
@@ -988,15 +990,18 @@ class Hydrophone_Xcorr:
         self.fmin = fmin
         self.fmax = fmax
         
-        hydrophone_locations = {'/LJ01D':[44.63714, -124.30598], '/LJ01C':[44.36943, -124.95357], '/PC01A':[44.52897, -125.38967], '/LJ01A':[44.51512, -125.38992], '/LJ03A':[45.81668, -129.75435], '/PC03A':[45.83049, -129.75327]}
-        D, T = self.distance_between_hydrophones(hydrophone_locations[node1],hydrophone_locations[node2])
-        print('Distance Between Hydrophones: ',D,' meters')
-        print('Estimate Time Delay Between Hydrophones: ',T,' seconds')
+        
+        self.__distance_between_hydrophones(hydrophone_locations[node1],hydrophone_locations[node2])
+        self.__bearing_between_hydrophones(hydrophone_locations[node1],hydrophone_locations[node2])
+        
+        print('Distance Between Hydrophones: ', self.distance,' meters')
+        print('Estimate Time Delay Between Hydrophones: ',self.time_delay,' seconds')
+        print('Bearing Between Hydrophone 1 and 2: ', self.theta_bearing_d_1_2,' degrees')
         
    
     # Calculate Distance Between 2 Hydrophones
     # function from https://www.geeksforgeeks.org/program-distance-two-points-earth/
-    def distance_between_hydrophones(self, coord1, coord2): 
+    def __distance_between_hydrophones(self, coord1, coord2): 
         '''
         distance_between_hydrophones(coord1, coord2) - calculates the distance in meters between two global cooridinates
         
@@ -1005,8 +1010,8 @@ class Hydrophone_Xcorr:
         coord2 - numpy array of shape [2,1] containing latitude and longitude of point 2
         
         Outpus:
-        D - distance between 2 points
-        time - sound delay between two points given fixed speed of sound in ocean to be 1480 m/s
+        self.distance - distance between 2 hydrophones in meters
+        self.time_delay - approximate time delay between 2 hydrophones (assuming speed of sound = 1480 m/s)
         
         '''
         from math import radians, cos, sin, asin, sqrt 
@@ -1026,12 +1031,42 @@ class Hydrophone_Xcorr:
 
         # Radius of earth in kilometers. Use 3956 for miles 
         r = 6371000
-
         D = c*r
-        time = D/1480
-        # calculate the result 
-        return(D, time)
+
+        self.distance = D
+        self.time_delay = D/1480
+
     
+    def __bearing_between_hydrophones(self, coord1, coord2):
+        '''
+        bearing_between_hydrophones(coord1, coord2) - calculates the bearing in degrees (NSEW) between coord1 and coord2
+
+        Inputs:
+        coord1 - numpy array
+            of shape [2,1] containing latitude and longitude of point1
+        coord2 - numpy array
+            of shape [2,1] containing latitude and longitude of point2
+
+        Outputs:
+        self.bearing_d_1_2 - float
+            bearing in degrees between node 1 and node 2
+        '''
+
+        psi1 = np.deg2rad(coord1[0])
+        lambda1 = np.deg2rad(coord1[1])
+        psi2 = np.deg2rad(coord2[0])
+        lambda2 = np.deg2rad(coord2[1])
+        del_lambda = lambda2-lambda1
+
+        y = np.sin(del_lambda)*np.cos(psi2)
+        x = np.cos(psi1)*np.sin(psi2) - np.sin(psi1)*np.cos(psi2)*np.cos(del_lambda);
+
+        theta_bearing_rad = np.arctan2(y,x)
+        theta_bearing_d_1_2 = (np.rad2deg(theta_bearing_rad)+360) % 360
+
+        self.theta_bearing_d_1_2 = theta_bearing_d_1_2
+
+
     def get_audio_avg_period(self, start_time):
 
         '''
@@ -1214,4 +1249,21 @@ class Hydrophone_Xcorr:
                 pickle.dump(xcorr, f)
                 pickle.dump(k,f)
 
-        return xcorr
+            # Calculate time variable TODO change to not calculate every loop
+            dt = self.Ts
+            t = np.arange(-xcorr.shape[0]*dt/2,xcorr.shape[0]*dt/2,dt)
+            
+            # Calculate Bearing of Max Peak
+            max_idx = np.argmax(xcorr)
+            time_of_max = t[max_idx]
+
+            #bearing is with respect to node1 (where node2 is at 0 deg)
+            bearing_max_local = [np.rad2deg(np.arccos(1480*time_of_max/self.distance)), -np.rad2deg(np.arccos(1480*time_of_max/self.distance))]
+            #convert bearing_max_local to numpy array
+            bearing_max_local = np.array(bearing_max_local)
+            #convert to global (NSEW) degrees
+            bearing_max_global = self.theta_bearing_d_1_2 + bearing_max_local
+            #make result between 0 and 360
+            bearing_max_global = bearing_max_global % 360
+
+        return t, xcorr, bearing_max_global
