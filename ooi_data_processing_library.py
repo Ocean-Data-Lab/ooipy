@@ -1276,5 +1276,102 @@ class Hydrophone_Xcorr:
             bearing_max_global = self.theta_bearing_d_1_2 + bearing_max_local
             #make result between 0 and 360
             bearing_max_global = bearing_max_global % 360
+            self.bearing_max_global = bearing_max_global
 
         return t, xcorr, bearing_max_global
+    def plot_map_of_bearing(self):
+        def find_phantom_point(coord1, coord2, thetaB):
+            '''
+            find_phantom_point
+
+            Inputs:
+            coord1 - list
+                coordinate of first hydrophone
+            coord2 - list
+                coordinate of second hydrophone
+
+            Output:
+            midpoint, phantom_point
+            '''
+            midpoint = [coord1[0] - (coord1[0] - coord2[0])/2, coord1[1] - (coord1[1] - coord2[1])/2]
+
+            del_lat = 0.01*np.sin(np.deg2rad(thetaB))
+            del_lon = 0.01*np.cos(np.deg2rad(thetaB))
+            print('del_lat',del_lat)
+            print('del_lon',del_lon)
+
+            phantom_point = [midpoint[0] + del_lat, midpoint[1] + del_lon]
+        return midpoint, phantom_point
+
+        midpoint, phantom_point = find_phantom_point(self.hydrophone_locations[node1],self.hydrophone_locations[node2], self.bearing_max_global)
+        from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+
+        def greatCirclePaths(start_coord,end_coord):
+            # define start coordinates
+            start_lon=start_coord[1]
+            start_lat=start_coord[0]
+            end_lon=end_coord[1]
+            end_lat=end_coord[0]
+
+            # get antipodes
+            ant1lon=start_lon+180
+            if ant1lon>360:
+                ant1lon= ant1lon - 360
+            ant1lat=-start_lat
+            ant2lon=end_lon+180
+            if ant2lon>360:
+                ant2lon= ant2lon - 360
+            ant2lat=-end_lat
+
+            #
+            paths={}
+            paths['minor_arc']={'lon':[ start_lon, end_lon ],
+                                'lat':[start_lat,end_lat], 'clr':'green','dash':None}
+            paths['major_arc']={'lon':[ start_lon,ant2lon,ant1lon, end_lon ],
+                                'lat':[start_lat,ant2lat,ant1lat,end_lat],'clr':'green','dash':None}
+            paths['great_circle']={'lon':[ start_lon,ant2lon,ant1lon, end_lon,start_lon ],
+                                'lat':[start_lat,ant2lat,ant1lat,end_lat,start_lat], 'clr':'blue',
+                                'dash':'dash'}
+            return paths
+
+        paths= greatCirclePaths(midpoint,phantom_point)
+                                
+        DataDict=list()
+        for path in ['minor_arc','major_arc']:
+            DataDict.append(
+                dict(
+                    type = 'scattergeo',
+                    lon = paths[path]['lon'],
+                    lat = paths[path]['lat'],
+                    name= path,
+                    mode = 'lines',
+                    line = dict(
+                        width = 2.5,
+                        color = paths[path]['clr'],
+                        dash=paths[path]['dash'],
+                    ),
+                    opacity = 1.0,
+                )
+            )
+
+        figdata={}
+        figdata['data']=DataDict
+
+        projs=['hammer','mercator','azimuthal equal area','orthographic']
+        projtype=projs[3]
+
+        figdata['layout'] = dict(
+            title = 'Bearing Angle for Max Correlation Peak',
+            showlegend = False,
+            geo = dict(
+                scope='world',
+                projection_type = "natural earth",
+                #projection= dict(type=projtype,rotation = dict( lon = -100, lat = 40, roll = 0)),
+                showland = True,
+                showcountries=True,
+                landcolor = 'rgb(243, 243, 243)',
+                countrycolor = 'rgb(204, 204, 204)'
+            ),
+        )
+
+        plot(figdata)
