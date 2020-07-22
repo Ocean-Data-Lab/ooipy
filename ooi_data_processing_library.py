@@ -345,7 +345,6 @@ class OOIHydrophoneData:
         get_data_list = [(starttime + datetime.timedelta(seconds=i * seconds_per_process),
             starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
             node, fmin, fmax) for i in range(N)]
-        print(get_data_list)
         
         # create pool of processes require one part of the data in each process
         with mp.get_context("spawn").Pool(N) as p:
@@ -1294,30 +1293,34 @@ class Hydrophone_Xcorr:
             midpoint, phantom_point
             '''
             midpoint = [coord1[0] - (coord1[0] - coord2[0])/2, coord1[1] - (coord1[1] - coord2[1])/2]
-
+            
             del_lat = 0.01*np.sin(np.deg2rad(thetaB))
             del_lon = 0.01*np.cos(np.deg2rad(thetaB))
-            print('del_lat',del_lat)
-            print('del_lon',del_lon)
 
             phantom_point = [midpoint[0] + del_lat, midpoint[1] + del_lon]
-        return midpoint, phantom_point
-
-        midpoint, phantom_point = find_phantom_point(self.hydrophone_locations[node1],self.hydrophone_locations[node2], self.bearing_max_global)
+            
+            self.midpoint = midpoint
+            self.phantom_point = phantom_point
+            
+            print(phantom_point)
+            print(midpoint)
+        find_phantom_point(self.hydrophone_locations[self.node1],self.hydrophone_locations[self.node2], self.bearing_max_global[0])
         from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 
         def greatCirclePaths(start_coord,end_coord):
+            
             # define start coordinates
             start_lon=start_coord[1]
             start_lat=start_coord[0]
             end_lon=end_coord[1]
             end_lat=end_coord[0]
-
+            
             # get antipodes
             ant1lon=start_lon+180
             if ant1lon>360:
                 ant1lon= ant1lon - 360
             ant1lat=-start_lat
+            
             ant2lon=end_lon+180
             if ant2lon>360:
                 ant2lon= ant2lon - 360
@@ -1334,7 +1337,7 @@ class Hydrophone_Xcorr:
                                 'dash':'dash'}
             return paths
 
-        paths= greatCirclePaths(midpoint,phantom_point)
+        paths= greatCirclePaths(self.midpoint, self.phantom_point)
                                 
         DataDict=list()
         for path in ['minor_arc','major_arc']:
@@ -1374,4 +1377,5 @@ class Hydrophone_Xcorr:
             ),
         )
 
-        plot(figdata)
+        #plot(figdata)
+        fig.show()
