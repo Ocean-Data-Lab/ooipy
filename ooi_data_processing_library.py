@@ -345,11 +345,13 @@ class OOIHydrophoneData:
         get_data_list = [(starttime + datetime.timedelta(seconds=i * seconds_per_process),
             starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
             node, fmin, fmax) for i in range(N)]
+        print(get_data_list)
         
         # create pool of processes require one part of the data in each process
         with mp.get_context("spawn").Pool(N) as p:
             try:
                 data_list = p.starmap(self.get_acoustic_data, get_data_list)
+                self.data_list = data_list
             except:
                 if self.print_exceptions:
                     print('Data cannot be requested.')
@@ -358,8 +360,17 @@ class OOIHydrophoneData:
                 self.starttime = starttime
                 self.endtime = endtime
                 return self.data
-
-        if None in data_list:
+        
+        #if only some of data is none, fill in gaps with masked array values
+        if (None in data_list):
+            if self.print_exceptions:
+                print('Some mseed files missing or corrupted for time range')
+            
+            self.data = None
+            self.data_available = False
+            st_all = None
+        #if all data is None, return None and set flags
+        elif (all(x==None for x in data_list)):
             if self.print_exceptions:
                 print('No data available for specified time and node')
             self.data = None
