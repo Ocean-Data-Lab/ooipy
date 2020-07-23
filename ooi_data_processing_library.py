@@ -390,6 +390,7 @@ class OOIHydrophoneData:
             try:
                 data_list = p.starmap(self.get_acoustic_data, get_data_list)
                 self.data_list = data_list
+                print(data_list)
             except:
                 if self.print_exceptions:
                     print('Data cannot be requested.')
@@ -399,40 +400,40 @@ class OOIHydrophoneData:
                 self.endtime = endtime
                 return self.data
         
-        #if only some of data is none, fill in gaps with masked array values
-        if (None in data_list):
-            if self.print_exceptions:
-                print('Some mseed files missing or corrupted for time range')
-            self.data = None
-            self.data_available = False
-            st_all = None
-
         #if all data is None, return None and set flags
-        elif (all(x==None for x in data_list)):
+        if (all(x==None for x in data_list)):
             if self.print_exceptions:
                 print('No data available for specified time and node')
             self.data = None
             self.data_available = False
             st_all = None
+        
+        
+        #if only some of data is none, remove None entries
+        if (None in data_list):
+            if self.print_exceptions:
+                print('Some mseed files missing or corrupted for time range')
+            data_list = list(filter(None.__ne__, data_list))
 
-        else:
-            # merge data segments together
-            st_all = data_list[0]
+
+        # merge data segments together
+        st_all = data_list[0]
+        if len(data_list) > 1:
             for d in data_list[1:]:
                 st_all = st_all + d
-            self._data_segmented = data_list
-            st_all.merge(method=1)
+        self._data_segmented = data_list
+        st_all.merge(method=1)
 
-            if isinstance(st_all[0].data, np.ma.core.MaskedArray):
-                self.data_gap = True
-                if self.print_exceptions: print('Data has gaps')
+        if isinstance(st_all[0].data, np.ma.core.MaskedArray):
+            self.data_gap = True
+            if self.print_exceptions: print('Data has gaps')
 
-            # apply bandpass filter to st_all if desired
-            if (self.fmin != None and self.fmax != None):
-                st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-                print('data filtered')
-            self.data = st_all[0]
-            self.data_available = True
+        # apply bandpass filter to st_all if desired
+        if (self.fmin != None and self.fmax != None):
+            st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
+            print('data filtered')
+        self.data = st_all[0]
+        self.data_available = True
 
         self.starttime = starttime
         self.endtime = endtime
@@ -1179,6 +1180,9 @@ class Hydrophone_Xcorr:
         if self.mp: ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
         else: ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
         
+        if (ooi1.data == None) or (ooi2.data == None):
+            print('Error with Getting Audio')
+            return None, None, None
         #Combine Data into Stream
         data_stream = obspy.Stream(traces=[ooi1.data, ooi2.data])
         
@@ -1278,8 +1282,8 @@ class Hydrophone_Xcorr:
             if verbose: print('Time Period: ',k + 1)
             
             h1, h2, flag = self.get_audio_avg_period(start_time)
-            if flag:
-                pass
+            if (h1 == None) or (h2 == None) or (flag == None):
+                return None, None, None
             else:
                 # Compute Cross Correlation for Each Window and Average
                 if first_loop:
