@@ -143,7 +143,7 @@ class OOIHydrophoneData:
 
         day_str (str): date for which URLs are requested; format: yyyy/mm/dd, e.g. 2016/07/15
 
-        return ([str]): list of URLs, each URL refers to one data file. If no data is avauilable for
+        return ([str]): list of URLs, each URL refers to one data file. If no data is available for
             specified date, None is returned.
         '''
 
@@ -230,7 +230,10 @@ class OOIHydrophoneData:
             self.data_available = False
             return None
         
+        #increment day start by 1 day
         day_start = day_start + 24*3600
+        
+        #get all urls for each day untill endtime is reached
         while day_start < self.endtime:
             data_url_list.extend(self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/")))
             day_start = day_start + 24*3600
@@ -251,14 +254,19 @@ class OOIHydrophoneData:
             if url[len(url) - 1] != 'mseed':
                 del_list.append(i)
         data_url_list = np.delete(data_url_list, del_list)
-                
+        self.data_url_list = data_url_list
         st_all = None
 
+        first_file=True
+        last_file=False
         # only acquire data for desired time
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
+            
+            # extract start time from ith file
             utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
             
+            # this line assumes no gaps between current and next file
             if i != len(data_url_list) - 1:
                 utc_time_url_stop = UTCDateTime(data_url_list[i+1].split('YDH')[1][1:].split('.mseed')[0])
             else: 
@@ -272,29 +280,71 @@ class OOIHydrophoneData:
             if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
                 (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
                 (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
-                
-                try:
-                    st = read(data_url_list[i], apply_calib=True)
-                except:
-                    if self.print_exceptions:
-                        print("Data are broken")
-                    self.data = None
-                    self.data_available = False
-                    return None
+                if first_file:
+                    first_file = False
+                    try:
+                        # add one extra file on front end
+                        st = read(data_url_list[i-1], apply_calib=True)
+                        st = read(data_url_list[i], apply_calib=True)
+                    except:
+                        if self.print_exceptions:
+                            print("Data are broken")
+                        self.data = None
+                        self.data_available = False
+                        return None
+                else:
+                    try:
+                        st = read(data_url_list[i], apply_calib=True)
+                    except:
+                        if self.print_exceptions:
+                            print("Data are broken")
+                        self.data = None
+                        self.data_available = False
+                        return None
+
                 # slice stream to get desired data
                 st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
                 
                 if st_all == None: st_all = st
                 else: 
                     st_all += st
-                    # Returns Masked Array if there are data gaps
+                    
                     if self.data_gap_mode == 0:
                         st_all.merge(fill_value ='interpolate', method=1)
+                    # Returns Masked Array if there are data gaps
                     elif self.data_gap_mode == 1:
                         st_all.merge(method=1)
                     else:
                         if self.print_exceptions: print('Invalid Data Gap Mode')
                         return None
+                        
+            else:
+                #Checks if last file has been downloaded within time period
+                if first_file == False:
+                    first_file = True
+                    try:
+                        st = read(data_url_list[i], apply_calib=True)
+                    except:
+                        if self.print_exceptions:
+                            print("Data are broken")
+                        self.data = None
+                        self.data_available = False
+                        return None                   
+    
+                    st_all += st
+                    
+                    if self.data_gap_mode == 0:
+                        st_all.merge(fill_value ='interpolate', method=1)
+                    # Returns Masked Array if there are data gaps
+                    elif self.data_gap_mode == 1:
+                        st_all.merge(method=1)
+                    else:
+                        if self.print_exceptions: print('Invalid Data Gap Mode')
+                        return None
+                            # slice stream to get desired data
+                    
+        st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
+
 
         if isinstance(st_all[0].data, np.ma.core.MaskedArray):
             self.data_gap = True
@@ -364,10 +414,10 @@ class OOIHydrophoneData:
         if (None in data_list):
             if self.print_exceptions:
                 print('Some mseed files missing or corrupted for time range')
-            
             self.data = None
             self.data_available = False
             st_all = None
+
         #if all data is None, return None and set flags
         elif (all(x==None for x in data_list)):
             if self.print_exceptions:
@@ -375,6 +425,7 @@ class OOIHydrophoneData:
             self.data = None
             self.data_available = False
             st_all = None
+
         else:
             # merge data segments together
             st_all = data_list[0]
