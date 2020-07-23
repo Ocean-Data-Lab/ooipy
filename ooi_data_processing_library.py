@@ -1278,104 +1278,109 @@ class Hydrophone_Xcorr:
             self.bearing_max_global = bearing_max_global
 
         return t, xcorr, bearing_max_global
-    def plot_map_of_bearing(self):
-        def find_phantom_point(coord1, coord2, thetaB):
-            '''
-            find_phantom_point
+    def plot_map_bearing(self):
+        coord1 = self.hydrophone_locations[self.node1]
+        coord2 = self.hydrophone_locations[self.node2]
+        thetaB1 = self.bearing_max_global[0]
+        thetaB2 = self.bearing_max_global[1]
+        
+        midpoint, phantom_point1 = self.__find_phantom_point(coord1, coord2, thetaB1)
+        midpoint, phantom_point2 = self.__find_phantom_point(coord1, coord2, thetaB2)
 
-            Inputs:
-            coord1 - list
-                coordinate of first hydrophone
-            coord2 - list
-                coordinate of second hydrophone
+        print(phantom_point1)
+        print(phantom_point2)
+        import plotly.graph_objects as go
 
-            Output:
-            midpoint, phantom_point
-            '''
-            midpoint = [coord1[0] - (coord1[0] - coord2[0])/2, coord1[1] - (coord1[1] - coord2[1])/2]
-            
-            del_lat = 0.01*np.sin(np.deg2rad(thetaB))
-            del_lon = 0.01*np.cos(np.deg2rad(thetaB))
+        hyd_lats = [coord1[0], coord2[0]]
+        hyd_lons = [coord1[1], coord2[1]]
 
-            phantom_point = [midpoint[0] + del_lat, midpoint[1] + del_lon]
-            
-            self.midpoint = midpoint
-            self.phantom_point = phantom_point
-            
-            print(phantom_point)
-            print(midpoint)
-        find_phantom_point(self.hydrophone_locations[self.node1],self.hydrophone_locations[self.node2], self.bearing_max_global[0])
-        from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+        antmidpoint = self.__get_antipode(midpoint)
+        fig = go.Figure()
 
-        def greatCirclePaths(start_coord,end_coord):
-            
-            # define start coordinates
-            start_lon=start_coord[1]
-            start_lat=start_coord[0]
-            end_lon=end_coord[1]
-            end_lat=end_coord[0]
-            
-            # get antipodes
-            ant1lon=start_lon+180
-            if ant1lon>360:
-                ant1lon= ant1lon - 360
-            ant1lat=-start_lat
-            
-            ant2lon=end_lon+180
-            if ant2lon>360:
-                ant2lon= ant2lon - 360
-            ant2lat=-end_lat
+        fig.add_trace(go.Scattergeo(
+            lat = [midpoint[0], phantom_point1[0], antmidpoint[0]],
+            lon = [midpoint[1], phantom_point1[1], antmidpoint[1]],
+            mode = 'lines',
+            line = dict(width = 1, color = 'blue')
+        ))
 
-            #
-            paths={}
-            paths['minor_arc']={'lon':[ start_lon, end_lon ],
-                                'lat':[start_lat,end_lat], 'clr':'green','dash':None}
-            paths['major_arc']={'lon':[ start_lon,ant2lon,ant1lon, end_lon ],
-                                'lat':[start_lat,ant2lat,ant1lat,end_lat],'clr':'green','dash':None}
-            paths['great_circle']={'lon':[ start_lon,ant2lon,ant1lon, end_lon,start_lon ],
-                                'lat':[start_lat,ant2lat,ant1lat,end_lat,start_lat], 'clr':'blue',
-                                'dash':'dash'}
-            return paths
+        fig.add_trace(go.Scattergeo(
+            lat = [midpoint[0], phantom_point2[0], antmidpoint[0]],
+            lon = [midpoint[1], phantom_point2[1], antmidpoint[1]],
+            mode = 'lines',
+            line = dict(width = 1, color = 'green')
+        ))
 
-        paths= greatCirclePaths(self.midpoint, self.phantom_point)
-                                
-        DataDict=list()
-        for path in ['minor_arc','major_arc']:
-            DataDict.append(
-                dict(
-                    type = 'scattergeo',
-                    lon = paths[path]['lon'],
-                    lat = paths[path]['lat'],
-                    name= path,
-                    mode = 'lines',
-                    line = dict(
-                        width = 2.5,
-                        color = paths[path]['clr'],
-                        dash=paths[path]['dash'],
-                    ),
-                    opacity = 1.0,
+        fig.add_trace(go.Scattergeo(
+            lon = hyd_lons,
+            lat = hyd_lats,
+            hoverinfo = 'text',
+            text = ['Oregon Slope Base Hydrophone','Oregon Cabled Benthic Hydrophone'],
+            mode = 'markers',
+            marker = dict(
+                size = 5,
+                color = 'rgb(255, 0, 0)',
+                line = dict(
+                    width = 3,
+                    color = 'rgba(68, 68, 68, 0)'
                 )
-            )
+            )))
 
-        figdata={}
-        figdata['data']=DataDict
 
-        projs=['hammer','mercator','azimuthal equal area','orthographic']
-        projtype=projs[3]
-
-        figdata['layout'] = dict(
-            title = 'Bearing Angle for Max Correlation Peak',
+        fig.update_layout(
+            title_text = 'Possible Bearings of Max Correlation Peak',
             showlegend = False,
             geo = dict(
-                scope='world',
-                projection_type = "natural earth",
-                #projection= dict(type=projtype,rotation = dict( lon = -100, lat = 40, roll = 0)),
+                resolution = 50,
                 showland = True,
-                showcountries=True,
-                landcolor = 'rgb(243, 243, 243)',
-                countrycolor = 'rgb(204, 204, 204)'
-            ),
+                showlakes = True,
+                landcolor = 'rgb(204, 204, 204)',
+                countrycolor = 'rgb(204, 204, 204)',
+                lakecolor = 'rgb(255, 255, 255)',
+                projection_type = "natural earth",
+                coastlinewidth = 1,
+                lataxis = dict(
+                    #range = [20, 60],
+                    showgrid = True,
+                    dtick = 10
+                ),
+                lonaxis = dict(
+                    #range = [-100, 20],
+                    showgrid = True,
+                    dtick = 20
+                ),
+            )
         )
 
-        #plot(figdata)
         fig.show()
+
+    def __find_phantom_point(self, coord1, coord2, thetaB):
+        '''
+        find_phantom_point
+
+        Inputs:
+        coord1 - list
+            coordinate of first hydrophone
+        coord2 - list
+            coordinate of second hydrophone
+
+        Output:
+        midpoint, phantom_point
+        '''
+        midpoint = [coord1[0] - (coord1[0] - coord2[0])/2, coord1[1] - (coord1[1] - coord2[1])/2]
+
+        del_lat = 0.01*np.cos(np.deg2rad(thetaB))
+        del_lon = 0.01*np.sin(np.deg2rad(thetaB))
+
+        phantom_point = [midpoint[0] + del_lat, midpoint[1] + del_lon]
+
+        return midpoint, phantom_point
+    
+    def __get_antipode(self, coord):
+        # get antipodes
+        antlon=coord[1]+180
+        if antlon>360:
+            antlon= antlon - 360
+        antlat=-coord[0]
+        antipode_coord = [antlat, antlon]
+        return antipode_coord    
