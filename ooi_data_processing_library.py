@@ -258,8 +258,8 @@ class OOIHydrophoneData:
         st_all = None
 
         first_file=True
-        last_file=False
         # only acquire data for desired time
+        count = 0
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
             
@@ -280,44 +280,35 @@ class OOIHydrophoneData:
             if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
                 (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
                 (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
+                count = count + 1
                 if first_file:
                     first_file = False
                     try:
                         # add one extra file on front end
                         st = read(data_url_list[i-1], apply_calib=True)
-                        st = read(data_url_list[i], apply_calib=True)
+                        st += read(data_url_list[i], apply_calib=True)
                     except:
                         if self.print_exceptions:
-                            print("Data are broken")
-                        self.data = None
-                        self.data_available = False
-                        return None
+                            print(f"Data Segment, {data_url_list[i-1]} or {data_url_list[i] } Broken")
+                        #self.data = None
+                        #self.data_available = False
+                        #return None
+                #normal operation (not first or last file)
                 else:
                     try:
                         st = read(data_url_list[i], apply_calib=True)
                     except:
                         if self.print_exceptions:
-                            print("Data are broken")
-                        self.data = None
-                        self.data_available = False
-                        return None
+                            print(f"Data Segment, {data_url_list[i]} Broken")
+                        #self.data = None
+                        #self.data_available = False
+                        #return None
 
-                # slice stream to get desired data
-                st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
-                
+                # Add st to acculation of all data st_all                
                 if st_all == None: st_all = st
                 else: 
                     st_all += st
-                    
-                    if self.data_gap_mode == 0:
-                        st_all.merge(fill_value ='interpolate', method=1)
-                    # Returns Masked Array if there are data gaps
-                    elif self.data_gap_mode == 1:
-                        st_all.merge(method=1)
-                    else:
-                        if self.print_exceptions: print('Invalid Data Gap Mode')
-                        return None
-                        
+            # adds one more mseed file to st_ll             
             else:
                 #Checks if last file has been downloaded within time period
                 if first_file == False:
@@ -326,25 +317,24 @@ class OOIHydrophoneData:
                         st = read(data_url_list[i], apply_calib=True)
                     except:
                         if self.print_exceptions:
-                            print("Data are broken")
-                        self.data = None
-                        self.data_available = False
-                        return None                   
+                            print(f"Data Segment, {data_url_list[i]} Broken")
+                        #self.data = None
+                        #self.data_available = False
+                        #return None                   
     
                     st_all += st
-                    
-                    if self.data_gap_mode == 0:
-                        st_all.merge(fill_value ='interpolate', method=1)
-                    # Returns Masked Array if there are data gaps
-                    elif self.data_gap_mode == 1:
-                        st_all.merge(method=1)
-                    else:
-                        if self.print_exceptions: print('Invalid Data Gap Mode')
-                        return None
-                            # slice stream to get desired data
-                    
-        st = st.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
-
+            
+        # Merge all traces together
+        if self.data_gap_mode == 0:
+            st_all.merge(fill_value ='interpolate', method=1)
+        # Returns Masked Array if there are data gaps
+        elif self.data_gap_mode == 1:
+            st_all.merge(method=1)
+        else:
+            if self.print_exceptions: print('Invalid Data Gap Mode')
+            return None
+        # Slice data to desired window                
+        st_all = st_all.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
 
         if isinstance(st_all[0].data, np.ma.core.MaskedArray):
             self.data_gap = True
@@ -359,10 +349,9 @@ class OOIHydrophoneData:
                 return None
         
         try:
-            #st_all = st_all.split()
             if (self.fmin != None and self.fmax != None):
                 st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-                print('filtered')
+                if self.print_exceptions: print('Signal Filtered')
             self.data = st_all[0]
             self.data_available = True
             return st_all
