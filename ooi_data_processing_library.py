@@ -220,7 +220,19 @@ class OOIHydrophoneData:
         
         self.data_gap = False
         
-        # get URLs
+        # Save last mseed of previous day to data_url_list
+        prev_day = self.starttime - timedelta(days=1)
+        data_url_list_prev_day = self.__web_crawler_noise(prev_day.strftime("/%Y/%m/%d/"))
+        # keep only .mseed files
+        del_list = []
+        for i in range(len(data_url_list_prev_day)):
+            url = data_url_list_prev_day[i].split('.')
+            if url[len(url) - 1] != 'mseed':
+                del_list.append(i)
+        data_url_prev_day = np.delete(data_url_list_prev_day, del_list)
+        data_url_prev_day = data_url_prev_day[-1]
+       
+        # get URL for first day
         day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
         data_url_list = self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/"))
         if data_url_list == None:
@@ -254,12 +266,14 @@ class OOIHydrophoneData:
             if url[len(url) - 1] != 'mseed':
                 del_list.append(i)
         data_url_list = np.delete(data_url_list, del_list)
-        self.data_url_list = data_url_list
-        st_all = None
+        data_url_list = np.insert(data_url_list,0,data_url_prev_day)
 
+        self.data_url_list = data_url_list
+                
+        st_all = None
         first_file=True
         # only acquire data for desired time
-        count = 0
+
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
             # extract start time from ith file
@@ -279,8 +293,8 @@ class OOIHydrophoneData:
             if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
                 (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
                 (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
-                count = count + 1
-                if first_file:
+
+                if (first_file) and (i != 0):
                     first_file = False
                     try:
                         # add one extra file on front end
@@ -347,6 +361,7 @@ class OOIHydrophoneData:
                 self.data_available = False
                 return None
         
+        #Filter Data
         try:
             if (self.fmin != None and self.fmax != None):
                 st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
@@ -389,7 +404,6 @@ class OOIHydrophoneData:
             try:
                 data_list = p.starmap(self.get_acoustic_data, get_data_list)
                 self.data_list = data_list
-                print(data_list)
             except:
                 if self.print_exceptions:
                     print('Data cannot be requested.')
