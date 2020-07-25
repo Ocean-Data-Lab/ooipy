@@ -262,7 +262,6 @@ class OOIHydrophoneData:
         count = 0
         for i in range(len(data_url_list)):
             # get UTC time of current and next item in URL list
-            
             # extract start time from ith file
             utc_time_url_start = UTCDateTime(data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
             
@@ -1208,9 +1207,6 @@ class Hydrophone_Xcorr:
         if ooi2.data_gap:
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
-                    
-        if verbose: print('Shape of node 1 data: ',h1_data.shape)
-        if verbose: print('Shape of node 2 data: ',h2_data.shape)
             
         if ((h1_data.shape[0] < avg_time*60*self.Fs)):
             print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
@@ -1282,15 +1278,14 @@ class Hydrophone_Xcorr:
             if verbose: print('Time Period: ',k + 1)
             
             h1, h2, flag = self.get_audio_avg_period(start_time)
-            if (h1 == None) or (h2 == None) or (flag == None):
-                return None, None, None
+            
+
+            # Compute Cross Correlation for Each Window and Average
+            if first_loop:
+                xcorr = self.xcorr_over_avg_period(h1, h2)
+                first_loop = False
             else:
-                # Compute Cross Correlation for Each Window and Average
-                if first_loop:
-                    xcorr = self.xcorr_over_avg_period(h1, h2)
-                    first_loop = False
-                else:
-                    xcorr += self.xcorr_over_avg_period(h1, h2)
+                xcorr += self.xcorr_over_avg_period(h1, h2)
 
                 start_time = start_time + timedelta(minutes=self.avg_time)
             stopwatch_end = time.time()
@@ -1331,8 +1326,6 @@ class Hydrophone_Xcorr:
         midpoint, phantom_point1 = self.__find_phantom_point(coord1, coord2, thetaB1)
         midpoint, phantom_point2 = self.__find_phantom_point(coord1, coord2, thetaB2)
 
-        print(phantom_point1)
-        print(phantom_point2)
         import plotly.graph_objects as go
 
         hyd_lats = [coord1[0], coord2[0]]
