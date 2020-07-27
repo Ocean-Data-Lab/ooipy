@@ -977,7 +977,7 @@ class Psd:
 class Hydrophone_Xcorr:
 
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, fmin=None, fmax=None, mp = True, ckpts=True):
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True, mp = True, ckpts=True):
         ''' 
         Initialize Class OOIHydrophoneData
 
@@ -996,10 +996,8 @@ class Hydrophone_Xcorr:
             indicates cross correlation window (seconds)
         verbose : bool
             indicates whether to print updates or not
-        fmin : int or float
-            indicates the lower cutoff frequency of applied bandpass filter. If None, then no filter is applied
-        fmax : int or float
-            indicates the upper cutoff frequency of applied bandpass filter. If None, then no filter is applied
+        filter_data : bool
+            indicates whether to filter the data with bandpass with cutofss [10, 1k]
         mp : bool
             indicates if multiprocessing functions should be used
         ckpts : bool
@@ -1051,8 +1049,7 @@ class Hydrophone_Xcorr:
         self.ckpts = ckpts
         self.Fs = 64000
         self.Ts = 1/self.Fs
-        self.fmin = fmin
-        self.fmax = fmax
+        self.filter_data = filter_data
         
         
         self.__distance_between_hydrophones(hydrophone_locations[node1],hydrophone_locations[node2])
@@ -1147,25 +1144,12 @@ class Hydrophone_Xcorr:
         flag : bool
             TODO flag stucture to be added later
         '''
-
-        # Frequency Design Functions
-        def butter_bandpass(lowcut, highcut, fs, order=5):
-            nyq = 0.5 * fs
-            low = lowcut / nyq
-            high = highcut / nyq
-            b, a = signal.butter(order, [high], btype='lowpass')
-            return b, a
-        def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-            b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-            y = signal.lfilter(b, a, data)
-            return y
         
         flag = False
         avg_time = self.avg_time
         verbose = self.verbose
         W = self.W
-        fmax = self.fmax
-        fmin = self.fmin
+
         
         avg_time_seconds = avg_time * 60
         
@@ -1231,10 +1215,12 @@ class Hydrophone_Xcorr:
             h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         
         # Filter Data
-        if (fmin != None) and (fmax != None):
-            h1_data = butter_bandpass_filter(h1_data, fmin, fmax, data_stream[0].stats.sampling_rate)
-            h2_data = butter_bandpass_filter(h2_data, fmin, fmax, data_stream[1].stats.sampling_rate)
-        
+        if self.filter_data:
+            h1_data = self.filter_bandpass(h1_data)
+            h2_data = self.filter_bandpass(h2_data)
+        self.data_node1 = h1_data
+        self.data_node2 = h2_data
+
         h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
         h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
               
@@ -1292,8 +1278,11 @@ class Hydrophone_Xcorr:
             if verbose: print('Time Period: ',k + 1)
             
             h1, h2, flag = self.get_audio_avg_period(start_time)
-            
 
+            if flag == None:
+                print(f'{k+1}th average period skipped, no data available')
+                continue
+            
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
                 xcorr_avg_period = self.xcorr_over_avg_period(h1, h2)
@@ -1309,11 +1298,17 @@ class Hydrophone_Xcorr:
             
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
-            
-            with open(filename,'wb') as f:
-                pickle.dump(xcorr, f)
-                pickle.dump(xcorr_avg_period, f)
-                pickle.dump(k,f)
+            try:
+                with open(filename,'wb') as f:
+                    pickle.dump(xcorr, f)
+                    pickle.dump(xcorr_avg_period, f)
+                    pickle.dump(k,f)
+            except:
+                os.makedirs('ckpts')
+                with open(filename,'wb') as f:
+                    pickle.dump(xcorr, f)
+                    pickle.dump(xcorr_avg_period, f)
+                    pickle.dump(k,f)
 
             # Calculate time variable TODO change to not calculate every loop
             dt = self.Ts
@@ -1441,3 +1436,21 @@ class Hydrophone_Xcorr:
         antlat=-coord[0]
         antipode_coord = [antlat, antlon]
         return antipode_coord    
+
+    def filter_bandpass(self, data):
+        # decimate by 4
+        data_ds_4 = scipy.signal.decimate(data,4)
+
+        # decimate that by 8 for total of 32
+        data_ds_32 = scipy.signal.decimate(data,8)
+        # sampling rate = 2000 Hz: Nyquist rate = 1000 Hz
+
+        N = 5
+        Wn = 10
+        fs = 2000
+        b,a = signal.butter(N=N, Wn=Wn, btype='high',fs=fs)
+
+        data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
+
+        data_filt = scipy.signal.resample(data_filt_ds,data.shape[0])
+        return(data_filt)
