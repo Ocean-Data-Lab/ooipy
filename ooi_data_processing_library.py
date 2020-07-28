@@ -60,7 +60,8 @@ class OOIHydrophoneData:
             |__________|_______________________________|
        
         fmin : int or float
-            indicates minimum frequency in bandpass filter. Default value is None, which results in unfiltered signal
+            indicates minimum frequency in bandpass 
+            . Default value is None, which results in unfiltered signal
         fmax : int or float
             indicates maximum frequency in bandpass filter. Default value is None, which results in unfiltered signal
         print_exceptions : bool
@@ -1317,7 +1318,7 @@ class Hydrophone_Xcorr:
         xcorr = xcorr / num_periods
 
         # Calculate Bearing of Max Peak
-        bearing_max_global = get_bearing_angle(xcorr, t)
+        bearing_max_global = self.get_bearing_angle(xcorr, t)
 
         return t, xcorr, bearing_max_global
     
@@ -1434,7 +1435,7 @@ class Hydrophone_Xcorr:
         data_ds_4 = scipy.signal.decimate(data,4)
 
         # decimate that by 8 for total of 32
-        data_ds_32 = scipy.signal.decimate(data,8)
+        data_ds_32 = scipy.signal.decimate(data_ds_4,8)
         # sampling rate = 2000 Hz: Nyquist rate = 1000 Hz
 
         N = 5
@@ -1442,9 +1443,9 @@ class Hydrophone_Xcorr:
         fs = 2000
         b,a = signal.butter(N=N, Wn=Wn, btype='high',fs=fs)
 
-        data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
+        #data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
 
-        data_filt = scipy.signal.resample(data_filt_ds,data.shape[0])
+        data_filt = scipy.signal.resample(data_ds_32,data.shape[0])
         return(data_filt)
     
     def get_bearing_angle(self, xcorr, t):
