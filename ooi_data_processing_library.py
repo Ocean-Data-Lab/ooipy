@@ -1315,28 +1315,19 @@ class Hydrophone_Xcorr:
             t = np.arange(-xcorr.shape[0]*dt/2,xcorr.shape[0]*dt/2,dt)
             
         xcorr = xcorr / num_periods
-        # Calculate Bearing of Max Peak
-        max_idx = np.argmax(xcorr)
-        time_of_max = t[max_idx]
 
-        #bearing is with respect to node1 (where node2 is at 0 deg)
-        bearing_max_local = [np.rad2deg(np.arccos(1480*time_of_max/self.distance)), -np.rad2deg(np.arccos(1480*time_of_max/self.distance))]
-        #convert bearing_max_local to numpy array
-        bearing_max_local = np.array(bearing_max_local)
-        #convert to global (NSEW) degrees
-        bearing_max_global = self.theta_bearing_d_1_2 + bearing_max_local
-        #make result between 0 and 360
-        bearing_max_global = bearing_max_global % 360
-        self.bearing_max_global = bearing_max_global
+        # Calculate Bearing of Max Peak
+        bearing_max_global = get_bearing_angle(xcorr, t)
 
         return t, xcorr, bearing_max_global
     
     
-    def plot_map_bearing(self):
+    def plot_map_bearing(self, bearing_angle):
+
         coord1 = self.hydrophone_locations[self.node1]
         coord2 = self.hydrophone_locations[self.node2]
-        thetaB1 = self.bearing_max_global[0]
-        thetaB2 = self.bearing_max_global[1]
+        thetaB1 = bearing_angle[0]
+        thetaB2 = bearing_angle[1]
         
         midpoint, phantom_point1 = self.__find_phantom_point(coord1, coord2, thetaB1)
         midpoint, phantom_point2 = self.__find_phantom_point(coord1, coord2, thetaB2)
@@ -1405,6 +1396,7 @@ class Hydrophone_Xcorr:
         )
 
         fig.show()
+        fig.write_html("21_hr_avg_map.html")
 
     def __find_phantom_point(self, coord1, coord2, thetaB):
         '''
@@ -1454,3 +1446,20 @@ class Hydrophone_Xcorr:
 
         data_filt = scipy.signal.resample(data_filt_ds,data.shape[0])
         return(data_filt)
+    
+    def get_bearing_angle(self, xcorr, t):
+        # Calculate Bearing of Max Peak
+        max_idx = np.argmax(xcorr)
+        time_of_max = t[max_idx]
+
+        #bearing is with respect to node1 (where node2 is at 0 deg)
+        bearing_max_local = [np.rad2deg(np.arccos(1480*time_of_max/self.distance)), -np.rad2deg(np.arccos(1480*time_of_max/self.distance))]
+        #convert bearing_max_local to numpy array
+        bearing_max_local = np.array(bearing_max_local)
+        #convert to global (NSEW) degrees
+        bearing_max_global = self.theta_bearing_d_1_2 + bearing_max_local
+        #make result between 0 and 360
+        bearing_max_global = bearing_max_global % 360
+        self.bearing_max_global = bearing_max_global
+
+        return bearing_max_global
