@@ -1370,6 +1370,22 @@ class Hydrophone_Xcorr:
                 )
             )))
 
+        EQ_lon = [-126.3030]
+        EQ_lat = [40.454]
+        fig.add_trace(go.Scattergeo(
+            lon = EQ_lon,
+            lat = EQ_lat,
+            #hoverinfo = ['Earth Quake Site'],
+            mode = 'markers',
+            marker = dict(
+                size = 5,
+                color = 'rgb(148, 0, 211)',
+                line = dict(
+                    width = 3,
+                    color = 'rgba(68, 68, 68, 0)'
+                )
+            )))
+
 
         fig.update_layout(
             title_text = 'Possible Bearings of Max Correlation Peak',
@@ -1431,6 +1447,9 @@ class Hydrophone_Xcorr:
         return antipode_coord    
 
     def filter_bandpass(self, data):
+        
+        #make data zero mean
+        data = data - np.mean(data)
         # decimate by 4
         data_ds_4 = scipy.signal.decimate(data,4)
 
@@ -1440,12 +1459,12 @@ class Hydrophone_Xcorr:
 
         N = 5
         Wn = 10
-        fs = 2000
+        fs = self.Fs/32
         b,a = signal.butter(N=N, Wn=Wn, btype='high',fs=fs)
 
         #data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
 
-        data_filt = scipy.signal.resample(data_ds_32,data.shape[0])
+        data_filt = scipy.signal.resample(data_ds_32 ,data.shape[0])
         return(data_filt)
     
     def get_bearing_angle(self, xcorr, t):
