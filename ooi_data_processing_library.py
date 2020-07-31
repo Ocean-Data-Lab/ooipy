@@ -1012,7 +1012,7 @@ class Hydrophone_Xcorr:
         -------
         distance_between_hydrophones(self, coord1, coord2)
             Calculates the distance in meteres between hydrophones
-        get_audio_avg_period(self, start_time)
+        get_audio(self, start_time)
             Pulls avg_period amount of data from server
         xcorr_over_avg_period(self, h1, h2)
             Computes cross-correlation for window of length W, averaged over avg_period
@@ -1129,7 +1129,7 @@ class Hydrophone_Xcorr:
         self.theta_bearing_d_1_2 = theta_bearing_d_1_2
 
 
-    def get_audio_avg_period(self, start_time):
+    def get_audio(self, start_time):
 
         '''
         Downloads, and Reshapes Data from OOI server for given average period and start time
@@ -1190,15 +1190,19 @@ class Hydrophone_Xcorr:
         if data_stream[0].data.shape != data_stream[1].data.shape:
             print('Data streams are not the same length. Flag to be added later')
             # TODO: Set up flag structure of some kind
-            
-        # Make Data Zero Mean
-        data_stream[0].data = data_stream[0].data - np.mean(data_stream[0].data) 
-        data_stream[1].data = data_stream[1].data - np.mean(data_stream[1].data)
                       
         # Cut off extra points if present
         h1_data = data_stream[0].data[:avg_time*60*self.Fs]
         h2_data = data_stream[1].data[:avg_time*60*self.Fs]
+        
+        return h1_data, h2_data, flag
 
+    def preprocess_audio(self, h1_data, h2_data):
+        
+        # Make Audio zero mean
+        h1_data = h1_data - np.mean(h1_data)
+        h2_data = h2_data - np.mean(h2_data)
+        
         # Set fill value to zero and fill in mask if there are gaps
         if ooi1.data_gap:
             h1_data.fill_value = 0
@@ -1206,7 +1210,9 @@ class Hydrophone_Xcorr:
         if ooi2.data_gap:
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
-            
+
+        #Previous Fix for data_gap, Recklessly added zeros
+        '''    
         if ((h1_data.shape[0] < avg_time*60*self.Fs)):
             print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
             h1_data = np.pad(h1_data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
@@ -1214,7 +1220,8 @@ class Hydrophone_Xcorr:
         if ((h2_data.shape[0] < avg_time*60*self.Fs)):
             print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
             h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
-        
+        '''
+        if self.verbose: print('Filtering Data')
         # Filter Data
         if self.filter_data:
             h1_data = self.filter_bandpass(h1_data)
@@ -1225,16 +1232,15 @@ class Hydrophone_Xcorr:
         h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
         h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
               
-        return h1_reshaped, h2_reshaped, flag
-    
+        return h1_reshaped, h2_reshaped
     
     def xcorr_over_avg_period(self, h1, h2):
         '''
         finds cross correlation over average period and avereages all correlations
         
         Inputs:
-        h1 - audio data from hydrophone 1
-        h2 - audio data from hydrophone 2
+        h1 - audio data from hydrophone 1 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
+        h2 - audio data from hydrophone 2 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
         
         Output - avg_xcorr of shape (N) where N = W*Fs
         '''
@@ -1247,12 +1253,17 @@ class Hydrophone_Xcorr:
         
         
         stopwatch_start = time.time()
-        if verbose:
-            bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-            bar.start()
-        for k in range(h1.shape[0]):
-            xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
-            if verbose: bar.update(k+1)
+        #if verbose:
+        #    bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        #    bar.start()
+        
+        if self.verbose: print('Correlating Data')
+        xcorr = signal.fftconvolve(h1,h2,'full',axes=1)
+        print(xcorr.shape)
+        
+        #for k in range(h1.shape[0]):
+        #    xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
+        #    if verbose: bar.update(k+1)
         
         avg_xcorr = np.average(xcorr,axis=0)
         stopwatch_end = time.time()
@@ -1278,12 +1289,13 @@ class Hydrophone_Xcorr:
             stopwatch_start = time.time()
             if verbose: print('Time Period: ',k + 1)
             
-            h1, h2, flag = self.get_audio_avg_period(start_time)
+            h1, h2, flag = self.get_audio(start_time)
 
             if flag == None:
                 print(f'{k+1}th average period skipped, no data available')
                 continue
             
+            h1, h2 = self.preprocess_audio(h1,h2)
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
                 xcorr_avg_period = self.xcorr_over_avg_period(h1, h2)
