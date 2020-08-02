@@ -1199,10 +1199,12 @@ class Hydrophone_Xcorr:
 
     def preprocess_audio(self, h1_data, h2_data):
         
+        if self.verbose: print('Making Data Zero Mean...')
         # Make Audio zero mean
         h1_data = h1_data - np.mean(h1_data)
         h2_data = h2_data - np.mean(h2_data)
         
+        if self.verbose: print('Setting invalid points to 0...')
         # Set fill value to zero and fill in mask if there are gaps
         if self.ooi1.data_gap:
             h1_data.fill_value = 0
@@ -1221,16 +1223,18 @@ class Hydrophone_Xcorr:
             print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
             h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         '''
-        if self.verbose: print('Filtering Data')
+        
         # Filter Data
         if self.filter_data:
+            if self.verbose: print('Filtering Data...')
+
             h1_data = self.filter_bandpass(h1_data)
             h2_data = self.filter_bandpass(h2_data)
         self.data_node1 = h1_data
         self.data_node2 = h2_data
 
-        h1_reshaped = np.reshape(h1_data,(int(self.avg_time*60/W), int(self.W*self.Fs)))
-        h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/W), int(self.W*self.Fs)))                    
+        h1_reshaped = np.reshape(h1_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))
+        h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))                    
               
         return h1_reshaped, h2_reshaped
     
@@ -1242,7 +1246,9 @@ class Hydrophone_Xcorr:
         h1 - audio data from hydrophone 1 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
         h2 - audio data from hydrophone 2 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
         
-        Output - avg_xcorr of shape (N) where N = W*Fs
+        Output :
+        avg_xcorr of shape (N) where N = W*Fs
+        xcorr - xcorr for every short time window within average period shape [avg_time(s)/W(s), N]
         '''
         verbose = self.verbose
         avg_time = self.avg_time
@@ -1257,9 +1263,8 @@ class Hydrophone_Xcorr:
         #    bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
         #    bar.start()
         
-        if self.verbose: print('Correlating Data')
-        xcorr = signal.fftconvolve(h1,h2,'full',axes=1)
-        print(xcorr.shape)
+        if self.verbose: print('Correlating Data...')
+        xcorr = signal.fftconvolve(h1,np.flip(h2,axis=1),'full',axes=1)
         
         #for k in range(h1.shape[0]):
         #    xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
@@ -1268,7 +1273,7 @@ class Hydrophone_Xcorr:
         avg_xcorr = np.average(xcorr,axis=0)
         stopwatch_end = time.time()
         print('Time to Calculate Cross Correlation of 1 period: ',stopwatch_end-stopwatch_start)
-        return avg_xcorr
+        return avg_xcorr, xcorr
     
  
     def avg_over_mult_periods(self, num_periods, start_time):
@@ -1474,9 +1479,9 @@ class Hydrophone_Xcorr:
         fs = self.Fs/32
         b,a = signal.butter(N=N, Wn=Wn, btype='high',fs=fs)
 
-        #data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
+        data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
 
-        data_filt = scipy.signal.resample(data_ds_32 ,data.shape[0])
+        data_filt = scipy.signal.resample(data_filt_ds ,data.shape[0])
         return(data_filt)
     
     def get_bearing_angle(self, xcorr, t):
