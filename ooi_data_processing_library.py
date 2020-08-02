@@ -1158,10 +1158,10 @@ class Hydrophone_Xcorr:
             print('Error: Average Time Must Be Interval of Window')
             return None
         # Initialze Two Classes for Two Hydrophones
-        ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
-        ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
-        ooi1.data_gap_mode=1
-        ooi2.data_gap_mode=1
+        self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
+        self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
+        self.ooi1.data_gap_mode=1
+        self.ooi2.data_gap_mode=1
 
         # Calculate end_time
         end_time = start_time + timedelta(minutes=avg_time)
@@ -1170,19 +1170,19 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        if self.mp: ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
-        else: ooi1.get_acoustic_data(start_time, end_time, node=self.node1)
+        if self.mp: self.ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
+        else: self.ooi1.get_acoustic_data(start_time, end_time, node=self.node1)
         
         if verbose: print('Getting Audio from Node 2...')
         #Audio from Node 2
-        if self.mp: ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
-        else: ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
+        if self.mp: self.ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
+        else: self.ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
         
-        if (ooi1.data == None) or (ooi2.data == None):
+        if (self.ooi1.data == None) or (self.ooi2.data == None):
             print('Error with Getting Audio')
             return None, None, None
         #Combine Data into Stream
-        data_stream = obspy.Stream(traces=[ooi1.data, ooi2.data])
+        data_stream = obspy.Stream(traces=[self.ooi1.data, self.ooi2.data])
         
         stopwatch_end = time.time()
         print('Time to Download Data from Server: ',stopwatch_end-stopwatch_start)
@@ -1204,10 +1204,10 @@ class Hydrophone_Xcorr:
         h2_data = h2_data - np.mean(h2_data)
         
         # Set fill value to zero and fill in mask if there are gaps
-        if ooi1.data_gap:
+        if self.ooi1.data_gap:
             h1_data.fill_value = 0
             h1_data = np.ma.filled(h1_data)
-        if ooi2.data_gap:
+        if self.ooi2.data_gap:
             h2_data.fill_value = 0
             h2_data = np.ma.filled(h2_data)
 
@@ -1229,8 +1229,8 @@ class Hydrophone_Xcorr:
         self.data_node1 = h1_data
         self.data_node2 = h2_data
 
-        h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*self.Fs)))
-        h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*self.Fs)))                    
+        h1_reshaped = np.reshape(h1_data,(int(self.avg_time*60/W), int(self.W*self.Fs)))
+        h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/W), int(self.W*self.Fs)))                    
               
         return h1_reshaped, h2_reshaped
     
