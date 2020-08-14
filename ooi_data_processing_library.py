@@ -199,7 +199,7 @@ class OOIHydrophoneData:
         return sens_interpolated(f)
 
 
-    def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None):
+    def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, append=True):
         '''
         Get acoustic data for specific time frame and node:
 
@@ -225,15 +225,17 @@ class OOIHydrophoneData:
         
         # Save last mseed of previous day to data_url_list
         prev_day = self.starttime - timedelta(days=1)
-        data_url_list_prev_day = self.__web_crawler_noise(prev_day.strftime("/%Y/%m/%d/"))
-        # keep only .mseed files
-        del_list = []
-        for i in range(len(data_url_list_prev_day)):
-            url = data_url_list_prev_day[i].split('.')
-            if url[len(url) - 1] != 'mseed':
-                del_list.append(i)
-        data_url_prev_day = np.delete(data_url_list_prev_day, del_list)
-        data_url_prev_day = data_url_prev_day[-1]
+        
+        if append:
+            data_url_list_prev_day = self.__web_crawler_noise(prev_day.strftime("/%Y/%m/%d/"))
+            # keep only .mseed files
+            del_list = []
+            for i in range(len(data_url_list_prev_day)):
+                url = data_url_list_prev_day[i].split('.')
+                if url[len(url) - 1] != 'mseed':
+                    del_list.append(i)
+            data_url_prev_day = np.delete(data_url_list_prev_day, del_list)
+            data_url_prev_day = data_url_prev_day[-1]
        
         # get URL for first day
         day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
@@ -269,7 +271,8 @@ class OOIHydrophoneData:
             if url[len(url) - 1] != 'mseed':
                 del_list.append(i)
         data_url_list = np.delete(data_url_list, del_list)
-        data_url_list = np.insert(data_url_list,0,data_url_prev_day)
+        
+        if append: data_url_list = np.insert(data_url_list,0,data_url_prev_day)
 
         self.data_url_list = data_url_list
                 
@@ -300,9 +303,12 @@ class OOIHydrophoneData:
                 if (first_file) and (i != 0):
                     first_file = False
                     try:
-                        # add one extra file on front end
-                        st = read(data_url_list[i-1], apply_calib=True)
-                        st += read(data_url_list[i], apply_calib=True)
+                        if append:
+                            # add one extra file on front end
+                            st = read(data_url_list[i-1], apply_calib=True)
+                            st += read(data_url_list[i], apply_calib=True)
+                        else:
+                            st = read(data_url_list[i], apply_calib=True)
                     except:
                         if self.print_exceptions:
                             print(f"Data Segment, {data_url_list[i-1]} or {data_url_list[i] } Broken")
@@ -330,7 +336,7 @@ class OOIHydrophoneData:
                 if first_file == False:
                     first_file = True
                     try:
-                        st = read(data_url_list[i], apply_calib=True)
+                        if append: st = read(data_url_list[i], apply_calib=True)
                     except:
                         if self.print_exceptions:
                             print(f"Data Segment, {data_url_list[i]} Broken")
@@ -338,7 +344,7 @@ class OOIHydrophoneData:
                         #self.data_available = False
                         #return None                   
     
-                    st_all += st
+                    if append: st_all += st
             
         # Merge all traces together
         if self.data_gap_mode == 0:
@@ -490,7 +496,7 @@ class OOIHydrophoneData:
         
         return data_url_list
     
-    def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=20):
+    def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=20, append=True, verbose=False):
         '''
         Get acoustic data for specific time frame and node:
 
@@ -500,7 +506,11 @@ class OOIHydrophoneData:
         fmin (float): lower cutoff frequency of hydrophone's bandpass filter. Default is None which results in no filtering.
         fmax (float): higher cutoff frequency of hydrophones bandpass filter. Default is None which results in no filtering.
         print_exceptions (bool): whether or not exeptions are printed in the terminal line
-
+        max_workers (int) : number of maximum workers for concurrent processing
+        append (bool) : specifies if extra mseed files should be appended at beginning and end in case of boundary gaps in data
+        verbose (bool) : specifies whether print statements should occur or not
+        
+        
         return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
             between start_time and end_time. Returns None if no data are available for specified time frame
 
@@ -514,7 +524,7 @@ class OOIHydrophoneData:
         
         self.data_gap = False
 
-        print('Fetching URLs...')
+        if verbose: print('Fetching URLs...')
 
         # Save last mseed of previous day to data_url_list
         prev_day = self.starttime - timedelta(days=1)
@@ -544,13 +554,13 @@ class OOIHydrophoneData:
         data_url_last_day_list= self.__get_mseed_urls(self.starttime.strftime("/%Y/%m/%d/"))
         data_url_last_day = data_url_last_day_list[0]
 
-        #add 1 extra mseed file at beginning and end to handle gaps
-        data_url_list = np.insert(data_url_list,0,data_url_prev_day)
-        data_url_list = np.insert(data_url_list,-1,data_url_last_day)
+        #add 1 extra mseed file at beginning and end to handle gaps if append is true
+        if append: data_url_list = np.insert(data_url_list,0,data_url_prev_day)
+        if append: data_url_list = np.insert(data_url_list,-1,data_url_last_day)
 
-        print('Sorting valid URLs for Time Window...')
+
+        if verbose: print('Sorting valid URLs for Time Window...')
         #Create list of urls for specified time range
-        
         
         valid_data_url_list = []
         first_file=True
@@ -576,14 +586,20 @@ class OOIHydrophoneData:
             if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
                 (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
                 (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
-                if i == 0:
-                    first_file = False
-                    valid_data_url_list.append(data_url_list[i])
+                
+                if append:
+                    if i == 0:
+                        first_file = False
+                        valid_data_url_list.append(data_url_list[i])
 
-                elif (first_file):
-                    first_file = False
-                    valid_data_url_list = [data_url_list[i-1], data_url_list[i]]
+                    elif (first_file):
+                        first_file = False
+                        valid_data_url_list = [data_url_list[i-1], data_url_list[i]]
+                    else:
+                        valid_data_url_list.append(data_url_list[i])
                 else:
+                    if i == 0:
+                        first_file = False
                     valid_data_url_list.append(data_url_list[i])
 
             # adds one more mseed file to st_ll             
@@ -591,9 +607,11 @@ class OOIHydrophoneData:
                 #Checks if last file has been downloaded within time period
                 if first_file == False:
                     first_file = True
-                    valid_data_url_list.append(data_url_list[i])
-                break
-        print('Downloading mseed files...')
+                    if append: valid_data_url_list.append(data_url_list[i])
+                    break
+            
+
+        if verbose: print('Downloading mseed files...')
         # Code Below from Landung Setiawan
         self.logger = logging.getLogger('HYDRO-FETCHER')
         st_list = self.__map_concurrency(self.__read_mseed, valid_data_url_list, max_workers=20)
