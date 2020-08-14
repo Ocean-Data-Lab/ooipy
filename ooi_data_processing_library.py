@@ -34,7 +34,7 @@ import logging
 class OOIHydrophoneData:
 
     def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
-        fmax=None, print_exceptions=None, limit_seed_files=True):
+        fmax=None, print_exceptions=None, limit_seed_files=True, data_gap_mode=0):
         
         ''' 
         Initialize Class OOIHydrophoneData
@@ -90,6 +90,7 @@ class OOIHydrophoneData:
             specifies how to handle gapped data
             mode 0 (default) - linearly interpolates between gap
             mode 1 - returns numpy masked array
+            mode 2 - makes valid data zero mean, and fills invalid data with zeros
 
         Private Attributes
         ------------------
@@ -128,7 +129,7 @@ class OOIHydrophoneData:
         self.data_available = None
         self.limit_seed_files = limit_seed_files
         self.data_gap = False
-        self.data_gap_mode = 0
+        self.data_gap_mode = data_gap_mode
 
         if self.starttime == None or self.endtime == None or self.node == None:
             self.data = None
@@ -199,7 +200,7 @@ class OOIHydrophoneData:
         return sens_interpolated(f)
 
 
-    def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, append=True):
+    def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, append=True, verbose=False):
         '''
         Get acoustic data for specific time frame and node:
 
@@ -209,6 +210,7 @@ class OOIHydrophoneData:
         fmin (float): lower cutoff frequency of hydrophone's bandpass filter. Default is None which results in no filtering.
         fmax (float): higher cutoff frequency of hydrophones bandpass filter. Default is None which results in no filtering.
         print_exceptions (bool): whether or not exeptions are printed in the terminal line
+        verbose (bool) : Determines if information is printed to command line
 
         return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
             between start_time and end_time. Returns None if no data are available for specified time frame
@@ -612,6 +614,7 @@ class OOIHydrophoneData:
             
 
         if verbose: print('Downloading mseed files...')
+        
         # Code Below from Landung Setiawan
         self.logger = logging.getLogger('HYDRO-FETCHER')
         st_list = self.__map_concurrency(self.__read_mseed, valid_data_url_list, max_workers=20)
@@ -623,12 +626,23 @@ class OOIHydrophoneData:
                 else:
                     st_all += st
         
-        # Merge all traces together
+        ##Merge all traces together
+        
+        #Interpolation
         if self.data_gap_mode == 0:
             st_all.merge(fill_value ='interpolate', method=1)
-        # Returns Masked Array if there are data gaps
+        #Masked Array
         elif self.data_gap_mode == 1:
             st_all.merge(method=1)
+        #Masked Array, Zero-Mean, Zero Fill
+        elif self.data_gap_mode == 2:
+            st_all.merge(method=1)
+            st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
+
+            st_all[0].data.fill_value = 0
+            st_all[0].data = np.ma.filled(st_all[0].data)
+       
+        
         else:
             if self.print_exceptions: print('Invalid Data Gap Mode')
             return None
@@ -681,7 +695,12 @@ class OOIHydrophoneData:
     def __read_mseed(self, url):
         fname = os.path.basename(url)
         self.logger.info(f"=== Reading: {fname} ===")
-        st = read(url, apply_calib=True)
+        try:
+            st = read(url, apply_calib=True)
+        except:
+            print(f'Data Segment {url} Broken')
+            self.logger.info(f"!!! FAILEED READING: {fname} !!!")
+            return None
         if isinstance(st, Stream):
             self.logger.info(f"*** SUCCESS: {fname} ***")
             return st
@@ -1394,10 +1413,8 @@ class Hydrophone_Xcorr:
             print('Error: Average Time Must Be Interval of Window')
             return None
         # Initialze Two Classes for Two Hydrophones
-        self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
-        self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True)
-        self.ooi1.data_gap_mode=1
-        self.ooi2.data_gap_mode=1
+        self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
+        self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
 
         # Calculate end_time
         end_time = start_time + timedelta(minutes=avg_time)
@@ -1406,13 +1423,12 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        if self.mp: self.ooi1.get_acoustic_data_mp(start_time, end_time, node=self.node1)
-        else: self.ooi1.get_acoustic_data(start_time, end_time, node=self.node1)
+        ooi1.get_acoustic_data_conc(start_time, end_time, node=self.node1)
         
         if verbose: print('Getting Audio from Node 2...')
+
         #Audio from Node 2
-        if self.mp: self.ooi2.get_acoustic_data_mp(start_time, end_time, node=self.node2)
-        else: self.ooi2.get_acoustic_data(start_time, end_time, node=self.node2)
+        ooi2.get_acoustic_data_conc(start_time, end_time, node=self.node2)
         
         if (self.ooi1.data == None) or (self.ooi2.data == None):
             print('Error with Getting Audio')
@@ -1434,21 +1450,7 @@ class Hydrophone_Xcorr:
         return h1_data, h2_data, flag
 
     def preprocess_audio(self, h1_data, h2_data):
-        
-        if self.verbose: print('Making Data Zero Mean...')
-        # Make Audio zero mean
-        h1_data = h1_data - np.mean(h1_data)
-        h2_data = h2_data - np.mean(h2_data)
-        
-        if self.verbose: print('Setting invalid points to 0...')
-        # Set fill value to zero and fill in mask if there are gaps
-        if self.ooi1.data_gap:
-            h1_data.fill_value = 0
-            h1_data = np.ma.filled(h1_data)
-        if self.ooi2.data_gap:
-            h2_data.fill_value = 0
-            h2_data = np.ma.filled(h2_data)
-
+            
         #Previous Fix for data_gap, Recklessly added zeros
         '''    
         if ((h1_data.shape[0] < avg_time*60*self.Fs)):
