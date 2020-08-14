@@ -617,7 +617,7 @@ class OOIHydrophoneData:
         
         # Code Below from Landung Setiawan
         self.logger = logging.getLogger('HYDRO-FETCHER')
-        st_list = self.__map_concurrency(self.__read_mseed, valid_data_url_list, max_workers=20)
+        st_list = self.__map_concurrency(self.__read_mseed, valid_data_url_list)        #removed max workers argument
         st_all = None
         for st in st_list:
             if st:
@@ -679,8 +679,6 @@ class OOIHydrophoneData:
             self.data = None
             self.data_available = False
             return None
-
-
 
     def __map_concurrency(self, func, iterator, args=(), max_workers=10):
         results = []
@@ -1423,12 +1421,12 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        ooi1.get_acoustic_data_conc(start_time, end_time, node=self.node1)
+        self.ooi1.get_acoustic_data_conc(start_time, end_time, node=self.node1, max_workers=100, verbose=self.verbose)
         
         if verbose: print('Getting Audio from Node 2...')
 
         #Audio from Node 2
-        ooi2.get_acoustic_data_conc(start_time, end_time, node=self.node2)
+        self.ooi2.get_acoustic_data_conc(start_time, end_time, node=self.node2, max_workers=100, verbose=self.verbose)
         
         if (self.ooi1.data == None) or (self.ooi2.data == None):
             print('Error with Getting Audio')
@@ -1472,7 +1470,7 @@ class Hydrophone_Xcorr:
         self.data_node2 = h2_data
 
         h1_reshaped = np.reshape(h1_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))
-        h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))                    
+        h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))                  
               
         return h1_reshaped, h2_reshaped
     
@@ -1493,8 +1491,9 @@ class Hydrophone_Xcorr:
         M = h1.shape[1]
         N = h2.shape[1]
 
-        xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
         
+        xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
+
         
         stopwatch_start = time.time()
         #if verbose:
@@ -1503,15 +1502,18 @@ class Hydrophone_Xcorr:
         
         if self.verbose: print('Correlating Data...')
         xcorr = signal.fftconvolve(h1,np.flip(h2,axis=1),'full',axes=1)
-        
+
+        # Normalize Every Short Time Correlation
+        xcorr_norm = xcorr / np.max(xcorr,axis=1)[:,np.newaxis]
+
         #for k in range(h1.shape[0]):
         #    xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
         #    if verbose: bar.update(k+1)
         
-        avg_xcorr = np.average(xcorr,axis=0)
+        xcorr_stack = np.sum(xcorr_norm,axis=0)
         stopwatch_end = time.time()
         print('Time to Calculate Cross Correlation of 1 period: ',stopwatch_end-stopwatch_start)
-        return avg_xcorr, xcorr
+        return xcorr_stack, xcorr_norm
     
  
     def avg_over_mult_periods(self, num_periods, start_time):
@@ -1530,7 +1532,7 @@ class Hydrophone_Xcorr:
         first_loop = True
         for k in range(num_periods):
             stopwatch_start = time.time()
-            if verbose: print('Time Period: ',k + 1)
+            if verbose: print('\n\nTime Period: ',k + 1)
             
             h1, h2, flag = self.get_audio(start_time)
 
@@ -1538,14 +1540,14 @@ class Hydrophone_Xcorr:
                 print(f'{k+1}th average period skipped, no data available')
                 continue
             
-            h1, h2 = self.preprocess_audio(h1,h2)
+            h1_processed, h2_processed = self.preprocess_audio(h1,h2)
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
-                xcorr_avg_period = self.xcorr_over_avg_period(h1, h2)
+                xcorr_avg_period, xcorr_short_time = self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr = xcorr_avg_period
                 first_loop = False
             else:
-                xcorr_avg_period = self.xcorr_over_avg_period(h1, h2)
+                xcorr_avg_period, xcorr_short_time = self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr += xcorr_avg_period
                 start_time = start_time + timedelta(minutes=self.avg_time)
             
@@ -1568,7 +1570,8 @@ class Hydrophone_Xcorr:
 
             # Calculate time variable TODO change to not calculate every loop
             dt = self.Ts
-            t = np.arange(-xcorr.shape[0]*dt/2,xcorr.shape[0]*dt/2,dt)
+            self.xcorr = xcorr
+            t = np.arange(-np.shape(xcorr)[0]*dt/2,np.shape(xcorr)[0]*dt/2,dt)
             
         xcorr = xcorr / num_periods
 
