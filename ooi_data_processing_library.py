@@ -1558,14 +1558,14 @@ class Hydrophone_Xcorr:
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
             try:
                 with open(filename,'wb') as f:
-                    pickle.dump(xcorr, f)
-                    pickle.dump(xcorr_avg_period, f)
-                    pickle.dump(k,f)
+                    pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
+                    pickle.dump(xcorr, f)               #Accumulated xcorr
+                    pickle.dump(k,f)                    #avg_period number
             except:
                 os.makedirs('ckpts')
                 with open(filename,'wb') as f:
+                    pickle.dump(xcorr_short_time, f)
                     pickle.dump(xcorr, f)
-                    pickle.dump(xcorr_avg_period, f)
                     pickle.dump(k,f)
 
             # Calculate time variable TODO change to not calculate every loop
@@ -1573,7 +1573,7 @@ class Hydrophone_Xcorr:
             self.xcorr = xcorr
             t = np.arange(-np.shape(xcorr)[0]*dt/2,np.shape(xcorr)[0]*dt/2,dt)
             
-        xcorr = xcorr / num_periods
+        #xcorr = xcorr / num_periods
 
         # Calculate Bearing of Max Peak
         bearing_max_global = self.get_bearing_angle(xcorr, t)
