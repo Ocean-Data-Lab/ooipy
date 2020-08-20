@@ -1,4 +1,5 @@
-# OOIPY ![OOIPY Logo](https://github.com/ooipy.ooipy_private/imgs/OOIPY_Logo.png)
+![OOIPY Logo](https://github.com/ooipy.ooipy_private/imgs/OOIPY_Logo.png)
+# OOIPY 
 A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data
 
 ## Python Package for OOI Data Processing
