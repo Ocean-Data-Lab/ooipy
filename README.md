@@ -1,4 +1,7 @@
-# OOI Data Processing
+<img src='imgs/OOIPY_Logo.png' align="right" width=150>
+
+# OOIPY 
+A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data
 
 ## Python Package for OOI Data Processing
 
