@@ -32,7 +32,7 @@ import logging
 
 
 
-def __web_crawler_noise(self, day_str):
+def _web_crawler_acoustic_data(day_str, node):
     '''
     get URLs for a specific day from OOI raw data server
 
@@ -42,23 +42,23 @@ def __web_crawler_noise(self, day_str):
         specified date, None is returned.
     '''
 
-    if self.node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
+    if node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
         array = '/CE02SHBP'
         instrument = '/11-HYDBBA106'
-    if self.node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
+    if node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
         array = '/RS01SLBS'
         instrument = '/09-HYDBBA102'
-    if self.node == '/PC01A': #Oregan Slope Base Shallow
+    if node == '/PC01A': #Oregan Slope Base Shallow
         array = '/RS01SBPS'
         instrument = '/08-HYDBBA103'
-    if self.node == '/PC03A': #Axial Base Shallow Profiler
+    if node == '/PC03A': #Axial Base Shallow Profiler
         array = '/RS03AXPS'
         instrument = '/08-HYDBBA303'
-    if self.node == '/LJ01C': #Oregon Offshore Base Seafloor
+    if node == '/LJ01C': #Oregon Offshore Base Seafloor
         array = '/CE04OSBP'
         instrument = '/11-HYDBBA105'
         
-    mainurl = 'https://rawdata.oceanobservatories.org/files'+array+self.node+instrument+day_str
+    mainurl = 'https://rawdata.oceanobservatories.org/files'+array+node+instrument+day_str
     try:
         mainurlpage =requests.get(mainurl, timeout=60)
     except:
@@ -75,7 +75,7 @@ def __web_crawler_noise(self, day_str):
     return data_url_list
 
 
-def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, append=True, verbose=False):
+def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
     '''
     Get acoustic data for specific time frame and node:
 
@@ -91,20 +91,14 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
         between start_time and end_time. Returns None if no data are available for specified time frame
 
     '''
-
-    self.starttime = starttime
-    self.endtime = endtime
-    self.node = node
-    self.fmin = fmin
-    self.fmax = fmax
     
-    self.data_gap = False
+    #data_gap = False
     
     # Save last mseed of previous day to data_url_list
-    prev_day = self.starttime - timedelta(days=1)
+    prev_day = starttime - timedelta(days=1)
     
     if append:
-        data_url_list_prev_day = self.__web_crawler_noise(prev_day.strftime("/%Y/%m/%d/"))
+        data_url_list_prev_day = _web_crawler_acoustic_data(prev_day.strftime("/%Y/%m/%d/"), node)
         # keep only .mseed files
         del_list = []
         for i in range(len(data_url_list_prev_day)):
@@ -115,30 +109,26 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
         data_url_prev_day = data_url_prev_day[-1]
     
     # get URL for first day
-    day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
-    data_url_list = self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/"))
+    day_start = UTCDateTime(starttime.year, starttime.month, starttime.day, 0, 0, 0)
+    data_url_list = _web_crawler_acoustic_data(starttime.strftime("/%Y/%m/%d/"), node)
     if data_url_list == None:
-        if self.print_exceptions:
+        if verbose:
             print('No data available for specified day and node. Please change the day or use a differnt node')
-        self.data = None
-        self.data_available = False
         return None
     
     #increment day start by 1 day
     day_start = day_start + 24*3600
     
     #get all urls for each day untill endtime is reached
-    while day_start < self.endtime:
-        data_url_list.extend(self.__web_crawler_noise(self.starttime.strftime("/%Y/%m/%d/")))
+    while day_start < endtime:
+        data_url_list.extend(_web_crawler_acoustic_data(starttime.strftime("/%Y/%m/%d/"), node))
         day_start = day_start + 24*3600
     
-    if self.limit_seed_files:
+    if limit_seed_files:
         # if too many files for one day -> skip day (otherwise program takes too long to terminate)
         if len(data_url_list) > 1000:
-            if self.print_exceptions:
+            if verbose:
                 print('Too many files for specified day. Cannot request data as web crawler cannot terminate.')
-            self.data = None
-            self.data_available = False
             return None
     
     # keep only .mseed files
@@ -150,8 +140,6 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
     data_url_list = np.delete(data_url_list, del_list)
     
     if append: data_url_list = np.insert(data_url_list,0,data_url_prev_day)
-
-    self.data_url_list = data_url_list
             
     st_all = None
     first_file=True
@@ -173,9 +161,9 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
             utc_time_url_stop.microsecond = 999999
             
         # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
-            (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
-            (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
+        if (utc_time_url_start >= starttime and utc_time_url_start < endtime) or \
+            (utc_time_url_stop >= starttime and utc_time_url_stop < endtime) or  \
+            (utc_time_url_start <= starttime and utc_time_url_stop >= endtime):
 
             if (first_file) and (i != 0):
                 first_file = False
@@ -187,7 +175,7 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
                     else:
                         st = read(data_url_list[i], apply_calib=True)
                 except:
-                    if self.print_exceptions:
+                    if verbose:
                         print(f"Data Segment, {data_url_list[i-1]} or {data_url_list[i] } Broken")
                     #self.data = None
                     #self.data_available = False
@@ -197,7 +185,7 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
                 try:
                     st = read(data_url_list[i], apply_calib=True)
                 except:
-                    if self.print_exceptions:
+                    if verbose:
                         print(f"Data Segment, {data_url_list[i]} Broken")
                     #self.data = None
                     #self.data_available = False
@@ -215,7 +203,7 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
                 try:
                     if append: st = read(data_url_list[i], apply_calib=True)
                 except:
-                    if self.print_exceptions:
+                    if verbose:
                         print(f"Data Segment, {data_url_list[i]} Broken")
                     #self.data = None
                     #self.data_available = False
@@ -224,55 +212,53 @@ def get_acoustic_data(self, starttime, endtime, node, fmin=None, fmax=None, appe
                 if append: st_all += st
         
     # Merge all traces together
-    if self.data_gap_mode == 0:
+    if data_gap_mode == 0:
         st_all.merge(fill_value ='interpolate', method=1)
     # Returns Masked Array if there are data gaps
-    elif self.data_gap_mode == 1:
+    elif data_gap_mode == 1:
         st_all.merge(method=1)
     else:
-        if self.print_exceptions: print('Invalid Data Gap Mode')
+        if verbose: print('Invalid Data Gap Mode')
         return None
     # Slice data to desired window                
-    st_all = st_all.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
+    st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
     if isinstance(st_all[0].data, np.ma.core.MaskedArray):
-        self.data_gap = True
-        if self.print_exceptions: print('Data has Gaps') #Note this will only trip if masked array is returned
+        #data_gap = True
+        if verbose: print('Data has Gaps') #Note this will only trip if masked array is returned
                                                             #interpolated is treated as if there is no gap
     if st_all != None:
         if len(st_all) == 0:
-            if self.print_exceptions:
+            if verbose:
                 print('No data available for selected time frame.')
-            self.data = None
-            self.data_available = False
             return None
     
     #Filter Data
     try:
-        if (self.fmin != None and self.fmax != None):
+        if (fmin != None and fmax != None):
             st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-            if self.print_exceptions: print('Signal Filtered')
-        self.data = st_all[0]
-        self.data_available = True
-        return st_all
+            if verbose: print('Signal Filtered')
+        data = st_all[0]
+        #data_available = True
+        return data
     except:
         if st_all == None:
-            if self.print_exceptions:
+            if verbose:
                 print('No data available for selected time frame.')
         else: 
-            if self.print_exceptions:
+            if verbose:
                 print('Other exception')
-        self.data = None
-        self.data_available = False
         return None
 
-def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=None, fmax=None):
+#TODO revison necessary; function might be superfluous
+'''def get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=None, fmax=None,
+    append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
+    '''
     '''
     Same as function get acoustic data but using multiprocessing.
     '''
-    self.node = node
-    self.fmin = fmin
-    self.fmax = fmax
+    '''
+
     # entire time frame is divided into n_process parts of equal length 
     if n_process == None:
         N  = mp.cpu_count()
@@ -289,19 +275,15 @@ def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=No
     with mp.get_context("spawn").Pool(N) as p:
         try:
             data_list = p.starmap(self.get_acoustic_data, get_data_list)
-            self.data_list = data_list
         except:
-            if self.print_exceptions:
+            if verbose:
                 print('Data cannot be requested.')
-            self.data = None
-            self.data_available = False
-            self.starttime = starttime
-            self.endtime = endtime
-            return self.data
+            #data_available = False
+            return None
     
     #if all data is None, return None and set flags
     if (all(x==None for x in data_list)):
-        if self.print_exceptions:
+        if verbose:
             print('No data available for specified time and node')
         self.data = None
         self.data_available = False
@@ -336,9 +318,9 @@ def get_acoustic_data_mp(self, starttime, endtime, node, n_process=None, fmin=No
 
     self.starttime = starttime
     self.endtime = endtime
-    return st_all
+    return st_all'''
 
-def __get_mseed_urls(self, day_str):
+def __get_mseed_urls(day_str, node):
     import fsspec
 
     '''
@@ -350,30 +332,31 @@ def __get_mseed_urls(self, day_str):
         specified date, None is returned.
     '''
 
-    if self.node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
+    if node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
         array = '/CE02SHBP'
         instrument = '/11-HYDBBA106'
-    if self.node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
+    if node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
         array = '/RS01SLBS'
         instrument = '/09-HYDBBA102'
-    if self.node == '/PC01A': #Oregan Slope Base Shallow
+    if node == '/PC01A': #Oregan Slope Base Shallow
         array = '/RS01SBPS'
         instrument = '/08-HYDBBA103'
-    if self.node == '/PC03A': #Axial Base Shallow Profiler
+    if node == '/PC03A': #Axial Base Shallow Profiler
         array = '/RS03AXPS'
         instrument = '/08-HYDBBA303'
-    if self.node == '/LJ01C': #Oregon Offshore Base Seafloor
+    if node == '/LJ01C': #Oregon Offshore Base Seafloor
         array = '/CE04OSBP'
         instrument = '/11-HYDBBA105'
         
-    mainurl = 'https://rawdata.oceanobservatories.org/files'+array+self.node+instrument+day_str
+    mainurl = 'https://rawdata.oceanobservatories.org/files'+array+node+instrument+day_str
 
     FS = fsspec.filesystem('http')
     data_url_list = sorted([f['name'] for f in FS.ls(mainurl) if f['type'] == 'file' and f['name'].endswith('.mseed')])
     
     return data_url_list
 
-def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=20, append=True, verbose=False):
+def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=20, append=True, verbose=False,
+    data_gap_mode=0):
     '''
     Get acoustic data for specific time frame and node:
 
@@ -392,43 +375,35 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
         between start_time and end_time. Returns None if no data are available for specified time frame
 
     '''
-
-    self.starttime = starttime
-    self.endtime = endtime
-    self.node = node
-    self.fmin = fmin
-    self.fmax = fmax
     
-    self.data_gap = False
+    #data_gap = False
 
     if verbose: print('Fetching URLs...')
 
     # Save last mseed of previous day to data_url_list
-    prev_day = self.starttime - timedelta(days=1)
-    data_url_list_prev_day = self.__get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"))
+    prev_day = starttime - timedelta(days=1)
+    data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node)
     data_url_prev_day = data_url_list_prev_day[-1]
     
     # get URL for first day
-    day_start = UTCDateTime(self.starttime.year, self.starttime.month, self.starttime.day, 0, 0, 0)
-    data_url_list = self.__get_mseed_urls(self.starttime.strftime("/%Y/%m/%d/"))
+    day_start = UTCDateTime(starttime.year, starttime.month, starttime.day, 0, 0, 0)
+    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node)
     
     if data_url_list == None:
-        if self.print_exceptions:
+        if verbose:
             print('No data available for specified day and node. Please change the day or use a differnt node')
-        self.data = None
-        self.data_available = False
         return None
     
     #increment day start by 1 day
     day_start = day_start + 24*3600
     
     #get all urls for each day until endtime is reached
-    while day_start < self.endtime:
-        data_url_list.extend(self.__get_mseed_urls(self.starttime.strftime("/%Y/%m/%d/")))
+    while day_start < endtime:
+        data_url_list.extend(__get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node))
         day_start = day_start + 24*3600
 
     #get 1 more day of urls
-    data_url_last_day_list= self.__get_mseed_urls(self.starttime.strftime("/%Y/%m/%d/"))
+    data_url_last_day_list= __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node)
     data_url_last_day = data_url_last_day_list[0]
 
     #add 1 extra mseed file at beginning and end to handle gaps if append is true
@@ -441,6 +416,7 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
     
     valid_data_url_list = []
     first_file=True
+    logger = logging.getLogger('HYDRO-FETCHER')
     
     # Create List of mseed urls for valid time range
     for i in range(len(data_url_list)):
@@ -460,39 +436,39 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
             utc_time_url_stop.microsecond = 999999
             
         # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= self.starttime and utc_time_url_start < self.endtime) or \
-            (utc_time_url_stop >= self.starttime and utc_time_url_stop < self.endtime) or  \
-            (utc_time_url_start <= self.starttime and utc_time_url_stop >= self.endtime):
+        if (utc_time_url_start >= starttime and utc_time_url_start < endtime) or \
+            (utc_time_url_stop >= starttime and utc_time_url_stop < endtime) or  \
+            (utc_time_url_start <= starttime and utc_time_url_stop >= endtime):
             
             if append:
                 if i == 0:
                     first_file = False
-                    valid_data_url_list.append(data_url_list[i])
+                    valid_data_url_list.append((data_url_list[i], logger))
 
                 elif (first_file):
                     first_file = False
-                    valid_data_url_list = [data_url_list[i-1], data_url_list[i]]
+                    valid_data_url_list = [(data_url_list[i-1], logger), (data_url_list[i], logger)]
                 else:
-                    valid_data_url_list.append(data_url_list[i])
+                    valid_data_url_list.append((data_url_list[i], logger))
             else:
                 if i == 0:
                     first_file = False
-                valid_data_url_list.append(data_url_list[i])
+                valid_data_url_list.append((data_url_list[i], logger))
 
         # adds one more mseed file to st_ll             
         else:
             #Checks if last file has been downloaded within time period
             if first_file == False:
                 first_file = True
-                if append: valid_data_url_list.append(data_url_list[i])
+                if append: valid_data_url_list.append((data_url_list[i], logger))
                 break
         
 
     if verbose: print('Downloading mseed files...')
     
     # Code Below from Landung Setiawan
-    self.logger = logging.getLogger('HYDRO-FETCHER')
-    st_list = self.__map_concurrency(self.__read_mseed, valid_data_url_list)        #removed max workers argument
+    #TODO: allow thrid input argument for __map_concurrency to pass logger separately
+    st_list = __map_concurrency(__read_mseed, valid_data_url_list)        #removed max workers argument
     st_all = None
     for st in st_list:
         if st:
@@ -504,13 +480,13 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
     ##Merge all traces together
     
     #Interpolation
-    if self.data_gap_mode == 0:
+    if data_gap_mode == 0:
         st_all.merge(fill_value ='interpolate', method=1)
     #Masked Array
-    elif self.data_gap_mode == 1:
+    elif data_gap_mode == 1:
         st_all.merge(method=1)
     #Masked Array, Zero-Mean, Zero Fill
-    elif self.data_gap_mode == 2:
+    elif data_gap_mode == 2:
         st_all.merge(method=1)
         st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
 
@@ -519,43 +495,38 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
     
     
     else:
-        if self.print_exceptions: print('Invalid Data Gap Mode')
+        if verbose: print('Invalid Data Gap Mode')
         return None
     # Slice data to desired window                
-    st_all = st_all.slice(UTCDateTime(self.starttime), UTCDateTime(self.endtime))
+    st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
     if isinstance(st_all[0].data, np.ma.core.MaskedArray):
-        self.data_gap = True
-        if self.print_exceptions: print('Data has Gaps') #Note this will only trip if masked array is returned
+        #data_gap = True
+        if verbose: print('Data has Gaps') #Note this will only trip if masked array is returned
                                                             #interpolated is treated as if there is no gap
     if st_all != None:
         if len(st_all) == 0:
-            if self.print_exceptions:
+            if verbose:
                 print('No data available for selected time frame.')
-            self.data = None
-            self.data_available = False
             return None
     
     #Filter Data
     try:
-        if (self.fmin != None and self.fmax != None):
+        if (fmin != None and fmax != None):
             st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-            if self.print_exceptions: print('Signal Filtered')
-        self.data = st_all[0]
-        self.data_available = True
-        return st_all
+            if verbose: print('Signal Filtered')
+        return st_all[0]
     except:
         if st_all == None:
-            if self.print_exceptions:
+            if verbose:
                 print('No data available for selected time frame.')
         else: 
-            if self.print_exceptions:
+            if verbose:
                 print('Other exception')
-        self.data = None
-        self.data_available = False
         return None
 
-def __map_concurrency(self, func, iterator, args=(), max_workers=10):
+#TODO: allow for additional input argument logger that can be passed to func
+def __map_concurrency(func, iterator, args=(), max_workers=10):
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
@@ -565,18 +536,20 @@ def __map_concurrency(self, func, iterator, args=(), max_workers=10):
             results.append(data)
     return results
 
-def __read_mseed(self, url):
+def __read_mseed(url_logger_tuple):
+    url = url_logger_tuple[0]
+    logger = url_logger_tuple[1]
     fname = os.path.basename(url)
-    self.logger.info(f"=== Reading: {fname} ===")
+    logger.info(f"=== Reading: {fname} ===")
     try:
         st = read(url, apply_calib=True)
     except:
         print(f'Data Segment {url} Broken')
-        self.logger.info(f"!!! FAILEED READING: {fname} !!!")
+        logger.info(f"!!! FAILEED READING: {fname} !!!")
         return None
     if isinstance(st, Stream):
-        self.logger.info(f"*** SUCCESS: {fname} ***")
+        logger.info(f"*** SUCCESS: {fname} ***")
         return st
     else:
-        self.logger.info(f"!!! FAILED READING: {fname} !!!")
+        logger.info(f"!!! FAILED READING: {fname} !!!")
         return None
