@@ -28,7 +28,7 @@ import scipy
 import progressbar
 from datetime import timedelta
 import concurrent.futures
-import logging
+
 
 
 
@@ -416,7 +416,7 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
     
     valid_data_url_list = []
     first_file=True
-    logger = logging.getLogger('HYDRO-FETCHER')
+
     
     # Create List of mseed urls for valid time range
     for i in range(len(data_url_list)):
@@ -443,31 +443,30 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
             if append:
                 if i == 0:
                     first_file = False
-                    valid_data_url_list.append((data_url_list[i], logger))
+                    valid_data_url_list.append(data_url_list[i])
 
                 elif (first_file):
                     first_file = False
-                    valid_data_url_list = [(data_url_list[i-1], logger), (data_url_list[i], logger)]
+                    valid_data_url_list = [data_url_list[i-1], data_url_list[i]]
                 else:
-                    valid_data_url_list.append((data_url_list[i], logger))
+                    valid_data_url_list.append(data_url_list[i])
             else:
                 if i == 0:
                     first_file = False
-                valid_data_url_list.append((data_url_list[i], logger))
+                valid_data_url_list.append(data_url_list[i])
 
         # adds one more mseed file to st_ll             
         else:
             #Checks if last file has been downloaded within time period
             if first_file == False:
                 first_file = True
-                if append: valid_data_url_list.append((data_url_list[i], logger))
+                if append: valid_data_url_list.append(data_url_list[i])
                 break
         
 
     if verbose: print('Downloading mseed files...')
     
     # Code Below from Landung Setiawan
-    #TODO: allow thrid input argument for __map_concurrency to pass logger separately
     st_list = __map_concurrency(__read_mseed, valid_data_url_list)        #removed max workers argument
     st_all = None
     for st in st_list:
@@ -525,7 +524,7 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
                 print('Other exception')
         return None
 
-#TODO: allow for additional input argument logger that can be passed to func
+
 def __map_concurrency(func, iterator, args=(), max_workers=-1):
     
     #automatically set max_workers to 2x(available cores)
@@ -541,20 +540,19 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
             results.append(data)
     return results
 
-def __read_mseed(url_logger_tuple):
-    url = url_logger_tuple[0]
-    logger = url_logger_tuple[1]
+def __read_mseed(url):
     fname = os.path.basename(url)
-    logger.info(f"=== Reading: {fname} ===")
+    print(f"=== Reading: {fname} ===")
     try:
         st = read(url, apply_calib=True)
     except:
         print(f'Data Segment {url} Broken')
-        logger.info(f"!!! FAILEED READING: {fname} !!!")
+
         return None
     if isinstance(st, Stream):
-        logger.info(f"*** SUCCESS: {fname} ***")
+
         return st
     else:
-        logger.info(f"!!! FAILED READING: {fname} !!!")
+        print(f"Problem Reading {url}")
+
         return None
