@@ -355,7 +355,7 @@ def __get_mseed_urls(day_str, node):
     
     return data_url_list
 
-def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=20, append=True, verbose=False,
+def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False,
     data_gap_mode=0):
     '''
     Get acoustic data for specific time frame and node:
@@ -526,7 +526,12 @@ def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None,
         return None
 
 #TODO: allow for additional input argument logger that can be passed to func
-def __map_concurrency(func, iterator, args=(), max_workers=10):
+def __map_concurrency(func, iterator, args=(), max_workers=-1):
+    
+    #automatically set max_workers to 2x(available cores)
+    if max_workers == -1:
+        max_workers = 2*mp.cpu_count()
+    
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
