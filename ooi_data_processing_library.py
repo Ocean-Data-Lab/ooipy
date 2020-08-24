@@ -680,7 +680,11 @@ class OOIHydrophoneData:
             self.data_available = False
             return None
 
-    def __map_concurrency(self, func, iterator, args=(), max_workers=10):
+    def __map_concurrency(self, func, iterator, args=(), max_workers=-1):
+        #automatically set max_workers to 2x(available cores)
+        if max_workers == -1:
+            max_workers = 2*mp.cpu_count()
+               
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Start the load operations and mark each future with its URL
