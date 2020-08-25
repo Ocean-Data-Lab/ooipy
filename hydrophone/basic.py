@@ -31,7 +31,7 @@ import concurrent.futures
 import logging
 
 
-class AcousticData:
+class HydrophoneData:
 
     def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
         fmax=None, print_exceptions=None, limit_seed_files=True, data_gap_mode=0):
