@@ -251,13 +251,14 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
         return None
 
 #TODO revison necessary; function might be superfluous
-'''def get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=None, fmax=None,
+'''
+def get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=None, fmax=None,
     append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
-    '''
-    '''
+
+
     Same as function get acoustic data but using multiprocessing.
-    '''
-    '''
+  
+
 
     # entire time frame is divided into n_process parts of equal length 
     if n_process == None:
@@ -318,7 +319,8 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
 
     self.starttime = starttime
     self.endtime = endtime
-    return st_all'''
+    return st_all
+    '''
 
 def __get_mseed_urls(day_str, node):
     import fsspec
@@ -355,7 +357,7 @@ def __get_mseed_urls(day_str, node):
     
     return data_url_list
 
-def get_acoustic_data_conc(self, starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False,
+def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False,
     data_gap_mode=0):
     '''
     Get acoustic data for specific time frame and node:
