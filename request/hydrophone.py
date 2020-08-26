@@ -220,7 +220,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
     elif data_gap_mode == 1:
         st_all.merge(method=1)
     else:
-        if verbose: print('Invalid Data Gap Mode')
+        if verbose: print('Invalid Data Gap Mode')a
         return None
     # Slice data to desired window                
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
