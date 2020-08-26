@@ -2,6 +2,9 @@
 import numpy as np
 import json
 import os
+import sys
+sys.path.append("..") #TODO: remove this before publishing
+from hydrophone.basic import HydrophoneData #TODO: chnager to from ooipy.hydrophone.basic import HydrophoneData
 from matplotlib import pyplot as plt
 from obspy import read,Stream, Trace
 from obspy.core import UTCDateTime
@@ -19,7 +22,6 @@ import datetime
 import urllib
 import time
 import pandas as pd
-import sys
 from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import pickle
@@ -240,7 +242,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
             if verbose: print('Signal Filtered')
         data = st_all[0]
         #data_available = True
-        return data
+        return HydrophoneData(data.data, data.stats, node)
     except:
         if st_all == None:
             if verbose:

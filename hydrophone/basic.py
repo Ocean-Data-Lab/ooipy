@@ -31,10 +31,9 @@ import concurrent.futures
 import logging
 
 
-class HydrophoneData:
+class HydrophoneData(Trace):
 
-    def __init__(self, starttime=None, endtime=None, node=None, fmin=None,
-        fmax=None, print_exceptions=None, limit_seed_files=True, data_gap_mode=0):
+    def __init__(self, data=np.array([]), header=None, node=''):
         
         ''' 
         Initialize Class OOIHydrophoneData
@@ -120,21 +119,20 @@ class HydrophoneData:
         _freq_dependent_sensitivity_correct(N)
             TODO: applies frequency dependent sensitivity correction to hydrohone data 
         '''
-        self.starttime = starttime
-        self.endtime = endtime
-        self.node = node
-        self.fmin = fmin
-        self.fmax = fmax
-        self.print_exceptions = print_exceptions
-        self.data_available = None
-        self.limit_seed_files = limit_seed_files
-        self.data_gap = False
-        self.data_gap_mode = data_gap_mode
+        super(HydrophoneData, self).__init__(data, header)
 
-        if self.starttime == None or self.endtime == None or self.node == None:
-            self.data = None
-        else:
-            self.get_acoustic_data(self.starttime, self.endtime, self.node, fmin=self.fmin, fmax=self.fmax)
+        self.node = node
+
+        #self.starttime = starttime
+        #self.endtime = endtime
+        #self.node = node
+        #self.fmin = fmin
+        #self.fmax = fmax
+        #self.print_exceptions = print_exceptions
+        #self.data_available = None
+        #self.limit_seed_files = limit_seed_files
+        #self.data_gap = False
+        #self.data_gap_mode = data_gap_mode
 
         self.spectrogram = None
         self.psd = None
