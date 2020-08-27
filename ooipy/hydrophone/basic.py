@@ -122,7 +122,7 @@ class HydrophoneData(Trace):
         '''
         super(HydrophoneData, self).__init__(data, header)
 
-        self.node = node
+        self.stats.location = node
 
         #self.starttime = starttime
         #self.endtime = endtime
@@ -288,24 +288,18 @@ class HydrophoneData(Trace):
         #        ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
         # do segmentation from scratch
         #else:
-        seconds_per_process = (self.stats.endtime - self.stats.starttime).total_seconds() / N
+        seconds_per_process = (self.stats.endtime - self.stats.starttime) / N
         for k in range(N - 1):
             starttime = self.stats.starttime + datetime.timedelta(seconds=k * seconds_per_process)
             endtime = self.stats.starttime + datetime.timedelta(seconds=(k+1) * seconds_per_process)
-            stats_tmp = copy.deepcopy(self.stats)
-            stats_tmp.starttime = starttime
-            stats_tmp.endtime = endtime
-            tmp_obj = HydrophoneData(header=stats_tmp)
-            tmp_obj.data = self.data.slice(starttime=starttime, endtime=endtime)
+            temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
+            tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
             ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
 
         starttime = self.stats.starttime + datetime.timedelta(seconds=(N - 1) * seconds_per_process)
-        stats_tmp = copy.deepcopy(self.stats)
-        stats_tmp.starttime = starttime
-        stats_tmp.endtime = self.stats.endtime
-        tmp_obj = HydrophoneData(header=stats_tmp)
-        tmp_obj.data = self.data.slice(starttime=starttime, endtime=self.stats.endtime)
+        temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.stats.endtime))
+        tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
         ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
         with mp.get_context("spawn").Pool(n_process) as p:
@@ -428,34 +422,25 @@ class HydrophoneData(Trace):
         #        ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # do segmentation from scratch
         if isinstance(split, int) or isinstance(split, float):
-            n_seg = int(np.ceil((self.stats.endtime - self.stats.starttime).total_seconds() / split))
-            seconds_per_process = (self.stats.endtime - self.stats.starttime).total_seconds() / n_seg
+            n_seg = int(np.ceil((self.stats.endtime - self.stats.starttime) / split))
+            seconds_per_process = (self.stats.endtime - self.stats.starttime) / n_seg
             for k in range(n_seg - 1):
                 starttime = self.stats.starttime + datetime.timedelta(seconds=k * seconds_per_process)
                 endtime = self.stats.starttime + datetime.timedelta(seconds=(k+1) * seconds_per_process)
-                stats_tmp = copy.deepcopy(self.stats)
-                stats_tmp.starttime = starttime
-                stats_tmp.endtime = endtime
-                tmp_obj = HydrophoneData(header=stats_tmp)
-                tmp_obj.data = self.data.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
+                temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
+                tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
                 ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
             # treat last segment separately as its length may differ from other segments
             starttime = self.stats.starttime + datetime.timedelta(seconds=(n_seg - 1) * seconds_per_process)
-            stats_tmp = copy.deepcopy(self.stats)
-            stats_tmp.starttime = starttime
-            stats_tmp.endtime = self.stats.endtime
-            tmp_obj = HydrophoneData(header=stats_tmp)
-            tmp_obj.data = self.data.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.stats.endtime))
+            temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.stats.endtime))
+            tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
             ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # use segmentation specified by split
         else:
             ooi_hyd_data_list = []
             for row in split:
-                stats_tmp = copy.deepcopy(self.stats)
-                stats_tmp.starttime = row[0]
-                stats_tmp.endtime = row[1]
-                tmp_obj = HydrophoneData(header=stats_tmp)
-                tmp_obj.data = self.data.slice(starttime=UTCDateTime(row[0]), endtime=UTCDateTime(row[1]))
+                temp_slice = self.slice(starttime=UTCDateTime(row[0]), endtime=UTCDateTime(row[1]))
+                tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
                 ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
         with mp.get_context("spawn").Pool(n_process) as p:
