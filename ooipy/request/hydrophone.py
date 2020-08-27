@@ -4,7 +4,7 @@ import json
 import os
 import sys
 sys.path.append("..") #TODO: remove this before publishing
-from hydrophone.basic import HydrophoneData #TODO: chnager to from ooipy.hydrophone.basic import HydrophoneData
+from ooipy.hydrophone.basic import HydrophoneData
 from matplotlib import pyplot as plt
 from obspy import read,Stream, Trace
 from obspy.core import UTCDateTime
@@ -547,7 +547,7 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
 
 def __read_mseed(url):
     fname = os.path.basename(url)
-    print(f"=== Reading: {fname} ===")
+    #print(f"=== Reading: {fname} ===")
     try:
         st = read(url, apply_calib=True)
     except:

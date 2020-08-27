@@ -1,34 +1,27 @@
 # Import all dependancies
 import numpy as np
-import json
 import os
-from matplotlib import pyplot as plt
+import sys
 from obspy import read,Stream, Trace
 from obspy.core import UTCDateTime
-import math
-from matplotlib import mlab
-from matplotlib.colors import Normalize
-import requests
-from lxml import html
 from scipy import signal
 from scipy import interpolate
-import matplotlib.dates as mdates
-import matplotlib.colors as colors
-import matplotlib
 import datetime
-import urllib
 import time
-import pandas as pd
-import sys
 from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
-import pickle
 import obspy
 import scipy
-import progressbar
 from datetime import timedelta
 import concurrent.futures
-import logging
+import pickle
+
+cwd = os.getcwd()
+ooipy_dir = os.path.dirname(os.path.dirname(cwd))
+sys.path.append(ooipy_dir)
+
+from ooipy.request import hydrophone
+
 
 class Hydrophone_Xcorr:
 
@@ -212,9 +205,10 @@ class Hydrophone_Xcorr:
         if avg_time_seconds % W != 0:
             print('Error: Average Time Must Be Interval of Window')
             return None
+        
         # Initialze Two Classes for Two Hydrophones
-        self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
-        self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
+        #self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
+        #self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
 
         # Calculate end_time
         end_time = start_time + timedelta(minutes=avg_time)
@@ -223,18 +217,18 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        self.ooi1.get_acoustic_data_conc(start_time, end_time, node=self.node1, max_workers=100, verbose=self.verbose)
+        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose)
         
         if verbose: print('Getting Audio from Node 2...')
 
         #Audio from Node 2
-        self.ooi2.get_acoustic_data_conc(start_time, end_time, node=self.node2, max_workers=100, verbose=self.verbose)
+        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose)
         
-        if (self.ooi1.data == None) or (self.ooi2.data == None):
+        if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
             return None, None, None
         #Combine Data into Stream
-        data_stream = obspy.Stream(traces=[self.ooi1.data, self.ooi2.data])
+        data_stream = obspy.Stream(traces=[node1_data, node2_data])
         
         stopwatch_end = time.time()
         print('Time to Download Data from Server: ',stopwatch_end-stopwatch_start)
@@ -318,7 +312,7 @@ class Hydrophone_Xcorr:
         return xcorr_stack, xcorr_norm
     
  
-    def avg_over_mult_periods(self, num_periods, start_time):
+    def avg_over_mult_periods(self, num_periods, start_time, ckpt=False):
         '''
         Computes average over num_periods of averaging periods
         
@@ -358,17 +352,19 @@ class Hydrophone_Xcorr:
             
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
-            try:
-                with open(filename,'wb') as f:
-                    pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                    pickle.dump(xcorr, f)               #Accumulated xcorr
-                    pickle.dump(k,f)                    #avg_period number
-            except:
-                os.makedirs('ckpts')
-                with open(filename,'wb') as f:
-                    pickle.dump(xcorr_short_time, f)
-                    pickle.dump(xcorr, f)
-                    pickle.dump(k,f)
+            
+            if ckpt:
+                try:
+                    with open(filename,'wb') as f:
+                        pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
+                        pickle.dump(xcorr, f)               #Accumulated xcorr
+                        pickle.dump(k,f)                    #avg_period number
+                except:
+                    os.makedirs('ckpts')
+                    with open(filename,'wb') as f:
+                        pickle.dump(xcorr_short_time, f)
+                        pickle.dump(xcorr, f)
+                        pickle.dump(k,f)
 
             # Calculate time variable TODO change to not calculate every loop
             dt = self.Ts
