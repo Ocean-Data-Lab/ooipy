@@ -220,7 +220,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
     elif data_gap_mode == 1:
         st_all.merge(method=1)
     else:
-        if verbose: print('Invalid Data Gap Mode')a
+        if verbose: print('Invalid Data Gap Mode')
         return None
     # Slice data to desired window                
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
@@ -518,7 +518,8 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_w
         if (fmin != None and fmax != None):
             st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
             if verbose: print('Signal Filtered')
-        return st_all[0]
+        #return st_all[0]
+        return HydrophoneData(st_all[0].data, st_all[0].stats, node)
     except:
         if st_all == None:
             if verbose:
