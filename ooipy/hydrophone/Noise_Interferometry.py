@@ -15,6 +15,8 @@ import scipy
 from datetime import timedelta
 import concurrent.futures
 import pickle
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 cwd = os.getcwd()
 ooipy_dir = os.path.dirname(os.path.dirname(cwd))
@@ -176,7 +178,6 @@ class Hydrophone_Xcorr:
 
         self.theta_bearing_d_1_2 = theta_bearing_d_1_2
 
-
     def get_audio(self, start_time):
 
         '''
@@ -217,12 +218,12 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose)
+        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose, data_gap_mode=2)
         
         if verbose: print('Getting Audio from Node 2...')
 
         #Audio from Node 2
-        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose)
+        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose, data_gap_mode=2)
         
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
@@ -309,8 +310,7 @@ class Hydrophone_Xcorr:
         xcorr_stack = np.sum(xcorr_norm,axis=0)
         stopwatch_end = time.time()
         print('Time to Calculate Cross Correlation of 1 period: ',stopwatch_end-stopwatch_start)
-        return xcorr_stack, xcorr_norm
-    
+        return xcorr_stack, xcorr_norm   
  
     def avg_over_mult_periods(self, num_periods, start_time, ckpt=False):
         '''
@@ -376,8 +376,7 @@ class Hydrophone_Xcorr:
         # Calculate Bearing of Max Peak
         bearing_max_global = self.get_bearing_angle(xcorr, t)
 
-        return t, xcorr, bearing_max_global
-    
+        return t, xcorr, bearing_max_global  
     
     def plot_map_bearing(self, bearing_angle):
 
@@ -539,3 +538,18 @@ class Hydrophone_Xcorr:
         self.bearing_max_global = bearing_max_global
 
         return bearing_max_global
+
+    def plot_polar_TDOA(self, xcorr, t):
+        '''
+        plot_polar_TDOA(self, xcorr)
+
+        Inputs:
+        xcorr (numpy array) : array of shape [X,] consisting of an averaged cross correlation
+
+        Outputs:
+        None
+        '''
+        
+        B = np.arccos(1480*t/self.distance)
+        plt.polar(B, xcorr)
+        print(type(B))
