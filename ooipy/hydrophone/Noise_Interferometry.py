@@ -110,7 +110,6 @@ class Hydrophone_Xcorr:
         print('Estimate Time Delay Between Hydrophones: ',self.time_delay,' seconds')
         print('Bearing Between Hydrophone 1 and 2: ', self.theta_bearing_d_1_2,' degrees')
         
-   
     # Calculate Distance Between 2 Hydrophones
     # function from https://www.geeksforgeeks.org/program-distance-two-points-earth/
     def __distance_between_hydrophones(self, coord1, coord2): 
@@ -148,7 +147,6 @@ class Hydrophone_Xcorr:
         self.distance = D
         self.time_delay = D/1480
 
-    
     def __bearing_between_hydrophones(self, coord1, coord2):
         '''
         bearing_between_hydrophones(coord1, coord2) - calculates the bearing in degrees (NSEW) between coord1 and coord2
