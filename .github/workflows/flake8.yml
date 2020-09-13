@@ -16,5 +16,10 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/`
+        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/` > flake8_log.txt
+      - name: Upload flake8 resutls
+        uses: actions/upload-artifact@v2
+        with:
+	  name: flake8_log
+	  path: flake8_log.txt
 
