@@ -28,7 +28,7 @@ from ooipy.request import hydrophone
 class Hydrophone_Xcorr:
 
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True, mp = True, ckpts=True):
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True, mp = True):
         ''' 
         Initialize Class OOIHydrophoneData
 
@@ -51,8 +51,6 @@ class Hydrophone_Xcorr:
             indicates whether to filter the data with bandpass with cutofss [10, 1k]
         mp : bool
             indicates if multiprocessing functions should be used
-        ckpts : bool
-            indicates if checkpoints are saved in working directory ./ckpts
        
         Private Attributes
         ------------------
@@ -66,7 +64,6 @@ class Hydrophone_Xcorr:
             Pulls avg_period amount of data from server
         xcorr_over_avg_period(self, h1, h2)
             Computes cross-correlation for window of length W, averaged over avg_period
-        avg_over_mult_periods(self, num_periods, start_time, ckpts=True)
             runs xcorr_over_avg_period() for num_periods amount of periods
   
         Private Methods
@@ -97,7 +94,6 @@ class Hydrophone_Xcorr:
         self.verbose = verbose
         self.avg_time = avg_time
         self.mp = mp
-        self.ckpts = ckpts
         self.Fs = 64000
         self.Ts = 1/self.Fs
         self.filter_data = filter_data
@@ -226,6 +222,7 @@ class Hydrophone_Xcorr:
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
             return None, None, None
+        
         #Combine Data into Stream
         data_stream = obspy.Stream(traces=[node1_data, node2_data])
         
@@ -254,7 +251,7 @@ class Hydrophone_Xcorr:
             print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
             h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         '''
-        
+
         # Filter Data
         if self.filter_data:
             if self.verbose: print('Filtering Data...')
@@ -264,12 +261,15 @@ class Hydrophone_Xcorr:
         self.data_node1 = h1_data
         self.data_node2 = h2_data
 
+        plt.plot(h1_data)
+        plt.plot(h2_data)
+
         h1_reshaped = np.reshape(h1_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))
         h2_reshaped = np.reshape(h2_data,(int(self.avg_time*60/self.W), int(self.W*self.Fs)))                  
               
         return h1_reshaped, h2_reshaped
     
-    def xcorr_over_avg_period(self, h1, h2):
+    def xcorr_over_avg_period(self, h1, h2, loop=True):
         '''
         finds cross correlation over average period and avereages all correlations
         
@@ -286,10 +286,8 @@ class Hydrophone_Xcorr:
         M = h1.shape[1]
         N = h2.shape[1]
 
-        
         xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
 
-        
         stopwatch_start = time.time()
         #if verbose:
         #    bar = progressbar.ProgressBar(maxval=h1.shape[0], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
@@ -300,17 +298,33 @@ class Hydrophone_Xcorr:
 
         # Normalize Every Short Time Correlation
         xcorr_norm = xcorr / np.max(xcorr,axis=1)[:,np.newaxis]
-
-        #for k in range(h1.shape[0]):
-        #    xcorr[k,:] = scipy.signal.correlate(h1[k,:],h2[k,:],'full')
-        #    if verbose: bar.update(k+1)
         
         xcorr_stack = np.sum(xcorr_norm,axis=0)
+
+        if loop:
+            #Save Checkpoints for every average period
+            filename = './ckpts/ckpt_' + str(self.count) + '.pkl'
+            
+            try:
+                with open(filename,'wb') as f:
+                    #pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
+                    pickle.dump(xcorr_norm, f)               #Accumulated xcorr
+                    #pickle.dump(k,f)                    #avg_period number
+            except:
+                os.makedirs('ckpts')
+                with open(filename,'wb') as f:
+                    #pickle.dump(xcorr_short_time, f)
+                    pickle.dump(xcorr_norm, f)
+                    #pickle.dump(k,f)
+
         stopwatch_end = time.time()
         print('Time to Calculate Cross Correlation of 1 period: ',stopwatch_end-stopwatch_start)
-        return xcorr_stack, xcorr_norm   
+        if loop:
+            return
+        else:
+            return xcorr_stack, xcorr_norm   
  
-    def avg_over_mult_periods(self, num_periods, start_time, ckpt=False):
+    def avg_over_mult_periods(self, num_periods, start_time):
         '''
         Computes average over num_periods of averaging periods
         
@@ -324,6 +338,8 @@ class Hydrophone_Xcorr:
         verbose = self.verbose
         
         first_loop = True
+        self.count = 0
+
         for k in range(num_periods):
             stopwatch_start = time.time()
             if verbose: print('\n\nTime Period: ',k + 1)
@@ -335,6 +351,11 @@ class Hydrophone_Xcorr:
                 continue
             
             h1_processed, h2_processed = self.preprocess_audio(h1,h2)
+            
+            self.xcorr_over_avg_period(h1_processed, h2_processed)
+
+            self.count=self.count+1
+            '''
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
                 xcorr_avg_period, xcorr_short_time = self.xcorr_over_avg_period(h1_processed, h2_processed)
@@ -351,18 +372,22 @@ class Hydrophone_Xcorr:
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
             
-            if ckpt:
+            if self.ckpts:
                 try:
                     with open(filename,'wb') as f:
-                        pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                        pickle.dump(xcorr, f)               #Accumulated xcorr
+                        #pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
+                        pickle.dump(xcorr_avg_period, f)               #Accumulated xcorr
                         pickle.dump(k,f)                    #avg_period number
                 except:
                     os.makedirs('ckpts')
                     with open(filename,'wb') as f:
-                        pickle.dump(xcorr_short_time, f)
-                        pickle.dump(xcorr, f)
+                        #pickle.dump(xcorr_short_time, f)
+                        pickle.dump(xcorr_avg_period, f)
                         pickle.dump(k,f)
+            '''
+        return None
+        '''
+            self.count = self.count + 1
 
             # Calculate time variable TODO change to not calculate every loop
             dt = self.Ts
@@ -375,7 +400,7 @@ class Hydrophone_Xcorr:
         bearing_max_global = self.get_bearing_angle(xcorr, t)
 
         return t, xcorr, bearing_max_global  
-    
+    '''
     def plot_map_bearing(self, bearing_angle):
 
         coord1 = self.hydrophone_locations[self.node1]
@@ -499,7 +524,7 @@ class Hydrophone_Xcorr:
         antipode_coord = [antlat, antlon]
         return antipode_coord    
 
-    def filter_bandpass(self, data):
+    def filter_bandpass(self, data, Wlow=15, Whigh=25):
         
         #make data zero mean
         data = data - np.mean(data)
@@ -510,14 +535,15 @@ class Hydrophone_Xcorr:
         data_ds_32 = scipy.signal.decimate(data_ds_4,8)
         # sampling rate = 2000 Hz: Nyquist rate = 1000 Hz
 
-        N = 5
-        Wn = 10
+        N = 4
+
         fs = self.Fs/32
-        b,a = signal.butter(N=N, Wn=Wn, btype='high',fs=fs)
+        b,a = signal.butter(N=N, Wn=[Wlow, Whigh], btype='bandpass',fs=fs)
 
         data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
 
         data_filt = scipy.signal.resample(data_filt_ds ,data.shape[0])
+
         return(data_filt)
     
     def get_bearing_angle(self, xcorr, t):
