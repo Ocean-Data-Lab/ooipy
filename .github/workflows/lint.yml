@@ -2,10 +2,10 @@ name: Lint
 
 on:
   pull_request:
-    paths: 
+    paths:
       - '*.py'
   push:
-    paths: 
+    paths:
       - '*.py'
 
 jobs:
