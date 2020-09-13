@@ -20,6 +20,6 @@ jobs:
       - name: Upload flake8 resutls
         uses: actions/upload-artifact@v2
         with:
-          name: flake8
+          name: flake8-artifact
           path: flake8_log.txt
 
