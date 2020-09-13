@@ -21,6 +21,6 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: flake8-artifact
+          name: flake8_artifact.txt
           path: flake8_log.txt
 
