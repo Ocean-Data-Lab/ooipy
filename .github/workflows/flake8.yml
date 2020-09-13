@@ -11,6 +11,8 @@ jobs:
         with:
           python-version: 3.7.9
           architecture: x64
+      - name: Checkout PyTorch
+        uses: actions/checkout@master
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
