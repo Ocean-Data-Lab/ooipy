@@ -20,7 +20,7 @@ jobs:
         run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/`
       - name: Store flake8 results
         if: ${{ always() }}
-        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/` |$ tee flake8_log.txt
+        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/` |& tee flake8_log.txt
       - name: Upload flake8 resutls
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
