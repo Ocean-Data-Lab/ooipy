@@ -4,14 +4,15 @@ from obspy import read, Stream
 from obspy.core import UTCDateTime
 from lxml import html
 from datetime import timedelta
-
 import numpy as np
 import os
 import sys
-sys.path.append("..")  # TODO: remove this before publishing
 import requests
 import multiprocessing as mp
 import concurrent.futures
+
+sys.path.append("..")  # TODO: remove this before publishing
+
 
 
 
