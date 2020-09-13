@@ -1,6 +1,6 @@
 name: Flake8
 
-on: [pull_request]
+on: [pull_request, push]
 
 jobs:
   flake8_py3:

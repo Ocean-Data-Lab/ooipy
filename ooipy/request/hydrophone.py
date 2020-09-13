@@ -1,38 +1,17 @@
 # Import all dependancies
+from ooipy.hydrophone.basic import HydrophoneData
+from obspy import read, Stream
+from obspy.core import UTCDateTime
+from lxml import html
+from datetime import timedelta
 import numpy as np
-import json
 import os
 import sys
-sys.path.append("..") #TODO: remove this before publishing
-from ooipy.hydrophone.basic import HydrophoneData
-from matplotlib import pyplot as plt
-from obspy import read,Stream, Trace
-from obspy.core import UTCDateTime
-import math
-from matplotlib import mlab
-from matplotlib.colors import Normalize
 import requests
-from lxml import html
-from scipy import signal
-from scipy import interpolate
-import matplotlib.dates as mdates
-import matplotlib.colors as colors
-import matplotlib
-import datetime
-import urllib
-import time
-import pandas as pd
-from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
-import pickle
-import obspy
-import scipy
-import progressbar
-from datetime import timedelta
 import concurrent.futures
 
-
-
+sys.path.append("..")  # TODO: remove this before publishing
 
 def _web_crawler_acoustic_data(day_str, node):
     '''
@@ -44,19 +23,19 @@ def _web_crawler_acoustic_data(day_str, node):
         specified date, None is returned.
     '''
 
-    if node == '/LJ01D': #LJ01D'  Oregon Shelf Base Seafloor
+    if node == '/LJ01D':  # LJ01D'  Oregon Shelf Base Seafloor
         array = '/CE02SHBP'
         instrument = '/11-HYDBBA106'
-    if node == '/LJ01A': #LJ01A Oregon Slope Base Seafloore
+    if node == '/LJ01A':  # LJ01A Oregon Slope Base Seafloore
         array = '/RS01SLBS'
         instrument = '/09-HYDBBA102'
-    if node == '/PC01A': #Oregan Slope Base Shallow
+    if node == '/PC01A':  # Oregan Slope Base Shallow
         array = '/RS01SBPS'
         instrument = '/08-HYDBBA103'
-    if node == '/PC03A': #Axial Base Shallow Profiler
+    if node == '/PC03A':  # Axial Base Shallow Profiler
         array = '/RS03AXPS'
         instrument = '/08-HYDBBA303'
-    if node == '/LJ01C': #Oregon Offshore Base Seafloor
+    if node == '/LJ01C':  # Oregon Offshore Base Seafloor
         array = '/CE04OSBP'
         instrument = '/11-HYDBBA105'
         
