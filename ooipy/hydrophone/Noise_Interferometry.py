@@ -28,7 +28,7 @@ from ooipy.request import hydrophone
 class Hydrophone_Xcorr:
 
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True, mp = True):
+    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True):
         ''' 
         Initialize Class OOIHydrophoneData
 
@@ -577,3 +577,177 @@ class Hydrophone_Xcorr:
         B = np.arccos(1480*t/self.distance)
         plt.polar(B, xcorr)
         print(type(B))
+
+# Implement Hydrophone_Xcorr Class as list of functions
+
+
+def calculate_NCF(node1, node2, avg_time, start_time, loop, count, W=30, verbose=True, filter_data=True):
+    
+    stopwatch_start = time.time()
+    count = 0
+    h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2, verbose=verbose, W=W)
+    h1_processed, h2_processed = preprocess_audio(h1_data, h2_data, filter_data=filter_data, verbose=True, Fs=Fs, W=W, avg_time=avg_time)
+    calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
+    stopwatch_end = time.time()
+    print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end-stopwatch_start} \n\n')
+
+def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
+        '''
+        Downloads, and Reshapes Data from OOI server for given average period and start time
+        
+        Inputs:
+        start_time - indicates UTC time that data starts with
+       
+        Outputs:
+        h1_reshaped : float
+            hydrophone data from node 1 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+        h2_reshaped : float
+            hydrophone data from node 2 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+        flag : bool
+            TODO flag stucture to be added later
+        '''
+        
+        flag = False
+        
+        avg_time_seconds = avg_time * 60
+        
+        if avg_time_seconds % W != 0:
+            print('Error: Average Time Must Be Interval of Window')
+            return None
+        
+        # Calculate end_time
+        end_time = start_time + timedelta(minutes=avg_time)
+
+        if verbose: print('   Getting Audio from Node 1...')
+        
+        #Audio from Node 1
+        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
+        
+        if verbose: print('   Getting Audio from Node 2...')
+
+        #Audio from Node 2
+        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+        
+        if (node1_data == None) or (node2_data == None):
+            print('Error with Getting Audio')
+            return None, None, None
+        
+        #Combine Data into Stream
+        data_stream = obspy.Stream(traces=[node1_data, node2_data])
+        
+        if data_stream[0].data.shape != data_stream[1].data.shape:
+            print('Data streams are not the same length. Flag to be added later')
+            # TODO: Set up flag structure of some kind
+        
+        Fs = node1_data.stats.sampling_rate   
+
+        # Cut off extra points if present
+        h1_data = data_stream[0].data[:int(avg_time*60*Fs)]
+        h2_data = data_stream[1].data[:int(avg_time*60*Fs)]
+        
+
+        return h1_data, h2_data, Fs, flag
+
+def preprocess_audio(h1_data, h2_data, filter_data, W, avg_time, verbose, Fs):
+        
+    #Previous Fix for data_gap, Recklessly added zeros
+    '''    
+    if ((h1_data.shape[0] < avg_time*60*self.Fs)):
+        print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
+        h1_data = np.pad(h1_data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
+
+    if ((h2_data.shape[0] < avg_time*60*self.Fs)):
+        print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
+        h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
+    '''
+
+    # Filter Data
+    if filter_data:
+        if verbose: print('   Filtering Data...')
+
+        h1_data = filter_bandpass(h1_data)
+        h2_data = filter_bandpass(h2_data)
+
+    #plt.plot(h1_data)
+    #plt.plot(h2_data)
+
+    h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
+    h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs)))                  
+            
+    return h1_reshaped, h2_reshaped
+   
+def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
+    '''
+    finds cross correlation over average period and avereages all correlations
+    
+    Inputs:
+    h1 - audio data from hydrophone 1 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
+    h2 - audio data from hydrophone 2 of shape [avg_time(s)/W(s), W*Fs], 1st axis contains short time NCCF stacked in 0th axis
+    
+    Output :
+    avg_xcorr of shape (N) where N = W*Fs
+    xcorr - xcorr for every short time window within average period shape [avg_time(s)/W(s), N]
+    '''
+
+    M = h1.shape[1]
+    N = h2.shape[1]
+
+    xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
+    
+    if verbose: print('   Correlating Data...')
+    xcorr = signal.fftconvolve(h1,np.flip(h2,axis=1),'full',axes=1)
+
+    # Normalize Every Short Time Correlation
+    xcorr_norm = xcorr / np.max(xcorr,axis=1)[:,np.newaxis]
+    
+    xcorr_stack = np.sum(xcorr_norm,axis=0)
+
+    if loop:
+        #Save Checkpoints for every average period
+        filename = './ckpts/ckpt_' + str(count) + '.pkl'
+        
+        try:
+            with open(filename,'wb') as f:
+                #pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
+                pickle.dump(xcorr_norm, f)               #Accumulated xcorr
+                #pickle.dump(k,f)                    #avg_period number
+        except:
+            os.makedirs('ckpts')
+            with open(filename,'wb') as f:
+                #pickle.dump(xcorr_short_time, f)
+                pickle.dump(xcorr_norm, f)
+                #pickle.dump(k,f)
+    
+    if loop:
+        return
+    else:
+        return xcorr_stack, xcorr_norm   
+
+def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, count, W=30, verbose=True):
+
+    for k in range(num_periods):
+        print(f'Calculting NCF for Period {k+1}:')
+        calculate_NCF(node1, node2, avg_time, start_time, loop=True, count=k, W=30, verbose=True)
+
+def filter_bandpass(data, Wlow=15, Whigh=25):
+    
+    #make data zero mean
+    data = data - np.mean(data)
+    # decimate by 4
+    data_ds_4 = scipy.signal.decimate(data,4)
+
+    # decimate that by 8 for total of 32
+    data_ds_32 = scipy.signal.decimate(data_ds_4,8)
+    # sampling rate = 2000 Hz: Nyquist rate = 1000 Hz
+
+    N = 4
+
+    #HARDCODED TODO: MAKE NOT HARDCODED
+    fs = 64000/32
+    b,a = signal.butter(N=N, Wn=[Wlow, Whigh], btype='bandpass',fs=fs)
+
+    data_filt_ds= scipy.signal.lfilter(b,a,data_ds_32)
+
+    data_filt = scipy.signal.resample(data_filt_ds ,data.shape[0])
+
+    return(data_filt)
