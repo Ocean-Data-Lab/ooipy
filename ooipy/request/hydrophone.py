@@ -212,7 +212,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
                     #return None                   
 
                 if append: st_all += st
-        
+
     # Merge all traces together
     if data_gap_mode == 0:
         st_all.merge(fill_value ='interpolate', method=1)
@@ -225,15 +225,15 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=Tru
     # Slice data to desired window                
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
+    if len(st_all) == 0:
+        if verbose:
+            print('No data available for selected time frame.')
+        return None
+
     if isinstance(st_all[0].data, np.ma.core.MaskedArray):
         #data_gap = True
         if verbose: print('Data has Gaps') #Note this will only trip if masked array is returned
                                                             #interpolated is treated as if there is no gap
-    if st_all != None:
-        if len(st_all) == 0:
-            if verbose:
-                print('No data available for selected time frame.')
-            return None
     
     #Filter Data
     try:
@@ -479,9 +479,8 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_w
                 st_all = st
             else:
                 st_all += st
-    
+
     ##Merge all traces together
-    
     #Interpolation
     if data_gap_mode == 0:
         st_all.merge(fill_value ='interpolate', method=1)
@@ -503,15 +502,15 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_w
     # Slice data to desired window                
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
+    if len(st_all) == 0:
+        if verbose:
+            print('No data available for selected time frame.')
+        return None
+
     if isinstance(st_all[0].data, np.ma.core.MaskedArray):
         #data_gap = True
         if verbose: print('Data has Gaps') #Note this will only trip if masked array is returned
                                                             #interpolated is treated as if there is no gap
-    if st_all != None:
-        if len(st_all) == 0:
-            if verbose:
-                print('No data available for selected time frame.')
-            return None
     
     #Filter Data
     try:
