@@ -14,6 +14,8 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
+        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/`
+      - name: Store flake8 results
         run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/` 2>&1 | tee flake8_log.txt
       - name: Upload flake8 resutls
         if: ${{ always() }}
