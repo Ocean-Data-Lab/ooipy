@@ -77,7 +77,7 @@ def _web_crawler_acoustic_data(day_str, node):
     return data_url_list
 
 
-def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
+def get_acoustic_data(starttime,endtime,node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0 ):
     '''
     Get acoustic data for specific time frame and node:
 
