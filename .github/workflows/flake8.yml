@@ -1,3 +1,4 @@
+# adapted from https://github.com/marketplace/actions/flake8-action
 name: Flake8
 
 on: [pull_request, push]
@@ -16,5 +17,11 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/`
+        run: flake8 --ignore N802,N806 --exclude=setup.py,ooipy/tests,__init__.py,ooipy/__init__.py,ooipy/request/__init__.py,ooipy/hydrophone/__init__.py,,ooipy/ctd/__init__.py,ooipy/surface_buoy/__init__.py,ooipy/visualize/__init__.py,docs --tee --output-file=flake8_log.txt `find . -name *.py | grep -v ./setup.py | grep -v /doc/`
+      - name: Upload flake8 resutls
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: flake8_artifact
+          path: flake8_log.txt
 
