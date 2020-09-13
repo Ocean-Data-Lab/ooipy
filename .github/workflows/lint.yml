@@ -17,8 +17,5 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        uses: suo/flake8-github-action@releases/v1
-        with:
-          checkName: 'flake8'   # NOTE: this needs to be the same as the job name
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: flake8 --ignore N802,N806 `find . -name *.py | grep -v setup.py | grep -v /doc/`
+        
