@@ -1,7 +1,7 @@
 <img src='imgs/OOIPY_Logo.png' align="right" width=150>
 
 # OOIPY 
-![PEP8](https://github.com/ooipy/ooipy/workflows/Flake8/badge.svg?branch=master)
+![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master)
 
 A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data
 
