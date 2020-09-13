@@ -13,10 +13,6 @@ import concurrent.futures
 
 sys.path.append("..")  # TODO: remove this before publishing
 
-
-
-
-
 def _web_crawler_acoustic_data(day_str, node):
     '''
     get URLs for a specific day from OOI raw data server
