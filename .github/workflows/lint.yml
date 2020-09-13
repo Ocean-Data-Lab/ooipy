@@ -1,21 +1,15 @@
-name: flake8
-
-on:
-  pull_request:
-  push:
+on: [pull_request]
 
 jobs:
-  flake8:
-    name: falke8 style checker
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: setup Python
-        uses: actions/setup-python@v1
+      - uses: actions/checkout@v1
+      - uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
         with:
-          python-version: 3.7.9
-          architecture: x64
-      - name: Install flake8
-        run: pip install flake8
-      - name: Run flake8
-        run: flake8 --ignore N802,N806 --show-source --statistics
-        
+          # The GitHub API token to create reviews with
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Fail if "new" violations detected or "any", default "new"
+          failIf: new
+          # Additional arguments to pass to flake8, default "." (current directory)
+          args: "--ignore=N802,N806 ."
