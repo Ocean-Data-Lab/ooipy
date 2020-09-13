@@ -1,4 +1,11 @@
 __pycache__/
 .ipynb_checkpoints/
-.vscode
+.vscode/
 .DS_Store
+ooipy/ctd/__pycache__/
+ooipy/hydrophone/__pycache__/
+ooipy/request/__pycache__/
+ooipy/surface_buoy/__pycache__/
+ooipy/tests/__pycache__/
+ooipy/visualize/__pycache__/
+ooipy/tests/.ipynb_checkpoints/
