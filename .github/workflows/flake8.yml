@@ -17,10 +17,10 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        run: flake8 --ignore N802,N806 --exclude=setup.py,*__init__.py `find . -name *.py | grep -v ./setup.py | grep -v /doc/`
-      - name: Store flake8 results
-        if: ${{ always() }}
-        run: flake8 --ignore N802,N806 `find . -name *.py | grep -v ./setup.py | grep -v /doc/` &> flake8_log.txt
+        run: flake8 --ignore N802,N806 --exclude=setup.py,__init__.py,ooipy/__init__.py,ooipy/request/__init__.py,ooipy/hydrophone/__init__.py,,ooipy/ctd/__init__.py,ooipy/surface_buoy/__init__.py,ooipy/visualize/__init__.py --tee --output-file=flake8_log.txt `find . -name *.py | grep -v ./setup.py | grep -v /doc/`
+      #- name: Store flake8 results
+      #  if: ${{ always() }}
+      #  run: flake8 --ignore N802,N806 `find . -name *.py | grep -v ./setup.py | grep -v /doc/` &> flake8_log.txt
       - name: Upload flake8 resutls
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
