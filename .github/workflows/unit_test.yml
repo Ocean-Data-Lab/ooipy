@@ -44,9 +44,9 @@ jobs:
     #- run: exec bash -l
     #- name: Activate OOI env
     #  run: conda activate ooi
-    - name: check envs
-      if: ${{ always() }}
-      run: conda env list 
+    #- name: check envs
+    #  if: ${{ always() }}
+    #  run: conda env list 
     #- name: add conda forge
     #  run: conda config --add channels conda-forge
     #- name: create obspy env
@@ -54,4 +54,9 @@ jobs:
     #- run: conda init bash
     #- name: activate obspy
     #  run: conda activate obspy
+    - name: install pytest
+      run: conda install pytest
+    - name: run unit tests
+      run: python3 -m pytest
+   
     
