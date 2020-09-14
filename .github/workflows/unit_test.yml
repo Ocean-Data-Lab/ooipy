@@ -20,4 +20,10 @@ jobs:
       uses: s-weigand/setup-conda@v1
     - run: conda --version
     - run: which python
+    - name: add conda forge
+      run: conda config --add channels conda-forge
+    - name: create obspy env
+      run: conda create -n obspy python=3.8
+    - name: activate obspy
+      run: conda activate obspy
     
