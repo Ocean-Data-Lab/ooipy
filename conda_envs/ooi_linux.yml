@@ -39,6 +39,7 @@ dependencies:
   - idna=2.9=py_1
   - importlib-metadata=1.6.1=py37_0
   - importlib_metadata=1.6.1=0
+  - iniconfig=1.0.1=pyh9f0ad1d_0
   - intel-openmp=2020.1=217
   - ipykernel=5.3.0=py37h5ca1d4c_0
   - ipython=7.15.0=py37_0
@@ -79,6 +80,7 @@ dependencies:
   - mkl-service=2.3.0=py37he904b0f_0
   - mkl_fft=1.1.0=py37h23d657b_0
   - mkl_random=1.1.1=py37h0573a6f_0
+  - more-itertools=8.5.0=py_0
   - nbconvert=5.6.1=py37_0
   - nbformat=5.0.7=py_0
   - ncurses=6.2=he6710b0_1
@@ -99,11 +101,13 @@ dependencies:
   - pickleshare=0.7.5=py37_0
   - pip=20.1.1=py37_1
   - plotly=4.8.2=py_0
+  - pluggy=0.13.1=py37hc8dfbb8_2
   - progressbar=2.5=py_0
   - prometheus_client=0.8.0=py_0
   - prompt-toolkit=3.0.5=py_0
   - prompt_toolkit=3.0.5=0
   - ptyprocess=0.6.0=py37_0
+  - py=1.9.0=pyh9f0ad1d_0
   - pycparser=2.20=py_0
   - pygments=2.6.1=py_0
   - pyopenssl=19.1.0=py_1
@@ -134,6 +138,7 @@ dependencies:
   - testpath=0.4.4=py_0
   - thredds_crawler=1.5.4=py_1
   - tk=8.6.10=hbc83047_0
+  - toml=0.10.1=pyh9f0ad1d_0
   - tornado=6.0.4=py37h7b6447c_1
   - traitlets=4.3.3=py37_0
   - urllib3=1.25.9=py_0
@@ -146,5 +151,9 @@ dependencies:
   - zeromq=4.3.2=he6710b0_2
   - zipp=3.1.0=py_0
   - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - multidict==4.7.6
+    - pytest==6.0.2
+    - typing-extensions==3.7.4.3
 prefix: /home/jhrag/anaconda3/envs/ooi
 
