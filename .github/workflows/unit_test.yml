@@ -35,7 +35,7 @@ jobs:
       #  conda_channels: anaconda, conda-forge
     #- run: conda --version
     #- run: which python
-    - run: source .bashrc
+    #- run: source .bashrc
     #- run: cd conda_envs
     #- run: conda env list
     #- name: enable conda activate
