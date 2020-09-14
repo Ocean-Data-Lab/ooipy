@@ -54,9 +54,9 @@ jobs:
     #- run: conda init bash
     #- name: activate obspy
     #  run: conda activate obspy
-    - name: install pytest
-      run: conda install pytest
+    #- name: install pytest
+    #  run: conda install pytest
     - name: run unit tests
-      run: python3 -m pytest
+      run: pytest
    
     
