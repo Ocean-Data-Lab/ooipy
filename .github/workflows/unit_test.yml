@@ -19,6 +19,7 @@ jobs:
     - name: Install conda
       uses: s-weigand/setup-conda@v1
       with:
+        activate-conda: false
         update-conda: true
         conda_channels: anaconda, conda-forge
     - run: conda --version
