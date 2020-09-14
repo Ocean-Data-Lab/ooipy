@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'OOIPY'
+project = 'ooipy'
 copyright = '2020, Felix Schwock, John Ragland'
 author = 'Felix Schwock, John Ragland'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.0'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
