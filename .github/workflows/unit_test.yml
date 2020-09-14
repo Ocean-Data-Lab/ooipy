@@ -19,10 +19,12 @@ jobs:
     - name: Install conda
       uses: goanpeca/setup-miniconda@v1
       with:
+        activate-environment: ooi
+        environment-file: conda_envs/ooi_linux.yml
         auto-update-conda: true
         python-version: 3.8
         miniconda-version: "latest"
-        #activate-environment: test
+        auto-activate-base: false
     - shell: bash -l {0}
       run: |
         conda info
@@ -48,6 +50,7 @@ jobs:
       run: conda activate test
     - name: check envs
       if: ${{ always() }}
+      shell: bash -l {0}
       run: conda env list 
     #- name: add conda forge
     #  run: conda config --add channels conda-forge
@@ -57,7 +60,8 @@ jobs:
     #- name: test package import
     #  run: python3
     #- run: import obspy
-    #- name: run unit tests
-    #  run: py.test ooipy
+    - name: run unit tests
+      shell: bash -l {0}
+      run: py.test ooipy
    
     
