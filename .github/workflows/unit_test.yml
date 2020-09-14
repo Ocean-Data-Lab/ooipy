@@ -42,7 +42,7 @@ jobs:
     #- run: conda init bash
     #- run: exec bash -l
     - name: Activate OOI env
-      run: conda activate test
+      run: source activate test
     - name: check envs
       if: ${{ always() }}
       run: conda env list 
@@ -54,7 +54,7 @@ jobs:
     #- name: test package import
     #  run: python3
     #- run: import obspy
-    - name: run unit tests
-      run: py.test ooipy
+    #- name: run unit tests
+    #  run: py.test ooipy
    
     
