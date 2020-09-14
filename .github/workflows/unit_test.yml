@@ -22,8 +22,8 @@ jobs:
         auto-update-conda: true
         python-version: 3.8
         miniconda-version: "latest"
-        activate-environment: test
-    - shell: bash
+        #activate-environment: test
+    - shell: bash -l {0}
       run: |
         conda info
         conda list
@@ -44,6 +44,7 @@ jobs:
     #- run: conda init bash
     #- run: exec bash -l
     - name: Activate OOI env
+      shell: bash -l {0}
       run: conda activate test
     - name: check envs
       if: ${{ always() }}
