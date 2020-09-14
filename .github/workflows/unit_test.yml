@@ -12,10 +12,10 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
+    #- name: Set up Python 3.8
+    #  uses: actions/setup-python@v1
+    #  with:
+    #    python-version: 3.8
     - name: Install conda
       uses: goanpeca/setup-miniconda@v1
       with:
@@ -37,11 +37,11 @@ jobs:
     #- run: which python
     #- run: source ~/.bashrc
     #- run: cd conda_envs
-    #- run: ls
+    - run: conda env list
     #- name: Install OOI env
     #  run: conda env create -f conda_envs/ooi_linux.yml
-    - name: Activate OOI env
-      run: conda activate ooi 
+    #- name: Activate OOI env
+    #  run: conda activate ooi 
     #- name: add conda forge
     #  run: conda config --add channels conda-forge
     #- name: create obspy env
