@@ -37,12 +37,12 @@ jobs:
     - run: conda env list
     #- name: create ooi env
     #  run: conda env create -f conda_envs/ooi_linux.yml
-    #- name: enable conda activate
-    #  run: eval "$(conda shell.bash hook)"
+    - name: enable conda activate
+      run: eval "$(conda shell.bash hook)"
     #- run: conda init bash
     #- run: exec bash -l
     - name: Activate OOI env
-      run: source activate /usr/share/miniconda/envs/test
+      run: conda activate test
     - name: check envs
       if: ${{ always() }}
       run: conda env list 
