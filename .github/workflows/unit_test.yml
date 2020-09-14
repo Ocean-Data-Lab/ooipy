@@ -42,7 +42,7 @@ jobs:
     #- run: conda init bash
     #- run: exec bash -l
     - name: Activate OOI env
-      run: source activate test
+      run: source activate /usr/share/miniconda/envs/test
     - name: check envs
       if: ${{ always() }}
       run: conda env list 
