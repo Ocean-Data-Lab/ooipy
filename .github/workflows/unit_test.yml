@@ -51,8 +51,8 @@ jobs:
     #  run: conda config --add channels conda-forge
     #- name: create obspy env
     #  run: conda create -n obspy python=3.8
-    #- run: conda init bash
-    #- name: activate obspy
+    - run: conda init fish
+    - name: activate obspy
     #  run: conda activate obspy
     #- name: test package import
     #  run: python3
