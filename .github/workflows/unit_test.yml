@@ -17,18 +17,29 @@ jobs:
       with:
         python-version: 3.8
     - name: Install conda
-      uses: s-weigand/setup-conda@v1
+      uses: goanpeca/setup-miniconda@v1
       with:
-        activate-conda: false
-        update-conda: true
-        conda_channels: anaconda, conda-forge
-    - run: conda --version
-    - run: which python
-    - run: source ~/.bashrc
+        activate-environment: ooi
+        environment-file: conda_envs/ooi_linux.yml
+        python-version: 3.8
+        #condarc-file: etc/example-condarc.yml
+        auto-activate-base: false
+    - shell: bash -l {0}
+      run: |
+        conda info
+        conda list
+      #uses: s-weigand/setup-conda@v1
+      #with:
+      #  activate-conda: false
+      #  update-conda: true
+      #  conda_channels: anaconda, conda-forge
+    #- run: conda --version
+    #- run: which python
+    #- run: source ~/.bashrc
     #- run: cd conda_envs
     #- run: ls
-    - name: Install OOI env
-      run: conda env create -f conda_envs/ooi_linux.yml
+    #- name: Install OOI env
+    #  run: conda env create -f conda_envs/ooi_linux.yml
     - name: Activate OOI env
       run: conda activate ooi 
     #- name: add conda forge
