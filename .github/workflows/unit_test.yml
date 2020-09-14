@@ -40,6 +40,8 @@ jobs:
     - run: conda env list
     - name: enable conda activate
       run: eval "$(conda shell.bash hook)"
+    - run: conda init bash
+    - run: exec bash -l
     - name: Activate OOI env
       run: conda activate ooi 
     #- name: add conda forge
