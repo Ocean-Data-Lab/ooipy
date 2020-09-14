@@ -43,7 +43,10 @@ jobs:
     - run: conda init bash
     - run: exec bash -l
     - name: Activate OOI env
-      run: conda activate ooi 
+      run: conda activate ooi
+    - name: check envs
+      if: ${{ always() }}
+      run: conda env list 
     #- name: add conda forge
     #  run: conda config --add channels conda-forge
     #- name: create obspy env
