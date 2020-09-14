@@ -723,7 +723,7 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
     else:
         return xcorr_stack, xcorr_norm   
 
-def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, count, W=30, verbose=True):
+def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W=30, verbose=True):
 
     for k in range(num_periods):
         print(f'Calculting NCF for Period {k+1}:')
