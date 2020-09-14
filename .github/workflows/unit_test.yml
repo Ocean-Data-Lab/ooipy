@@ -20,10 +20,10 @@ jobs:
       uses: s-weigand/setup-conda@v1
     - run: conda --version
     - run: which python
-    - run: cd conda_envs
+    #- run: cd conda_envs
     - run: ls
     - name: Install OOI env
-      run: conda env create -f ooi_linux.yml
+      run: conda env create -f conda_envs/ooi_linux.yml
     - name: Activate OOI env
       run: conda activate ooi 
     #- name: add conda forge
