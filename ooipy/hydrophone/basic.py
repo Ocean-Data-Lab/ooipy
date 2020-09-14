@@ -254,7 +254,7 @@ class HydrophoneData(Trace):
                     specgram.extend(specgram_list[i].values)
                 self.spectrogram = Spectrogram(np.array(time_specgram), specgram_list[0].freq, np.array(specgram))
                 return self.spectrogram
-            except:
+            except Exception:
                 if verbose:
                     print('Cannot compute spectrogram')
                 self.spectrogram = None
@@ -407,7 +407,7 @@ class HydrophoneData(Trace):
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
                 self.psd_list = p.starmap(_psd_mp_helper, ooi_hyd_data_list)
-            except:
+            except Exception:
                 if verbose:
                     print('Cannot compute PSd list')
                 self.psd_list = None

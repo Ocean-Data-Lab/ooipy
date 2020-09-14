@@ -43,7 +43,7 @@ def _web_crawler_acoustic_data(day_str, node):
     mainurl = 'https://rawdata.oceanobservatories.org/files' + array + node + instrument + day_str
     try:
         mainurlpage = requests.get(mainurl, timeout=60)
-    except:
+    except Exception:
         print('Timeout URL request')
         return None
     webpage = html.fromstring(mainurlpage.content)
@@ -158,7 +158,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                         st += read(data_url_list[i], apply_calib=True)
                     else:
                         st = read(data_url_list[i], apply_calib=True)
-                except:
+                except Exception:
                     if verbose:
                         print(f"Data Segment, {data_url_list[i - 1]} or {data_url_list[i]} Broken")
                     # self.data = None
@@ -168,7 +168,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
             else:
                 try:
                     st = read(data_url_list[i], apply_calib=True)
-                except:
+                except Exception:
                     if verbose:
                         print(f"Data Segment, {data_url_list[i]} Broken")
                     # self.data = None
@@ -188,7 +188,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                 try:
                     if append:
                         st = read(data_url_list[i], apply_calib=True)
-                except:
+                except Exception:
                     if verbose:
                         print(f"Data Segment, {data_url_list[i]} Broken")
                     # self.data = None
@@ -231,7 +231,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         data = st_all[0]
         # data_available = True
         return HydrophoneData(data.data, data.stats, node)
-    except:
+    except Exception:
         if st_all is None:
             if verbose:
                 print('No data available for selected time frame.')
@@ -516,7 +516,7 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_w
                 print('Signal Filtered')
         # return st_all[0]
         return HydrophoneData(st_all[0].data, st_all[0].stats, node)
-    except:
+    except Exception:
         if st_all is None:
             if verbose:
                 print('No data available for selected time frame.')
@@ -546,7 +546,7 @@ def __read_mseed(url):
     # print(f"=== Reading: {fname} ===")
     try:
         st = read(url, apply_calib=True)
-    except:
+    except Exception:
         print(f'Data Segment {url} Broken')
 
         return None

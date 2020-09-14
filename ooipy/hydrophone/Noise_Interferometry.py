@@ -17,12 +17,11 @@ import concurrent.futures
 import pickle
 from matplotlib import pyplot as plt
 import seaborn as sns
+from ooipy.request import hydrophone
 
 cwd = os.getcwd()
 ooipy_dir = os.path.dirname(os.path.dirname(cwd))
 sys.path.append(ooipy_dir)
-
-from ooipy.request import hydrophone
 
 
 class Hydrophone_Xcorr:
@@ -321,7 +320,7 @@ class Hydrophone_Xcorr:
                     # pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
                     pickle.dump(xcorr_norm, f)  # Accumulated xcorr
                     # pickle.dump(k,f)                    #avg_period number
-            except:
+            except Exception:
                 os.makedirs('ckpts')
                 with open(filename, 'wb') as f:
                     # pickle.dump(xcorr_short_time, f)
@@ -736,7 +735,7 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
                 # pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
                 pickle.dump(xcorr_stack, f)  # Accumulated xcorr
                 # pickle.dump(k,f)                    #avg_period number
-        except:
+        except Exception:
             os.makedirs('ckpts')
             with open(filename, 'wb') as f:
                 # pickle.dump(xcorr_short_time, f)
