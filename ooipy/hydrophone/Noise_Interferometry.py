@@ -583,11 +583,14 @@ class Hydrophone_Xcorr:
 
 def calculate_NCF(node1, node2, avg_time, start_time, loop, count, W=30, verbose=True, filter_data=True):
     
+    #Start Timing
     stopwatch_start = time.time()
-    count = 0
+
     h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2, verbose=verbose, W=W)
     h1_processed, h2_processed = preprocess_audio(h1_data, h2_data, filter_data=filter_data, verbose=True, Fs=Fs, W=W, avg_time=avg_time)
     calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
+
+    #End Timing
     stopwatch_end = time.time()
     print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end-stopwatch_start} \n\n')
 
@@ -705,17 +708,18 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
     if loop:
         #Save Checkpoints for every average period
         filename = './ckpts/ckpt_' + str(count) + '.pkl'
+        print(filename)
         
         try:
             with open(filename,'wb') as f:
                 #pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                pickle.dump(xcorr_norm, f)               #Accumulated xcorr
+                pickle.dump(xcorr_stack, f)               #Accumulated xcorr
                 #pickle.dump(k,f)                    #avg_period number
         except:
             os.makedirs('ckpts')
             with open(filename,'wb') as f:
                 #pickle.dump(xcorr_short_time, f)
-                pickle.dump(xcorr_norm, f)
+                pickle.dump(xcorr_stack, f)
                 #pickle.dump(k,f)
     
     if loop:
