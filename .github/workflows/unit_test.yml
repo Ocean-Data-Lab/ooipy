@@ -54,10 +54,10 @@ jobs:
     #- run: conda init bash
     #- name: activate obspy
     #  run: conda activate obspy
-    - name: test package import
-      run: python3
-    - run: import obspy
-    #- name: run unit tests
-    #  run: pytest
+    #- name: test package import
+    #  run: python3
+    #- run: import obspy
+    - name: run unit tests
+      run: py.test ooipy
    
     
