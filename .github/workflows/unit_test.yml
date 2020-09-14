@@ -18,10 +18,13 @@ jobs:
         python-version: 3.8
     - name: Install conda
       uses: s-weigand/setup-conda@v1
+      with:
+        update-conda: true
+        conda_channels: anaconda, conda-forge
     - run: conda --version
     - run: which python
     #- run: cd conda_envs
-    - run: ls
+    #- run: ls
     - name: Install OOI env
       run: conda env create -f conda_envs/ooi_linux.yml
     - name: Activate OOI env
