@@ -38,8 +38,8 @@ jobs:
     #- run: source ~/.bashrc
     #- run: cd conda_envs
     - run: conda env list
-    - name: enable conda ctivate
-      run: conda init bash
+    - name: enable conda activate
+      run: eval "$(conda shell.bash hook)"
     - name: Activate OOI env
       run: conda activate ooi 
     #- name: add conda forge
