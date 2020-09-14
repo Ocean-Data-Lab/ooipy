@@ -21,6 +21,8 @@ jobs:
       with:
         auto-update-conda: true
         python-version: 3.8
+        miniconda-version: "latest"
+        activate-environment: test
     - shell: bash
       run: |
         conda info
@@ -32,7 +34,7 @@ jobs:
       #  conda_channels: anaconda, conda-forge
     #- run: conda --version
     #- run: which python
-    - run: source ~/.bashrc
+    #- run: source ~/.bashrc
     #- run: cd conda_envs
     - run: conda env list
     #- name: create ooi env
