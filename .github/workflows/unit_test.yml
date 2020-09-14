@@ -21,9 +21,9 @@ jobs:
       with:
         activate-environment: ooi
         environment-file: conda_envs/ooi_linux.yml
-        python-version: 3.8
+        python-version: 3.5
         #condarc-file: etc/example-condarc.yml
-        auto-activate-base: true
+        auto-activate-base: false
     - shell: bash -l {0}
       run: |
         conda info
@@ -37,13 +37,13 @@ jobs:
     #- run: which python
     #- run: source ~/.bashrc
     #- run: cd conda_envs
-    - run: conda env list
-    - name: enable conda activate
-      run: eval "$(conda shell.bash hook)"
-    - run: conda init bash
-    - run: exec bash -l
-    - name: Activate OOI env
-      run: conda activate ooi
+    #- run: conda env list
+    #- name: enable conda activate
+    #  run: eval "$(conda shell.bash hook)"
+    #- run: conda init bash
+    #- run: exec bash -l
+    #- name: Activate OOI env
+    #  run: conda activate ooi
     - name: check envs
       if: ${{ always() }}
       run: conda env list 
