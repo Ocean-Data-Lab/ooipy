@@ -167,8 +167,8 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         # if current segment contains desired data, store data segment
         if (starttime <= utc_time_url_start < endtime) or \
                 (starttime <= utc_time_url_stop < endtime) or \
-                (utc_time_url_start <= starttime and
-                 utc_time_url_stop >= endtime):
+                (utc_time_url_start <= starttime
+                 and utc_time_url_stop >= endtime):
 
             if first_file and (i != 0):
                 first_file = False
@@ -197,12 +197,12 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                     # self.data_available = False
                     # return None
 
-            # Add st to acculation of all data st_all                
+            # Add st to acculation of all data st_all
             if st_all is None:
                 st_all = st
             else:
                 st_all += st
-        # adds one more mseed file to st_ll             
+        # adds one more mseed file to st_ll
         else:
             # Checks if last file has been downloaded within time period
             if first_file is False:
@@ -230,7 +230,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         if verbose:
             print('Invalid Data Gap Mode')
         return None
-    # Slice data to desired window                
+    # Slice data to desired window
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
     if len(st_all) == 0:
@@ -265,16 +265,16 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
 
 # TODO revision necessary; function might be superfluous
 '''
-def get_acoustic_data_mp(starttime, endtime, node, n_process=None, 
-fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, 
+def get_acoustic_data_mp(starttime, endtime, node, n_process=None,
+fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True,
 data_gap_mode=0):
 
 
     Same as function get acoustic data but using multiprocessing.
-  
 
 
-    # entire time frame is divided into n_process parts of equal length 
+
+    # entire time frame is divided into n_process parts of equal length
     if n_process == None:
         N  = mp.cpu_count()
     else:
@@ -286,7 +286,7 @@ data_gap_mode=0):
         seconds=i * seconds_per_process),
         starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
         node, fmin, fmax) for i in range(N)]
-    
+
     # create pool of processes require one part of the data in each process
     with mp.get_context("spawn").Pool(N) as p:
         try:
@@ -296,7 +296,7 @@ data_gap_mode=0):
                 print('Data cannot be requested.')
             #data_available = False
             return None
-    
+
     #if all data is None, return None and set flags
     if (all(x==None for x in data_list)):
         if verbose:
@@ -304,8 +304,8 @@ data_gap_mode=0):
         self.data = None
         self.data_available = False
         st_all = None
-    
-    
+
+
     #if only some of data is none, remove None entries
     if (None in data_list):
         if self.print_exceptions:
@@ -344,10 +344,10 @@ def __get_mseed_urls(day_str, node):
     '''
     get URLs for a specific day from OOI raw data server
 
-    day_str (str): date for which URLs are requested; 
+    day_str (str): date for which URLs are requested;
         format: yyyy/mm/dd, e.g. 2016/07/15
 
-    return ([str]): list of URLs, each URL refers to one data file. 
+    return ([str]): list of URLs, each URL refers to one data file.
         If no data is available for specified date, None is returned.
     '''
 
@@ -372,8 +372,8 @@ def __get_mseed_urls(day_str, node):
 
     FS = fsspec.filesystem('http')
     data_url_list = sorted([f['name'] for f in FS.ls(mainurl)
-                            if f['type'] == 'file'
-                            and f['name'].endswith('.mseed')])
+                            if f['type'] == 'file' and
+                            f['name'].endswith('.mseed')])
 
     return data_url_list
 
@@ -478,12 +478,8 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None,
             utc_time_url_stop.microsecond = 999999
 
         # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= starttime
-            and utc_time_url_start < endtime) \
-                or \
-                (utc_time_url_stop >= starttime
-                 and utc_time_url_stop < endtime) \
-                or \
+        if (starttime <= utc_time_url_start < endtime) or \
+                (starttime <= utc_time_url_stop < endtime) or \
                 (utc_time_url_start <= starttime
                  and utc_time_url_stop >= endtime):
 
@@ -503,7 +499,7 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None,
                     first_file = False
                 valid_data_url_list.append(data_url_list[i])
 
-        # adds one more mseed file to st_ll             
+        # adds one more mseed file to st_ll
         else:
             # Checks if last file has been downloaded within time period
             if first_file is False:
@@ -546,7 +542,7 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None,
         if verbose:
             print('Invalid Data Gap Mode')
         return None
-    # Slice data to desired window                
+    # Slice data to desired window
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
     if len(st_all) == 0:
