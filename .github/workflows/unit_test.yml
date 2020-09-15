@@ -12,10 +12,6 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
-    #- name: Set up Python 3.8
-    #  uses: actions/setup-python@v1
-    #  with:
-    #    python-version: 3.8
     - name: Install conda
       uses: goanpeca/setup-miniconda@v1
       with:
@@ -29,39 +25,7 @@ jobs:
       run: |
         conda info
         conda list
-      #uses: s-weigand/setup-conda@v1
-      #with:
-      #  activate-conda: false
-      #  update-conda: true
-      #  conda_channels: anaconda, conda-forge
-    #- run: conda --version
-    #- run: which python
-    #- run: source ~/.bashrc
-    #- run: cd conda_envs
-    - name: check envs
-      shell: bash -l {0}
-      run: conda env list
-    #- name: create ooi env
-    #  run: conda env create -f conda_envs/ooi_linux.yml
-    #- name: enable conda activate
-    #  run: eval "$(conda shell.bash hook)"
-    #- run: conda init bash
-    #- run: exec bash -l
-    - name: Activate OOI env
-      shell: bash -l {0}
-      run: conda activate ooi
-    - name: check envs
-      if: ${{ always() }}
-      shell: bash -l {0}
-      run: conda env list 
-    #- name: add conda forge
-    #  run: conda config --add channels conda-forge
-    #- name: create obspy env
-    #  run: conda create -n obspy python=3.8
-    #- run: conda init fish
-    #- name: test package import
-    #  run: python3
-    #- run: import obspy
+
     - name: run unit tests
       shell: bash -l {0}
       run: py.test ooipy
