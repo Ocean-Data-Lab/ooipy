@@ -20,7 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c9842530-ef95-4a88-8017-17a5b2c9f0a4" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ooipy/hydrophone/Noise_Interferometry.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/hydrophone/Noise_Interferometry.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" afterDir="false" />
@@ -51,6 +51,7 @@
     <property name="node.js.path.for.package.tslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -61,7 +62,7 @@
       <option name="presentableId" value="Default" />
       <updated>1600118808824</updated>
       <workItem from="1600118811072" duration="5207000" />
-      <workItem from="1600124035166" duration="1225000" />
+      <workItem from="1600124035166" duration="3445000" />
     </task>
     <servers />
   </component>
@@ -96,5 +97,9 @@
       <screen x="0" y="0" width="1440" height="900" />
     </state>
     <state width="1398" height="245" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1600118967970" />
+    <state x="221" y="89" key="SettingsEditor" timestamp="1600127050500">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="221" y="89" key="SettingsEditor/0.0.1440.900@0.0.1440.900" timestamp="1600127050500" />
   </component>
 </project>

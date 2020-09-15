@@ -26,7 +26,8 @@ sys.path.append(ooipy_dir)
 
 class Hydrophone_Xcorr:
 
-    def __init__(self, node1, node2, avg_time, W=30, verbose=True, filter_data=True):
+    def __init__(self, node1, node2, avg_time, W=30,
+                 verbose=True, filter_data=True):
         """
         Initialize Class OOIHydrophoneData
 
@@ -36,17 +37,21 @@ class Hydrophone_Xcorr:
             indicates start time for acquiring data
 
         node1 : str
-            indicates location of reference hydrophone (see table 1 for valid inputs)
+            indicates location of reference hydrophone
+                (see table 1 for valid inputs)
         node2 : str
-            indicates location of compared hydrophone (see table 1 for valid inputs)
+            indicates location of compared hydrophone
+                (see table 1 for valid inputs)
         avg_time : int or float
-            indicates length of data pulled from server for one averaging period (minutes)
+            indicates length of data pulled from server for one
+                averaging period (minutes)
         W : int or float
             indicates cross correlation window (seconds)
         verbose : bool
             indicates whether to print updates or not
         filter_data : bool
-            indicates whether to filter the data with bandpass with cutofss [10, 1k]
+            indicates whether to filter the data with bandpass with
+                cutoffs [10, 1k]
         mp : bool
             indicates if multiprocessing functions should be used
 
@@ -61,8 +66,9 @@ class Hydrophone_Xcorr:
         get_audio(self, start_time)
             Pulls avg_period amount of data from server
         xcorr_over_avg_period(self, h1, h2)
-            Computes cross-correlation for window of length W, averaged over avg_period
-            runs xcorr_over_avg_period() for num_periods amount of periods
+            Computes cross-correlation for window of length W,
+            averaged over avg_period runs xcorr_over_avg_period()
+            for num_periods amount of periods
 
         Private Methods
         ---------------
@@ -101,26 +107,38 @@ class Hydrophone_Xcorr:
         self.Ts = 1 / self.Fs
         self.filter_data = filter_data
 
-        self.__distance_between_hydrophones(hydrophone_locations[node1], hydrophone_locations[node2])
-        self.__bearing_between_hydrophones(hydrophone_locations[node1], hydrophone_locations[node2])
+        self.__distance_between_hydrophones(hydrophone_locations[node1],
+                                            hydrophone_locations[node2])
+
+        self.__bearing_between_hydrophones(hydrophone_locations[node1],
+                                           hydrophone_locations[node2])
 
         print('Distance Between Hydrophones: ', self.distance, ' meters')
-        print('Estimate Time Delay Between Hydrophones: ', self.time_delay, ' seconds')
-        print('Bearing Between Hydrophone 1 and 2: ', self.theta_bearing_d_1_2, ' degrees')
+
+        print('Estimate Time Delay Between Hydrophones: ',
+              self.time_delay, ' seconds')
+
+        print('Bearing Between Hydrophone 1 and 2: ',
+              self.theta_bearing_d_1_2, ' degrees')
 
     # Calculate Distance Between 2 Hydrophones
-    # function from https://www.geeksforgeeks.org/program-distance-two-points-earth/
+    # function from:
+    # https://www.geeksforgeeks.org/program-distance-two-points-earth/
     def __distance_between_hydrophones(self, coord1, coord2):
         """
-        distance_between_hydrophones(coord1, coord2) - calculates the distance in meters between two global coordinates
+        distance_between_hydrophones(coord1, coord2) - calculates the distance
+        in meters between two global coordinates
 
         Inputs:
-        coord1 - numpy array of shape [2,1] containing latitude and longitude of point 1
-        coord2 - numpy array of shape [2,1] containing latitude and longitude of point 2
+        coord1 - numpy array of shape [2,1] containing
+            latitude and longitude of point 1
+        coord2 - numpy array of shape [2,1] containing
+            latitude and longitude of point 2
 
         Outputs:
         self.distance - distance between 2 hydrophones in meters
-        self.time_delay - approximate time delay between 2 hydrophones (assuming speed of sound = 1480 m/s)
+        self.time_delay - approximate time delay between 2 hydrophones
+            (assuming speed of sound = 1480 m/s)
 
         """
         from math import radians, cos, sin, asin, sqrt
@@ -147,7 +165,8 @@ class Hydrophone_Xcorr:
 
     def __bearing_between_hydrophones(self, coord1, coord2):
         """
-        bearing_between_hydrophones(coord1, coord2) - calculates the bearing in degrees (NSEW) between coord1 and coord2
+        bearing_between_hydrophones(coord1, coord2) - calculates the
+            bearing in degrees (NSEW) between coord1 and coord2
 
         Inputs:
         coord1 - numpy array
@@ -167,7 +186,8 @@ class Hydrophone_Xcorr:
         del_lambda = lambda2 - lambda1
 
         y = np.sin(del_lambda) * np.cos(psi2)
-        x = np.cos(psi1) * np.sin(psi2) - np.sin(psi1) * np.cos(psi2) * np.cos(del_lambda)
+        x = np.cos(psi1) * np.sin(psi2) - np.sin(psi1) \
+            * np.cos(psi2) * np.cos(del_lambda)
 
         theta_bearing_rad = np.arctan2(y, x)
         theta_bearing_d_1_2 = (np.rad2deg(theta_bearing_rad) + 360) % 360
@@ -177,16 +197,19 @@ class Hydrophone_Xcorr:
     def get_audio(self, start_time):
 
         """
-        Downloads, and Reshapes Data from OOI server for given average period and start time
+        Downloads, and Reshapes Data from OOI server for given
+        average period and start time
 
         Inputs:
         start_time - indicates UTC time that data starts with
 
         Outputs:
         h1_reshaped : float
-            hydrophone data from node 1 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+            hydrophone data from node 1 of shape (B,N) where
+            B = avg_time*60/W and N = W*Fs
         h2_reshaped : float
-            hydrophone data from node 2 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+            hydrophone data from node 2 of shape (B,N) where
+            B = avg_time*60/W and N = W*Fs
         flag : bool
             TODO flag structure to be added later
         """
@@ -203,8 +226,10 @@ class Hydrophone_Xcorr:
             return None
 
         # Initialize Two Classes for Two Hydrophones
-        # self.ooi1 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
-        # self.ooi2 = OOIHydrophoneData(limit_seed_files=False, print_exceptions=True, data_gap_mode=2)
+        # self.ooi1 = OOIHydrophoneData(limit_seed_files=False,
+        # print_exceptions=True, data_gap_mode=2)
+        # self.ooi2 = OOIHydrophoneData(limit_seed_files=False,
+        # print_exceptions=True, data_gap_mode=2)
 
         # Calculate end_time
         end_time = start_time + timedelta(minutes=avg_time)
@@ -214,15 +239,17 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
 
         # Audio from Node 1
-        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time,
-                                                       node=self.node1, verbose=self.verbose, data_gap_mode=2)
+        node1_data = hydrophone.get_acoustic_data_conc(
+            start_time, end_time, node=self.node1,
+            verbose=self.verbose, data_gap_mode=2)
 
         if verbose:
             print('Getting Audio from Node 2...')
 
         # Audio from Node 2
-        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time,
-                                                       node=self.node2, verbose=self.verbose, data_gap_mode=2)
+        node2_data = hydrophone.get_acoustic_data_conc(
+            start_time, end_time, node=self.node2,
+            verbose=self.verbose, data_gap_mode=2)
 
         if (node1_data is None) or (node2_data is None):
             print('Error with Getting Audio')
@@ -232,10 +259,12 @@ class Hydrophone_Xcorr:
         data_stream = obspy.Stream(traces=[node1_data, node2_data])
 
         stopwatch_end = time.time()
-        print('Time to Download Data from Server: ', stopwatch_end - stopwatch_start)
+        print('Time to Download Data from Server: ',
+              stopwatch_end - stopwatch_start)
 
         if data_stream[0].data.shape != data_stream[1].data.shape:
-            print('Data streams are not the same length. Flag to be added later')
+            print('Data streams are not the same length. '
+                  'Flag to be added later')
             # TODO: Set up flag structure of some kind
 
         # Cut off extra points if present
@@ -249,12 +278,16 @@ class Hydrophone_Xcorr:
         # Previous Fix for data_gap, Recklessly added zeros
         """
         if ((h1_data.shape[0] < avg_time*60*self.Fs)):
-            print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
-            h1_data = np.pad(h1_data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
+            print('Length of Audio at node 1 too short, zeros added.
+            Length: ', data_stream[0].data.shape[0])
+            h1_data = np.pad(h1_data,
+            (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
 
         if ((h2_data.shape[0] < avg_time*60*self.Fs)):
-            print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
-            h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
+            print('Length of Audio at node 2 too short, zeros added.
+            Length: ', data_stream[1].data.shape[0])
+            h2_data = np.pad(h2_data,
+            (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
         """
 
         # Filter Data
@@ -270,14 +303,18 @@ class Hydrophone_Xcorr:
         plt.plot(h1_data)
         plt.plot(h2_data)
 
-        h1_reshaped = np.reshape(h1_data, (int(self.avg_time * 60 / self.W), int(self.W * self.Fs)))
-        h2_reshaped = np.reshape(h2_data, (int(self.avg_time * 60 / self.W), int(self.W * self.Fs)))
+        h1_reshaped = np.reshape(h1_data, (int(self.avg_time * 60 / self.W),
+                                           int(self.W * self.Fs)))
+
+        h2_reshaped = np.reshape(h2_data, (int(self.avg_time * 60 / self.W),
+                                           int(self.W * self.Fs)))
 
         return h1_reshaped, h2_reshaped
 
     def xcorr_over_avg_period(self, h1, h2, loop=True):
         """
-        finds cross correlation over average period and averages all correlations
+        finds cross correlation over average period
+        and averages all correlations
 
         Inputs:
         h1 - audio data from hydrophone 1 of shape [avg_time(s)/W(s), W*Fs],
@@ -287,7 +324,8 @@ class Hydrophone_Xcorr:
 
         Output :
         avg_xcorr of shape (N) where N = W*Fs
-        xcorr - xcorr for every short time window within average period shape [avg_time(s)/W(s), N]
+        xcorr - xcorr for every short time window within average period shape
+        [avg_time(s)/W(s), N]
         """
         verbose = self.verbose
         avg_time = self.avg_time
@@ -299,7 +337,8 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         # if verbose:
         #    bar = progressbar.ProgressBar(maxval=h1.shape[0],
-        #    widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        #    widgets=[progressbar.Bar('=', '[', ']'), ' ',
+        #    progressbar.Percentage()])
         #    bar.start()
 
         if self.verbose:
@@ -317,9 +356,14 @@ class Hydrophone_Xcorr:
 
             try:
                 with open(filename, 'wb') as f:
-                    # pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                    pickle.dump(xcorr_norm, f)  # Accumulated xcorr
-                    # pickle.dump(k,f)                    #avg_period number
+                    # Short Time XCORR for all of avg_perd
+                    # pickle.dump(xcorr_short_time, f)
+
+                    # Accumulated xcorr
+                    pickle.dump(xcorr_norm, f)
+
+                    # avg_period number
+                    # pickle.dump(k,f)
             except Exception:
                 os.makedirs('ckpts')
                 with open(filename, 'wb') as f:
@@ -328,7 +372,8 @@ class Hydrophone_Xcorr:
                     # pickle.dump(k,f)
 
         stopwatch_end = time.time()
-        print('Time to Calculate Cross Correlation of 1 period: ', stopwatch_end - stopwatch_start)
+        print('Time to Calculate Cross Correlation of 1 period: ',
+              stopwatch_end - stopwatch_start)
         if loop:
             return
         else:
@@ -369,16 +414,19 @@ class Hydrophone_Xcorr:
             '''
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
-                xcorr_avg_period, xcorr_short_time = self.xcorr_over_avg_period(h1_processed, h2_processed)
+                xcorr_avg_period, xcorr_short_time = 
+                self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr = xcorr_avg_period
                 first_loop = False
             else:
-                xcorr_avg_period, xcorr_short_time = self.xcorr_over_avg_period(h1_processed, h2_processed)
+                xcorr_avg_period, xcorr_short_time = 
+                self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr += xcorr_avg_period
                 start_time = start_time + timedelta(minutes=self.avg_time)
             
             stopwatch_end = time.time()
-            print('Time to Complete 1 period: ',stopwatch_end - stopwatch_start)
+            print('Time to Complete 1 period: ',
+            stopwatch_end - stopwatch_start)
             
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
@@ -386,9 +434,14 @@ class Hydrophone_Xcorr:
             if self.ckpts:
                 try:
                     with open(filename,'wb') as f:
-                        #pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                        pickle.dump(xcorr_avg_period, f)               #Accumulated xcorr
-                        pickle.dump(k,f)                    #avg_period number
+                        # Short Time XCORR for all of avg_perd
+                        #pickle.dump(xcorr_short_time, f) 
+                           
+                        # Accumulated xcorr   
+                        pickle.dump(xcorr_avg_period, f)   
+                        
+                        # avg_period number            
+                        pickle.dump(k,f)                    
                 except:
                     os.makedirs('ckpts')
                     with open(filename,'wb') as f:
@@ -420,8 +473,11 @@ class Hydrophone_Xcorr:
         thetaB1 = bearing_angle[0]
         thetaB2 = bearing_angle[1]
 
-        midpoint, phantom_point1 = self.__find_phantom_point(coord1, coord2, thetaB1)
-        midpoint, phantom_point2 = self.__find_phantom_point(coord1, coord2, thetaB2)
+        midpoint, phantom_point1 = \
+            self.__find_phantom_point(coord1, coord2, thetaB1)
+
+        midpoint, phantom_point2 = \
+            self.__find_phantom_point(coord1, coord2, thetaB2)
 
         import plotly.graph_objects as go
 
@@ -449,7 +505,8 @@ class Hydrophone_Xcorr:
             lon=hyd_lons,
             lat=hyd_lats,
             hoverinfo='text',
-            text=['Oregon Slope Base Hydrophone', 'Oregon Cabled Benthic Hydrophone'],
+            text=['Oregon Slope Base Hydrophone',
+                  'Oregon Cabled Benthic Hydrophone'],
             mode='markers',
             marker=dict(
                 size=5,
@@ -517,7 +574,8 @@ class Hydrophone_Xcorr:
         Output:
         midpoint, phantom_point
         """
-        midpoint = [coord1[0] - (coord1[0] - coord2[0]) / 2, coord1[1] - (coord1[1] - coord2[1]) / 2]
+        midpoint = [coord1[0] - (coord1[0] - coord2[0]) / 2,
+                    coord1[1] - (coord1[1] - coord2[1]) / 2]
 
         del_lat = 0.01 * np.cos(np.deg2rad(thetaB))
         del_lon = 0.01 * np.sin(np.deg2rad(thetaB))
@@ -563,8 +621,9 @@ class Hydrophone_Xcorr:
         time_of_max = t[max_idx]
 
         # bearing is with respect to node1 (where node2 is at 0 deg)
-        bearing_max_local = [np.rad2deg(np.arccos(1480 * time_of_max / self.distance)),
-                             -np.rad2deg(np.arccos(1480 * time_of_max / self.distance))]
+        bearing_max_local = \
+            [np.rad2deg(np.arccos(1480 * time_of_max / self.distance)),
+             -np.rad2deg(np.arccos(1480 * time_of_max / self.distance))]
         # convert bearing_max_local to numpy array
         bearing_max_local = np.array(bearing_max_local)
         # convert to global (NSEW) degrees
@@ -580,7 +639,8 @@ class Hydrophone_Xcorr:
         plot_polar_TDOA(self, xcorr)
 
         Inputs:
-        xcorr (numpy array) : array of shape [X,] consisting of an averaged cross correlation
+        xcorr (numpy array) : array of shape [X,]
+        consisting of an averaged cross correlation
 
         Outputs:
         None
@@ -594,32 +654,43 @@ class Hydrophone_Xcorr:
 # Implement Hydrophone_Xcorr Class as list of functions
 
 
-def calculate_NCF(node1, node2, avg_time, start_time, loop, count, W=30, verbose=True, filter_data=True):
+def calculate_NCF(node1, node2, avg_time, start_time, loop, count, W=30,
+                  verbose=True, filter_data=True):
     # Start Timing
     stopwatch_start = time.time()
 
-    h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2, verbose=verbose, W=W)
-    h1_processed, h2_processed = preprocess_audio(h1_data, h2_data,
-                                                  filter_data=filter_data, verbose=True, Fs=Fs, W=W, avg_time=avg_time)
-    calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
+    h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2,
+                                           verbose=verbose, W=W)
+    h1_processed, h2_processed = preprocess_audio(h1_data,
+                                                  h2_data,
+                                                  filter_data=filter_data,
+                                                  verbose=True, Fs=Fs, W=W,
+                                                  avg_time=avg_time)
+
+    calc_xcorr(h1_processed, h2_processed, verbose=True,
+               count=count, avg_time=avg_time, loop=loop)
 
     # End Timing
     stopwatch_end = time.time()
-    print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end - stopwatch_start} \n\n')
+    print(f'   Time to Calculate NCF for 1 Average Period: '
+          f'{stopwatch_end - stopwatch_start} \n\n')
 
 
 def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
     """
-        Downloads, and Reshapes Data from OOI server for given average period and start time
+        Downloads, and Reshapes Data from OOI server for given
+        average period and start time
 
         Inputs:
         start_time - indicates UTC time that data starts with
 
         Outputs:
         h1_reshaped : float
-            hydrophone data from node 1 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+            hydrophone data from node 1 of shape (B,N) where
+            B = avg_time*60/W and N = W*Fs
         h2_reshaped : float
-            hydrophone data from node 2 of shape (B,N) where B = avg_time*60/W and N = W*Fs
+            hydrophone data from node 2 of shape (B,N) where
+            B = avg_time*60/W and N = W*Fs
         flag : bool
             TODO flag stucture to be added later
     """
@@ -639,13 +710,18 @@ def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
         print('   Getting Audio from Node 1...')
 
     # Audio from Node 1
-    node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
+    node1_data = hydrophone.get_acoustic_data_conc(start_time,
+                                                   end_time, node=node1,
+                                                   verbose=False,
+                                                   data_gap_mode=2)
 
     if verbose:
         print('   Getting Audio from Node 2...')
 
     # Audio from Node 2
-    node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+    node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time,
+                                                   node=node2, verbose=False,
+                                                   data_gap_mode=2)
 
     if (node1_data is None) or (node2_data is None):
         print('Error with Getting Audio')
@@ -671,12 +747,16 @@ def preprocess_audio(h1_data, h2_data, filter_data, W, avg_time, verbose, Fs):
     # Previous Fix for data_gap, Recklessly added zeros
     """
     if ((h1_data.shape[0] < avg_time*60*self.Fs)):
-        print('Length of Audio at node 1 too short, zeros added. Length: ', data_stream[0].data.shape[0])
-        h1_data = np.pad(h1_data, (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
+        print('Length of Audio at node 1 too short, zeros added. Length: ',
+        data_stream[0].data.shape[0])
+        h1_data = np.pad(h1_data,
+        (0, avg_time*60*self.Fs-data_stream[0].data.shape[0]))
 
     if ((h2_data.shape[0] < avg_time*60*self.Fs)):
-        print('Length of Audio at node 2 too short, zeros added. Length: ', data_stream[1].data.shape[0])
-        h2_data = np.pad(h2_data, (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
+        print('Length of Audio at node 2 too short, zeros added. Length: ',
+        data_stream[1].data.shape[0])
+        h2_data = np.pad(h2_data,
+        (0, avg_time*60*self.Fs-data_stream[1].data.shape[0]))
     """
 
     # Filter Data
@@ -708,7 +788,8 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
 
     Output :
     avg_xcorr of shape (N) where N = W*Fs
-    xcorr - xcorr for every short time window within average period shape [avg_time(s)/W(s), N]
+    xcorr - xcorr for every short time window within
+    average period shape [avg_time(s)/W(s), N]
     """
 
     M = h1.shape[1]
@@ -732,9 +813,14 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
 
         try:
             with open(filename, 'wb') as f:
-                # pickle.dump(xcorr_short_time, f)    #Short Time XCORR for all of avg_perd
-                pickle.dump(xcorr_stack, f)  # Accumulated xcorr
-                # pickle.dump(k,f)                    #avg_period number
+                # Short Time XCORR for all of avg_perd
+                # pickle.dump(xcorr_short_time, f)
+
+                # Accumulated xcorr
+                pickle.dump(xcorr_stack, f)
+
+                # avg_period number
+                # pickle.dump(k,f)
         except Exception:
             os.makedirs('ckpts')
             with open(filename, 'wb') as f:
@@ -748,10 +834,12 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
         return xcorr_stack, xcorr_norm
 
 
-def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W=30, verbose=True):
+def calculate_NCF_loop(num_periods, node1, node2, avg_time,
+                       start_time, W=30, verbose=True):
     for k in range(num_periods):
         print(f'Calculating NCF for Period {k + 1}:')
-        calculate_NCF(node1, node2, avg_time, start_time, loop=True, count=k, W=30, verbose=True)
+        calculate_NCF(node1, node2, avg_time, start_time,
+                      loop=True, count=k, W=30, verbose=True)
 
 
 def filter_bandpass(data, Wlow=15, Whigh=25):
