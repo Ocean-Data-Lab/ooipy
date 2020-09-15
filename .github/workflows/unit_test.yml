@@ -1,0 +1,31 @@
+name: unit test
+
+on: [push, pull_request]
+
+jobs:
+  install_conda:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+    - name: Install conda
+      uses: goanpeca/setup-miniconda@v1
+      with:
+        activate-environment: ooi
+        environment-file: conda_envs/ooi_linux.yml
+        auto-update-conda: true
+        python-version: 3.8
+        miniconda-version: "latest"
+        auto-activate-base: false
+    - shell: bash -l {0}
+      run: |
+        conda info
+        conda list
+    - name: install pytest
+      shell: bash -l {0}
+      run: conda install pytest
+    - name: run unit tests
+      shell: bash -l {0}
+      run: py.test ooipy
+   
+    
