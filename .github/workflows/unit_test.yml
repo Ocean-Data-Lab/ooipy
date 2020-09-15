@@ -26,6 +26,6 @@ jobs:
       run: conda install pytest
     - name: run unit tests
       shell: bash -l {0}
-      run: py.test ooipy
+      run: py.test ooipy --colors
    
     
