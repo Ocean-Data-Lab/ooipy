@@ -26,6 +26,18 @@ jobs:
       run: conda install pytest
     - name: run unit tests
       shell: bash -l {0}
+      env:
+        FORCE_COLOR: 3
       run: py.test ooipy
+    - name: save unit tests in file
+      if: ${{ always() }}
+      shell: bash -l {0}
+      run: py.test ooipy &> unit_test_log.log
+    - name: Upload unit test log
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: unit_test_log
+        path: unit_test_log.log
    
     
