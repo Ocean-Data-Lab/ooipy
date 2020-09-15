@@ -88,5 +88,3 @@ def test_get_acoustic_data_conc():
     diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
     assert diff_start <= 100
     assert diff_end > 100
-
-    assert 3 > 4
