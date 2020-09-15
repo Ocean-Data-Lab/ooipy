@@ -26,6 +26,8 @@ jobs:
       run: conda install pytest
     - name: run unit tests
       shell: bash -l {0}
-      run: py.test ooipy --colors
+      env:
+        FORCE_COLOR: 3
+      run: py.test ooipy
    
     
