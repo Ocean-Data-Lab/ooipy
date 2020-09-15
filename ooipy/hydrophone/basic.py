@@ -192,7 +192,7 @@ class HydrophoneData(Trace):
                     return None
                 else:
                     tmp = self._freq_dependent_sensitivity_correct(
-                                           int(L / 2 + 1))
+                        int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
@@ -215,7 +215,7 @@ class HydrophoneData(Trace):
                     return None
                 else:
                     tmp = self._freq_dependent_sensitivity_correct(
-                                           int(L / 2 + 1))
+                        int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
@@ -392,7 +392,7 @@ class HydrophoneData(Trace):
             Pxx = Pxx * np.power(10,
                                  self._freq_dependent_sensitivity_correct(
                                      int(nfft / 2 + 1)) / 10) * \
-                  np.power(10, -128.9 / 10)
+                                        np.power(10, -128.9 / 10)
         else:
             raise Exception('scale has to be either "lin" or "log".')
 
@@ -450,9 +450,7 @@ class HydrophoneData(Trace):
 
         # create array with N start and end time values
         if n_process is None:
-            N = mp.cpu_count()
-        else:
-            N = n_process
+            n_process = mp.cpu_count()
 
         ooi_hyd_data_list = []
         # do segmentation from scratch

@@ -2,21 +2,14 @@
 import numpy as np
 import os
 import sys
-from obspy import read, Stream, Trace
-from obspy.core import UTCDateTime
 from scipy import signal
-from scipy import interpolate
-import datetime
 import time
-from thredds_crawler.crawl import Crawl
 import multiprocessing as mp
 import obspy
 import scipy
 from datetime import timedelta
-import concurrent.futures
 import pickle
 from matplotlib import pyplot as plt
-import seaborn as sns
 from ooipy.request import hydrophone
 
 cwd = os.getcwd()
@@ -142,21 +135,21 @@ class Hydrophone_Xcorr:
 
         """
         from math import radians, cos, sin, asin, sqrt
-        # The math module contains a function named 
-        # radians which converts from degrees to radians. 
+        # The math module contains a function named
+        # radians which converts from degrees to radians.
         lon1 = radians(coord1[1])
         lon2 = radians(coord2[1])
         lat1 = radians(coord1[0])
         lat2 = radians(coord2[0])
 
-        # Haversine formula  
+        # Haversine formula
         dlon = lon2 - lon1
         dlat = lat2 - lat1
         a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
 
         c = 2 * asin(sqrt(a))
 
-        # Radius of earth in kilometers. Use 3956 for miles 
+        # Radius of earth in kilometers. Use 3956 for miles
         r = 6371000
         D = c * r
 
