@@ -1,10 +1,6 @@
-# This is a basic workflow that is manually triggered
-
 name: unit test
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
-on: [push]
+on: [push, pull_request]
 
 jobs:
   install_conda:
