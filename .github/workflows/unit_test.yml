@@ -25,7 +25,9 @@ jobs:
       run: |
         conda info
         conda list
-
+    - name: install pytest
+      shell: bash -l {0}
+      run: conda install pytest
     - name: run unit tests
       shell: bash -l {0}
       run: py.test ooipy
