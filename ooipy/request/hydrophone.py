@@ -165,14 +165,10 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
             utc_time_url_stop.microsecond = 999999
 
         # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= starttime
-            and utc_time_url_start < endtime) \
-                or \
-                (utc_time_url_stop >= starttime
-                 and utc_time_url_stop < endtime) \
-                or \
-                (utc_time_url_start <= starttime
-                 and utc_time_url_stop >= endtime):
+        if (starttime <= utc_time_url_start < endtime) or \
+                (starttime <= utc_time_url_stop < endtime) or \
+                (utc_time_url_start <= starttime and
+                 utc_time_url_stop >= endtime):
 
             if first_file and (i != 0):
                 first_file = False
