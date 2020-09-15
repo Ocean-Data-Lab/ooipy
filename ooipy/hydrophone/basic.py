@@ -6,18 +6,14 @@ methods for computing spectrograms and power spectral densities are added.
 """
 import numpy as np
 import json
-import os
 from matplotlib import pyplot as plt
 from obspy import Trace
 from obspy.core import UTCDateTime
-from matplotlib.colors import Normalize
 from scipy import signal
-from scipy import interpolate
 import matplotlib.dates as mdates
 import matplotlib.colors as colors
 import matplotlib
 import datetime
-import pandas as pd
 import multiprocessing as mp
 import pickle
 

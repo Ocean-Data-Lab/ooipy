@@ -167,8 +167,8 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         # if current segment contains desired data, store data segment
         if (starttime <= utc_time_url_start < endtime) or \
                 (starttime <= utc_time_url_stop < endtime) or \
-                (utc_time_url_start <= starttime
-                 and utc_time_url_stop >= endtime):
+                (utc_time_url_start <= starttime and
+                 utc_time_url_stop >= endtime):
 
             if first_file and (i != 0):
                 first_file = False
@@ -372,8 +372,8 @@ def __get_mseed_urls(day_str, node):
 
     FS = fsspec.filesystem('http')
     data_url_list = sorted([f['name'] for f in FS.ls(mainurl)
-                            if f['type'] == 'file' and
-                            f['name'].endswith('.mseed')])
+                            if f['type'] == 'file'
+                            and f['name'].endswith('.mseed')])
 
     return data_url_list
 
@@ -593,7 +593,7 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
 
 
 def __read_mseed(url):
-    fname = os.path.basename(url)
+    # fname = os.path.basename(url)
     # print(f"=== Reading: {fname} ===")
     try:
         st = read(url, apply_calib=True)
