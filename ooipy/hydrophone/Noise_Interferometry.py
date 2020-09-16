@@ -17,13 +17,7 @@ import concurrent.futures
 import pickle
 from matplotlib import pyplot as plt
 import seaborn as sns
-
-cwd = os.getcwd()
-ooipy_dir = os.path.dirname(os.path.dirname(cwd))
-sys.path.append(ooipy_dir)
-
-from ooipy.request import hydrophone
-
+from ooipy import request
 
 class Hydrophone_Xcorr:
 
@@ -165,7 +159,7 @@ class Hydrophone_Xcorr:
         del_lambda = lambda2-lambda1
 
         y = np.sin(del_lambda)*np.cos(psi2)
-        x = np.cos(psi1)*np.sin(psi2) - np.sin(psi1)*np.cos(psi2)*np.cos(del_lambda);
+        x = np.cos(psi1)*np.sin(psi2) - np.sin(psi1)*np.cos(psi2)*np.cos(del_lambda)
 
         theta_bearing_rad = np.arctan2(y,x)
         theta_bearing_d_1_2 = (np.rad2deg(theta_bearing_rad)+360) % 360
@@ -212,12 +206,12 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose, data_gap_mode=2)
+        node1_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose, data_gap_mode=2)
         
         if verbose: print('Getting Audio from Node 2...')
 
         #Audio from Node 2
-        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose, data_gap_mode=2)
+        node2_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose, data_gap_mode=2)
         
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
@@ -448,23 +442,6 @@ class Hydrophone_Xcorr:
                 )
             )))
 
-        EQ_lon = [-126.3030]
-        EQ_lat = [40.454]
-        fig.add_trace(go.Scattergeo(
-            lon = EQ_lon,
-            lat = EQ_lat,
-            #hoverinfo = ['Earth Quake Site'],
-            mode = 'markers',
-            marker = dict(
-                size = 5,
-                color = 'rgb(148, 0, 211)',
-                line = dict(
-                    width = 3,
-                    color = 'rgba(68, 68, 68, 0)'
-                )
-            )))
-
-
         fig.update_layout(
             title_text = 'Possible Bearings of Max Correlation Peak',
             showlegend = False,
@@ -546,22 +523,19 @@ class Hydrophone_Xcorr:
 
         return(data_filt)
     
-    def get_bearing_angle(self, xcorr, t):
-        # Calculate Bearing of Max Peak
-        max_idx = np.argmax(xcorr)
-        time_of_max = t[max_idx]
+    def get_bearing_angle(self, t):
 
         #bearing is with respect to node1 (where node2 is at 0 deg)
-        bearing_max_local = [np.rad2deg(np.arccos(1480*time_of_max/self.distance)), -np.rad2deg(np.arccos(1480*time_of_max/self.distance))]
+        bearing_local = [np.rad2deg(np.arccos(1480*t/self.distance)), -np.rad2deg(np.arccos(1480*t/self.distance))]
         #convert bearing_max_local to numpy array
-        bearing_max_local = np.array(bearing_max_local)
+        bearing_local = np.array(bearing_local)
         #convert to global (NSEW) degrees
-        bearing_max_global = self.theta_bearing_d_1_2 + bearing_max_local
+        bearing_global = self.theta_bearing_d_1_2 + bearing_local
         #make result between 0 and 360
-        bearing_max_global = bearing_max_global % 360
-        self.bearing_max_global = bearing_max_global
+        bearing_global = bearing_global % 360
+        self.bearing_global = bearing_global
 
-        return bearing_max_global
+        return bearing_global
 
     def plot_polar_TDOA(self, xcorr, t):
         '''
@@ -581,18 +555,19 @@ class Hydrophone_Xcorr:
 # Implement Hydrophone_Xcorr Class as list of functions
 
 
-def calculate_NCF(node1, node2, avg_time, start_time, loop, count, W=30, verbose=True, filter_data=True):
+def calculate_NCF(node1, node2, avg_time, start_time, loop, count=None, W=30, verbose=True, filter_data=True):
     
     #Start Timing
     stopwatch_start = time.time()
 
     h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2, verbose=verbose, W=W)
     h1_processed, h2_processed = preprocess_audio(h1_data, h2_data, filter_data=filter_data, verbose=True, Fs=Fs, W=W, avg_time=avg_time)
-    calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
+    xcorr = calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
 
     #End Timing
     stopwatch_end = time.time()
     print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end-stopwatch_start} \n\n')
+    return xcorr
 
 def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
         '''
@@ -624,12 +599,12 @@ def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
         if verbose: print('   Getting Audio from Node 1...')
         
         #Audio from Node 1
-        node1_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
+        node1_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
         
         if verbose: print('   Getting Audio from Node 2...')
 
         #Audio from Node 2
-        node2_data = hydrophone.get_acoustic_data_conc(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+        node2_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
         
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
@@ -722,16 +697,13 @@ def calc_xcorr(h1, h2, verbose, count, avg_time, loop):
                 pickle.dump(xcorr_stack, f)
                 #pickle.dump(k,f)
     
-    if loop:
-        return
-    else:
-        return xcorr_stack, xcorr_norm   
+    return xcorr_stack
 
 def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W=30, verbose=True):
 
     for k in range(num_periods):
         print(f'Calculting NCF for Period {k+1}:')
-        calculate_NCF(node1, node2, avg_time, start_time, loop=True, count=k, W=30, verbose=True)
+        xcorr = calculate_NCF(node1, node2, avg_time, start_time, loop=True, count=k, W=30, verbose=True)
 
 def filter_bandpass(data, Wlow=15, Whigh=25):
     

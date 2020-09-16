@@ -5,3 +5,6 @@ __pycache__/
 .cache
 .pytest_cache
 *.pyc
+*.pkl
+build/
+_build/
