@@ -27,6 +27,15 @@ cd OOI-data-processing-Python
   conda env create -f ooi_linux.yml
   ```
 
-### Demo
+## Node Definitions OOI Broadband Hydrophones
 
-  - demo.ipynb provides examples of some of the most used functions in the library
+'/LJ01D': Oregon Shelf Base Seafloor
+
+'/LJ01A': Oregon Slope Base Seafloore
+
+'/PC01A': Slope Base Shallow
+
+'/PC03A': Base Shallow Profiler
+
+'/LJ01C': Offshore Base Seafloor
+
