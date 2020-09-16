@@ -206,12 +206,12 @@ class Hydrophone_Xcorr:
         stopwatch_start = time.time()
         
         #Audio from Node 1
-        node1_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node1, verbose=self.verbose, data_gap_mode=2)
+        node1_data = request.hydrophone.get_acoustic_data(start_time, end_time, node=self.node1, verbose=self.verbose, data_gap_mode=2)
         
         if verbose: print('Getting Audio from Node 2...')
 
         #Audio from Node 2
-        node2_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=self.node2, verbose=self.verbose, data_gap_mode=2)
+        node2_data = request.hydrophone.get_acoustic_data(start_time, end_time, node=self.node2, verbose=self.verbose, data_gap_mode=2)
         
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
@@ -599,12 +599,12 @@ def get_audio(start_time, avg_time, node1, node2, verbose=True, W=30):
         if verbose: print('   Getting Audio from Node 1...')
         
         #Audio from Node 1
-        node1_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
+        node1_data = request.hydrophone.get_acoustic_data(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
         
         if verbose: print('   Getting Audio from Node 2...')
 
         #Audio from Node 2
-        node2_data = request.hydrophone.get_acoustic_data_conc(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+        node2_data = request.hydrophone.get_acoustic_data(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
         
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')

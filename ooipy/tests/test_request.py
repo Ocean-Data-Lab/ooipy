@@ -7,6 +7,47 @@ from ooipy.hydrophone.basic import HydrophoneData
 import datetime
 import numpy as np
 
+def test_get_acoustic_data_archive():
+    # 1. case: 100% data coverage
+    start_time = datetime.datetime(2017,3,10,0,0,0)
+    end_time = datetime.datetime(2017,3,10,0,5,0)
+    node = '/PC01A'
+
+    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+
+    assert type(data) == HydrophoneData
+    assert type(data.data) == np.ndarray
+
+    diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
+    diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
+    assert diff_start <= 100
+    assert diff_end <= 100
+
+    # 2. case: 0% data coverage
+    start_time = datetime.datetime(2017,10,10,15,30,0)
+    end_time = datetime.datetime(2017,10,10,15,35,0)
+    node = '/LJ01C'
+
+    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+
+    assert data == None
+
+    # 3. case: partial data coverage (data available until 15:17:50)
+    start_time = datetime.datetime(2017,10,10,15,15,0)
+    end_time = datetime.datetime(2017,10,10,15,20,0)
+    node = '/LJ01C'
+
+    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+
+    assert type(data) == HydrophoneData
+    assert type(data.data) == np.ndarray
+
+    diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
+    diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
+    assert diff_start <= 100
+    assert diff_end > 100
+
+
 def test_get_acoustic_data():
     # 1. case: 100% data coverage
     start_time = datetime.datetime(2017,3,10,0,0,0)
@@ -20,47 +61,6 @@ def test_get_acoustic_data():
 
     diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
     diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
-    assert diff_start <= 100
-    assert diff_end <= 100
-
-    # 2. case: 0% data coverage
-    start_time = datetime.datetime(2017,10,10,15,30,0)
-    end_time = datetime.datetime(2017,10,10,15,35,0)
-    node = '/LJ01C'
-
-    data = hyd_request.get_acoustic_data(start_time, end_time, node)
-
-    assert data == None
-
-    # 3. case: partial data coverage (data available until 15:17:50)
-    start_time = datetime.datetime(2017,10,10,15,15,0)
-    end_time = datetime.datetime(2017,10,10,15,20,0)
-    node = '/LJ01C'
-
-    data = hyd_request.get_acoustic_data(start_time, end_time, node)
-
-    assert type(data) == HydrophoneData
-    assert type(data.data) == np.ndarray
-
-    diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
-    diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
-    assert diff_start <= 100
-    assert diff_end > 100
-
-
-def test_get_acoustic_data_conc():
-    # 1. case: 100% data coverage
-    start_time = datetime.datetime(2017,3,10,0,0,0)
-    end_time = datetime.datetime(2017,3,10,0,5,0)
-    node = '/PC01A'
-
-    data = hyd_request.get_acoustic_data_conc(start_time, end_time, node)
-
-    assert type(data) == HydrophoneData
-    assert type(data.data) == np.ndarray
-
-    diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
-    diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
 
     assert diff_start <= 100
     assert diff_end <= 100
@@ -70,7 +70,7 @@ def test_get_acoustic_data_conc():
     end_time = datetime.datetime(2017,10,10,15,35,0)
     node = '/LJ01C'
 
-    data = hyd_request.get_acoustic_data_conc(start_time, end_time, node, append=False)
+    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
 
     assert data == None
 
@@ -79,7 +79,7 @@ def test_get_acoustic_data_conc():
     end_time = datetime.datetime(2017,10,10,15,20,0)
     node = '/LJ01C'
 
-    data = hyd_request.get_acoustic_data_conc(start_time, end_time, node, append=False)
+    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
 
     assert type(data) == HydrophoneData
     assert type(data.data) == np.ndarray

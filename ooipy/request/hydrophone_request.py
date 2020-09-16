@@ -14,7 +14,7 @@ import concurrent.futures
 sys.path.append("..")  # TODO: remove this before publishing
 
 
-def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False,
+def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False,
     data_gap_mode=0):
     '''
     Get acoustic data for specific time frame and node:
@@ -251,7 +251,7 @@ def __get_mseed_urls(day_str, node):
 
 #Archive
 '''
-def get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=None, fmax=None,
+def get_acoustic_data_archive_mp(starttime, endtime, node, n_process=None, fmin=None, fmax=None,
     append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
 
 
@@ -274,7 +274,7 @@ def get_acoustic_data_mp(starttime, endtime, node, n_process=None, fmin=None, fm
     # create pool of processes require one part of the data in each process
     with mp.get_context("spawn").Pool(N) as p:
         try:
-            data_list = p.starmap(self.get_acoustic_data, get_data_list)
+            data_list = p.starmap(self.get_acoustic_data_archive, get_data_list)
         except:
             if verbose:
                 print('Data cannot be requested.')
@@ -365,7 +365,7 @@ def _web_crawler_acoustic_data(day_str, node):
         
     return data_url_list
 
-def get_acoustic_data(starttime,endtime,node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0 ):
+def get_acoustic_data_archive(starttime,endtime,node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0 ):
     '''
     Get acoustic data for specific time frame and node:
 

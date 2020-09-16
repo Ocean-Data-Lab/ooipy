@@ -11,9 +11,9 @@ Hydrophone
 Acquiring Acoustic Data
 -----------------------
 
-    get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False, data_gap_mode=0):
+    get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_workers=-1, append=True, verbose=False, data_gap_mode=0):
 
-Description of get_acoustic_data_conc()
+Description of get_acoustic_data()
 
 Inputs:
 +++++++
