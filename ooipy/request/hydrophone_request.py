@@ -55,7 +55,6 @@ def _web_crawler_acoustic_data(day_str, node):
         
     return data_url_list
 
-
 def get_acoustic_data(starttime,endtime,node, fmin=None, fmax=None, append=True, verbose=False, limit_seed_files=True, data_gap_mode=0 ):
     '''
     Get acoustic data for specific time frame and node:
@@ -506,7 +505,6 @@ def get_acoustic_data_conc(starttime, endtime, node, fmin=None, fmax=None, max_w
             if verbose:
                 print('Other exception')
         return None
-
 
 def __map_concurrency(func, iterator, args=(), max_workers=-1):
     
