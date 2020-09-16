@@ -2,7 +2,7 @@
 Unit tests for request module
 '''
 
-import ooipy.request.hydrophone as hyd_request
+import ooipy.request.hydrophone_request as hyd_request
 from ooipy.hydrophone.basic import HydrophoneData
 import datetime
 import numpy as np
