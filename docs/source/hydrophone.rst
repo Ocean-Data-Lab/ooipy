@@ -10,4 +10,5 @@ Basic Tools
 
 Noise Interferometry Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-calc_NCF()
+.. automodule:: ooipy.hydrophone.Noise_Interferometry
+    :members:

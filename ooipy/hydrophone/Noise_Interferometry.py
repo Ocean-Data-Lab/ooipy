@@ -17,25 +17,29 @@ import concurrent.futures
 import pickle
 from matplotlib import pyplot as plt
 import seaborn as sns
+from gwpy.timeseries import TimeSeries
 
 cwd = os.getcwd()
 ooipy_dir = os.path.dirname(os.path.dirname(cwd))
 sys.path.append(ooipy_dir)
 from ooipy.request import hydrophone_request
 
-def calculate_NCF(node1, node2, avg_time, start_time, loop, count=None, W=30, verbose=True, filter_data=True):
+def calculate_NCF(NCF_object, loop=False, count=None):
     
     #Start Timing
     stopwatch_start = time.time()
 
-    h1_data, h2_data, Fs, flag = get_audio(start_time, avg_time, node1, node2, verbose=verbose, W=W)
-    h1_processed, h2_processed = preprocess_audio(h1_data, h2_data, filter_data=filter_data, verbose=True, Fs=Fs, W=W, avg_time=avg_time)
-    xcorr = calc_xcorr(h1_processed, h2_processed, verbose=True, count=count, avg_time=avg_time, loop=loop)
-
+    NCF_object = get_audio(NCF_object)
+    NCF_object = preprocess_audio(NCF_object)
+    NCF_object = calc_xcorr(NCF_object, loop, count)
+    
     #End Timing
     stopwatch_end = time.time()
     print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end-stopwatch_start} \n\n')
-    return xcorr
+    if loop==False:
+        return NCF_object.NCF
+    else:
+        return None
 
 def get_audio(NCF_object):
     '''
@@ -96,13 +100,16 @@ def get_audio(NCF_object):
     # Cut off extra points if present
     h1_data = data_stream[0].data[:int(avg_time*60*Fs)]
     h2_data = data_stream[1].data[:int(avg_time*60*Fs)]
+
+    h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
+    h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs))) 
     
-    NCF_object.node1_data = h1_data
-    NCF_object.node2_data = h2_data
+    NCF_object.node1_data = h1_reshaped
+    NCF_object.node2_data = h2_reshaped
 
     return NCF_object
 
-def preprocess_audio(NCF_object):
+def preprocess_audio_single_thread(h1_data, W, Fs):
     '''
     Get preprocess audio data for both hydrophones. This includes the following:
     - Filter Data to given frequency range using butterworth bandpass filter
@@ -112,39 +119,73 @@ def preprocess_audio(NCF_object):
 
     Parameters
     ----------
-    NCF_object : NCF
-        object specifying all details about NCF calculation
+    h1_data : numpy array
+        audio data from either node for single window length
+    W : float
+        window lenght in seconds
+    Fs : float
+        sampling frequency in Hz
 
     Returns
     -------
-    NCF_object : NCF
-        object specifying all details about NCF calculation
+    h1_data_processes : numpy array
+        h1_data after preprocessing
+
     '''     
     # Unpack needed values from NCF_object
+    #h1_data = NCF_object.node1_data
+    #h2_data = NCF_object.node2_data
+    #W = NCF_object.W
+    #avg_time = NCF_object.avg_time
+    #verbose = NCF_object.verbose
+    #Fs = NCF_object.Fs
+    
+    # Filter Data
+    #if verbose: print('   Filtering Data...')
+
+    h1_data_filt = filter_bandpass(h1_data)
+    #h2_data_filt = filter_bandpass(h2_data)
+
+    #if verbose: print('   Whitening Data...')
+
+    h1_data_processed = freq_whiten(h1_data_filt, Fs)
+    #h2_data_processed = freq_whiten(h2_data_filt, Fs)
+
+    #h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
+    #h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs)))                  
+    
+    return h1_data_processed#, h2_data_processed
+
+def preprocess_audio(NCF_object):
     h1_data = NCF_object.node1_data
     h2_data = NCF_object.node2_data
     W = NCF_object.W
-    avg_time = NCF_object.avg_time
-    verbose = NCF_object.verbose
     Fs = NCF_object.Fs
-    
-    
-    # Filter Data
-    if verbose: print('   Filtering Data...')
+    verbose = NCF_object.verbose
 
-    h1_data = filter_bandpass(h1_data)
-    h2_data = filter_bandpass(h2_data)
+    preprocess_input_list_node1 = []
+    preprocess_input_list_node2 = []
+    for k in range(h1_data.shape[0]):
+        short_time_input_list_node1 = [h1_data[k,:], W, Fs]
+        short_time_input_list_node2 = [h2_data[k,:], W, Fs]
 
-    #plt.plot(h1_data)
-    #plt.plot(h2_data)
+        preprocess_input_list_node1.append(short_time_input_list_node1)
+        preprocess_input_list_node2.append(short_time_input_list_node2)
 
-    h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
-    h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs)))                  
+    pool = mp.Pool(processes=mp.cpu_count())
+    if verbose: print('   Filtering and Whitening Data for Node 1...')
+    processed_data_list_node1 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node1)
+    if verbose: print('   Filtering and Whitening Data for Node 2...')
+    processed_data_list_node2 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node2)
     
-    NCF_object.node1_processed_data = h1_reshaped
-    NCF_object.node2_processed_data = h2_reshaped
+    node1_processed_data = np.array(processed_data_list_node1)
+    node2_procesesd_data = np.array(processed_data_list_node2)
+
+    NCF_object.node1_processed_data = node1_processed_data
+    NCF_object.node2_processed_data = node2_procesesd_data
+
     return NCF_object
-   
+
 def calc_xcorr(NCF_object, loop=False, count=None):
     '''
     Calculate short time correlations for data:
@@ -189,7 +230,6 @@ def calc_xcorr(NCF_object, loop=False, count=None):
     if loop:
         #Save Checkpoints for every average period
         filename = './ckpts/ckpt_' + str(count) + '.pkl'
-        print(filename)
         
         try:
             with open(filename,'wb') as f:
@@ -237,6 +277,29 @@ def filter_bandpass(data, Wlow=15, Whigh=25):
 
     return(data_filt)
 
+def freq_whiten(x, Fs):
+    '''
+    Whiten time series data. Python package GWpy utilized for this function
+
+    Parameters
+    ----------
+    x : numpy array
+        array containing time series data to be whitened
+    Fs : float
+        sampling frequency of the time series array x
+
+    Returns
+    -------
+    x_new : numpy array
+        array containing frequency whitened time series data
+    '''
+
+    series = TimeSeries(x, sample_rate=Fs)
+    white = series.whiten()
+    x_new = white.value
+    return x_new
+
+
 class NCF:
     '''
     Object that stores NCF Data
@@ -255,10 +318,12 @@ class NCF:
         indicates low and high corner frequencies for implemented butterworth bandpass filter. Should be shape [2,]
     W : float
         indicates short time correlation window in seconds
-    node1_raw_data : HydrophoneData
-        raw data downloaded from ooi data server for hydrophone 1
-    node2_raw_data : HydrophoneData
-        raw data downloaded from ooi data server for hydrophone 2
+    node1_data : HydrophoneData
+        raw data downloaded from ooi data server for hydrophone 1. Data has shape [avg_time/W, W*Fs] and is a verticle
+        stack of short time series' of length W (in seconds)
+    node2_data : HydrophoneData
+        raw data downloaded from ooi data server for hydrophone 2. Data has shape [avg_time/W, W*Fs] and is a verticle
+        stack of short time series' of length W (in seconds)
     node1_processed_data : numpy array
         preprocessed data for hydrophone 1. This includes filtering, normalizing short time correlations and frequency whitening
     node2_processed_data : numpy array
