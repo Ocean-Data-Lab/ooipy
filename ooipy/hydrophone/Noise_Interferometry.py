@@ -18,6 +18,7 @@ import pickle
 from matplotlib import pyplot as plt
 import seaborn as sns
 from gwpy.timeseries import TimeSeries
+from multiprocessing.pool import ThreadPool
 
 cwd = os.getcwd()
 ooipy_dir = os.path.dirname(os.path.dirname(cwd))
@@ -172,7 +173,7 @@ def preprocess_audio(NCF_object):
         preprocess_input_list_node1.append(short_time_input_list_node1)
         preprocess_input_list_node2.append(short_time_input_list_node2)
 
-    pool = mp.Pool(processes=mp.cpu_count())
+    pool = ThreadPool(processes=mp.cpu_count())
     if verbose: print('   Filtering and Whitening Data for Node 1...')
     processed_data_list_node1 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node1)
     if verbose: print('   Filtering and Whitening Data for Node 2...')
@@ -199,7 +200,7 @@ def calc_xcorr(NCF_object, loop=False, count=None):
         single_short_time_input = [h1[k,:], h2[k,:]]
         xcorr_input_list.append(single_short_time_input)
 
-    pool = mp.Pool(processes=mp.cpu_count())
+    pool = ThreadPool(processes=mp.cpu_count())
     if verbose: print('   Correlating Data...')
     xcorr_list = pool.starmap(calc_xcorr_single_thread, xcorr_input_list)
 
