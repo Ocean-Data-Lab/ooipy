@@ -110,7 +110,7 @@ def get_audio(NCF_object):
 
     return NCF_object
 
-def preprocess_audio_single_thread(h1_data, W, Fs):
+def preprocess_audio_single_thread(h1_data, W, Fs, whiten):
     '''
     Get preprocess audio data for both hydrophones. This includes the following:
     - Filter Data to given frequency range using butterworth bandpass filter
@@ -126,6 +126,8 @@ def preprocess_audio_single_thread(h1_data, W, Fs):
         window lenght in seconds
     Fs : float
         sampling frequency in Hz
+    whiten : bool
+        indicates whether to whiten the spectrum
 
     Returns
     -------
@@ -144,12 +146,12 @@ def preprocess_audio_single_thread(h1_data, W, Fs):
     # Filter Data
     #if verbose: print('   Filtering Data...')
 
-    h1_data_filt = filter_bandpass(h1_data)
+    h1_data_processed = filter_bandpass(h1_data)
     #h2_data_filt = filter_bandpass(h2_data)
 
     #if verbose: print('   Whitening Data...')
 
-    h1_data_processed = freq_whiten(h1_data_filt, Fs)
+    if whiten: h1_data_processed = freq_whiten(h1_data_processed, Fs)
     #h2_data_processed = freq_whiten(h2_data_filt, Fs)
 
     #h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
@@ -163,12 +165,13 @@ def preprocess_audio(NCF_object):
     W = NCF_object.W
     Fs = NCF_object.Fs
     verbose = NCF_object.verbose
+    whiten = NCF_object.whiten
 
     preprocess_input_list_node1 = []
     preprocess_input_list_node2 = []
     for k in range(h1_data.shape[0]):
-        short_time_input_list_node1 = [h1_data[k,:], W, Fs]
-        short_time_input_list_node2 = [h2_data[k,:], W, Fs]
+        short_time_input_list_node1 = [h1_data[k,:], W, Fs, whiten]
+        short_time_input_list_node2 = [h2_data[k,:], W, Fs, whiten]
 
         preprocess_input_list_node1.append(short_time_input_list_node1)
         preprocess_input_list_node2.append(short_time_input_list_node2)
@@ -341,9 +344,11 @@ class NCF:
         specifies whether to print supporting information
     Fs : float
         sampling frequency of data
+    whiten : bool
+        indicates whether to whiten data or not
     '''
     
-    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False):
+    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False, whiten=True):
         self.avg_time = avg_time
         self.start_time = start_time
         self.node1 = node1
@@ -351,6 +356,7 @@ class NCF:
         self.filter_cutoffs = filter_cutoffs
         self.W = W
         self.verbose = verbose
+        self.whiten = whiten
         return
 
 
