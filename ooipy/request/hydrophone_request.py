@@ -147,8 +147,11 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_worker
         st_all.merge(method=1)
         st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
 
-        st_all[0].data.fill_value = 0
-        st_all[0].data = np.ma.filled(st_all[0].data)
+        try:
+            st_all[0].data.fill_value = 0
+            st_all[0].data = np.ma.filled(st_all[0].data)
+        except:
+            if verbose: print('        data has no minor gaps')
     
     
     else:
