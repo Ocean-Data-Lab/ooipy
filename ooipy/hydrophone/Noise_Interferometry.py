@@ -187,45 +187,25 @@ def preprocess_audio(NCF_object):
     return NCF_object
 
 def calc_xcorr(NCF_object, loop=False, count=None):
-    '''
-    Calculate short time correlations for data:
-
-    Parameters
-    ----------
-    NCF_object : NCF
-        object specifying all details about NCF calculation
-    loop : bool
-        indicates whether this function is being looped through or not. 
-        If it is, None is returned and results are writting to file. 
-        If it is not looped through, then the NCF_object is returned.
-    count : int
-        count variable is used if looped through this function so that it can save the results in a ckpt file
-
-    Returns
-    -------
-    NCF_object : NCF
-        object specifying all details about NCF calculation
-    ''' 
-
     # Unpack needed values from NCF_object
     h1 = NCF_object.node1_processed_data
     h2 = NCF_object.node2_processed_data
-    verbose = NCF_object.verbose
     avg_time = NCF_object.avg_time
+    verbose = NCF_object.verbose
 
+    #Build input list for multiprocessing map
+    xcorr_input_list = []
+    for k in range(h1.shape[0]):
+        single_short_time_input = [h1[k,:], h2[k,:]]
+        xcorr_input_list.append(single_short_time_input)
 
-    M = h1.shape[1]
-    N = h2.shape[1]
-
-    xcorr = np.zeros((int(avg_time*60/30),int(N+M-1)))
-    
+    pool = mp.Pool(processes=mp.cpu_count())
     if verbose: print('   Correlating Data...')
-    xcorr = signal.fftconvolve(h1,np.flip(h2,axis=1),'full',axes=1)
+    xcorr_list = pool.starmap(calc_xcorr_single_thread, xcorr_input_list)
 
-    # Normalize Every Short Time Correlation
-    xcorr_norm = xcorr / np.max(xcorr,axis=1)[:,np.newaxis]
+    xcorr = np.array(xcorr_list)
     
-    xcorr_stack = np.sum(xcorr_norm,axis=0)
+    xcorr_stack = np.sum(xcorr,axis=0)
 
     if loop:
         #Save Checkpoints for every average period
@@ -246,6 +226,32 @@ def calc_xcorr(NCF_object, loop=False, count=None):
         return None
     NCF_object.NCF = xcorr_stack
     return NCF_object
+
+def calc_xcorr_single_thread(h1, h2):
+    '''
+    Calculate single short time correlation of h1 and h2. fftconvolve is used for slightly faster performance:
+
+    Parameters
+    ----------
+    h1 : numpy array
+        with shape [M,]. Contains time series of processed acoustic data from node 1
+    h2 : numpy array
+        with shape [N,]. contains time series of processed acoustic data form node 2
+
+    Returns
+    -------
+    xcorr : numpy array
+        with shape [M+N-1,]. Contains crosscorrelation of h1 and h2
+    ''' 
+
+    xcorr = signal.fftconvolve(h1,np.flip(h2,axis=0),'full',axes=0)
+
+    # normalize single short time correlation
+    xcorr_norm = xcorr/np.max(xcorr)
+
+    return xcorr_norm
+
+
 
 def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True):
     
