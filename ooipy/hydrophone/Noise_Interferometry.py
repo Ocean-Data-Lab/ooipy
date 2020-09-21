@@ -38,7 +38,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     stopwatch_end = time.time()
     print(f'   Time to Calculate NCF for 1 Average Period: {stopwatch_end-stopwatch_start} \n\n')
     if loop==False:
-        return NCF_object.NCF
+        return NCF_object
     else:
         return None
 
@@ -110,22 +110,18 @@ def get_audio(NCF_object):
 
     return NCF_object
 
-def preprocess_audio_single_thread(h1_data, W, Fs, whiten):
+def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
     '''
-    Get preprocess audio data for both hydrophones. This includes the following:
-    - Filter Data to given frequency range using butterworth bandpass filter
-    - whiten data
-    - normalize short time correlation functions
-    - reshaping data to have shape [W*Fs, avg_time/W]
+    Frequency whiten and filter data from single hydrophone.
 
     Parameters
     ----------
     h1_data : numpy array
         audio data from either node for single window length
-    W : float
-        window lenght in seconds
     Fs : float
         sampling frequency in Hz
+    filter_cuttoffs : list
+        corners of bandpass filter
     whiten : bool
         indicates whether to whiten the spectrum
 
@@ -135,29 +131,15 @@ def preprocess_audio_single_thread(h1_data, W, Fs, whiten):
         h1_data after preprocessing
 
     '''     
-    # Unpack needed values from NCF_object
-    #h1_data = NCF_object.node1_data
-    #h2_data = NCF_object.node2_data
-    #W = NCF_object.W
-    #avg_time = NCF_object.avg_time
-    #verbose = NCF_object.verbose
-    #Fs = NCF_object.Fs
+
+    ts = TimeSeries(h1_data, sample_rate=Fs)
+    if whiten: ts = ts.whiten()
+    ts = ts.bandpass(filter_cutoffs[0], filter_cutoffs[1])
     
-    # Filter Data
-    #if verbose: print('   Filtering Data...')
-
-    h1_data_processed = filter_bandpass(h1_data)
-    #h2_data_filt = filter_bandpass(h2_data)
-
-    #if verbose: print('   Whitening Data...')
-
-    if whiten: h1_data_processed = freq_whiten(h1_data_processed, Fs)
-    #h2_data_processed = freq_whiten(h2_data_filt, Fs)
-
-    #h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
-    #h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs)))                  
     
-    return h1_data_processed#, h2_data_processed
+    h1_data_processed = ts.value
+            
+    return h1_data_processed
 
 def preprocess_audio(NCF_object):
     h1_data = NCF_object.node1_data
@@ -166,12 +148,13 @@ def preprocess_audio(NCF_object):
     Fs = NCF_object.Fs
     verbose = NCF_object.verbose
     whiten = NCF_object.whiten
+    filter_cutoffs = NCF_object.filter_cutoffs
 
     preprocess_input_list_node1 = []
     preprocess_input_list_node2 = []
     for k in range(h1_data.shape[0]):
-        short_time_input_list_node1 = [h1_data[k,:], W, Fs, whiten]
-        short_time_input_list_node2 = [h2_data[k,:], W, Fs, whiten]
+        short_time_input_list_node1 = [h1_data[k,:], Fs, filter_cutoffs, whiten]
+        short_time_input_list_node2 = [h2_data[k,:], Fs, filter_cutoffs, whiten]
 
         preprocess_input_list_node1.append(short_time_input_list_node1)
         preprocess_input_list_node2.append(short_time_input_list_node2)
