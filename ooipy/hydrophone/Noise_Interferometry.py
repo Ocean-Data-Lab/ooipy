@@ -63,6 +63,7 @@ def get_audio(NCF_object):
     node1 = NCF_object.node1
     node2 = NCF_object.node2
     verbose = NCF_object.verbose
+    htype = NCF_object.htype
 
     flag = False
     
@@ -75,19 +76,37 @@ def get_audio(NCF_object):
     # Calculate end_time
     end_time = start_time + timedelta(minutes=avg_time)
 
-    if verbose: print('   Getting Audio from Node 1...')
-    
-    #Audio from Node 1
-    node1_data = hydrophone_request.get_acoustic_data(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
-    
-    if verbose: print('   Getting Audio from Node 2...')
+    if htype == 'broadband':
+        if verbose: print('   Getting Audio from Node 1...')
 
-    #Audio from Node 2
-    node2_data = hydrophone_request.get_acoustic_data(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
-    
-    if (node1_data == None) or (node2_data == None):
-        print('Error with Getting Audio')
-        return None, None, None
+        #Audio from Node 1
+        node1_data = hydrophone_request.get_acoustic_data(start_time, end_time, node=node1, verbose=False, data_gap_mode=2)
+        
+        if verbose: print('   Getting Audio from Node 2...')
+
+        #Audio from Node 2
+        node2_data = hydrophone_request.get_acoustic_data(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+        
+        if (node1_data == None) or (node2_data == None):
+            print('Error with Getting Audio')
+            return None, None, None
+    elif htype == 'low_frequency':
+        if verbose: print('   Getting Audio from Node 1...')
+
+        #Audio from Node 1
+        node1_data = hydrophone_request.get_acoustic_data_LF(start_time, end_time, node=node1, verbose=False, zero_mean=True)
+        
+        if verbose: print('   Getting Audio from Node 2...')
+
+        #Audio from Node 2
+        node2_data = hydrophone_request.get_acoustic_data_LF(start_time, end_time, node=node2, verbose=False, zero_mean=True)
+        
+        if (node1_data == None) or (node2_data == None):
+            print('Error with Getting Audio')
+            return None, None, None      
+
+    else:
+        raise Exception ('Invalid htype')
     
     #Combine Data into Stream
     data_stream = obspy.Stream(traces=[node1_data, node2_data])
@@ -329,9 +348,11 @@ class NCF:
         sampling frequency of data
     whiten : bool
         indicates whether to whiten data or not
+    htype : str
+        specifices the type of hydrophone that is used. options include, 'broadband' and 'low_frequency'
     '''
     
-    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False, whiten=True):
+    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False, whiten=True, htype='broadband'):
         self.avg_time = avg_time
         self.start_time = start_time
         self.node1 = node1
@@ -340,6 +361,7 @@ class NCF:
         self.W = W
         self.verbose = verbose
         self.whiten = whiten
+        self.htype = htype
         return
 
 

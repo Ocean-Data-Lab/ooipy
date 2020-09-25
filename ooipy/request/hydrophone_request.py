@@ -252,14 +252,14 @@ def __get_mseed_urls(day_str, node):
     
     return data_url_list
 
-def build_LF_URL(location, starttime, endtime, bandpass_range=None, zero_mean=False):
+def build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=False):
     '''
-    Build URL for Lowfrequency Data given the start time, end time, and location
+    Build URL for Lowfrequency Data given the start time, end time, and node
 
     Parameters
     ----------
-    location : str
-        location of low frequency hydrophone. Options include 'Easter_Caldera', ...
+    node : str
+        node of low frequency hydrophone. Options include 'Easter_Caldera', ...
     starttime : datetime.datetime
         start of data segment requested
     endtime : datetime.datetime
@@ -274,7 +274,7 @@ def build_LF_URL(location, starttime, endtime, bandpass_range=None, zero_mean=Fa
         url of specified data segment. Format will be in miniseed.
     '''
     
-    network, station, location, channel = get_LF_location_stats(location)
+    network, station, location, channel = get_LF_location_stats(node)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -297,40 +297,40 @@ def build_LF_URL(location, starttime, endtime, bandpass_range=None, zero_mean=Fa
     url = base_url+netw_url+stat_url+chan_url+strt_url+end_url+mean_url+band_url+form_url+loca_url
     return url
 
-def get_LF_location_stats(location):
+def get_LF_location_stats(node):
 
     try:
-        if location == 'Slope_Base':
+        if node == 'Slope_Base':
             network='OO'
             station='HYSB1'
             location='--'
             channel='HHE'
 
-        if location == 'Southern_Hydrate':
+        if node == 'Southern_Hydrate':
             network='OO'
             station='HYS14'
             location='--'
             channel='HHE'
 
-        if location == 'Axial_Base':
+        if node == 'Axial_Base':
             network='OO'
             station='AXBA1'
             location='--'
             channel='HHE'
             
-        if location == 'Central_Caldera':
+        if node == 'Central_Caldera':
             network='OO'
             station='AXCC1'
             location='--'
             channel='HHE'
 
-        if location == 'Eastern_Caldera':
+        if node == 'Eastern_Caldera':
             network='OO'
             station='AXEC2'
             location='--'
             channel='HHE'
 
-        # Create error if location is invalid
+        # Create error if node is invalid
         network = network
 
     except:
@@ -339,20 +339,20 @@ def get_LF_location_stats(location):
         
     return network, station, location, channel
     
-def get_acoustic_data_LF(starttime, endtime, location, fmin=None, fmax=None, verbose=False, zero_mean=False):
+def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False):
     if (fmin and fmax) == None:
         bandpass_range = None
     else:
         bandpass_range = [fmin, fmax]
 
-    url = build_LF_URL(location, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean)
+    url = build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean)
     if verbose: print('Downloading mseed file...')
     data_stream = read(url)
     
-    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, location)
+    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
 
-def ooipy_read(device, location, starttime, endtime, fmin=None, fmax=None, verbose=False, data_gap_mode=0, zero_mean=False):
+def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None, verbose=False, data_gap_mode=0, zero_mean=False):
     '''
     General Purpose OOIpy read function. Parses input parameters to appropriate, device specific, read function
     
@@ -360,7 +360,7 @@ def ooipy_read(device, location, starttime, endtime, fmin=None, fmax=None, verbo
     ----------
     device : str
         Specifies device type. Valid option are 'broadband_hydrohpone' and 'low_frequency_hydrophone'
-    location : str
+    node : str
         Specifies data acquisition device location. TODO add available options
     starttime : datetime.datetime
         Specifies start time of data requested
@@ -384,9 +384,9 @@ def ooipy_read(device, location, starttime, endtime, fmin=None, fmax=None, verbo
     '''
 
     if device == 'broadband_hydrophone':
-        hydrophone_data = get_acoustic_data(starttime, endtime, location, fmin, fmax, verbose=verbose, data_gap_mode=data_gap_mode)
+        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin, fmax, verbose=verbose, data_gap_mode=data_gap_mode)
     elif device == 'low_frequency_hydrophone':
-        hydrophone_data = get_acoustic_data_LF(starttime, endtime, location, fmin=fmin, fmax=fmax, verbose=verbose, zero_mean=zero_mean)
+        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node, fmin=fmin, fmax=fmax, verbose=verbose, zero_mean=zero_mean)
     else:
         raise Exception ('Invalid Devic String')
 
