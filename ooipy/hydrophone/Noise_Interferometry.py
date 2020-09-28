@@ -150,7 +150,6 @@ def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
         h1_data after preprocessing
 
     '''     
-
     ts = TimeSeries(h1_data, sample_rate=Fs)
     if whiten: ts = ts.whiten()
     ts = ts.bandpass(filter_cutoffs[0], filter_cutoffs[1])
@@ -259,10 +258,10 @@ def calc_xcorr_single_thread(h1, h2):
 
 
 
-def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True):
+def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True, htype='broadband'):
     
     for k in range(num_periods):
-        NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten)
+        NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype)
         print(f'Calculting NCF for Period {k+1}:')
         xcorr = calculate_NCF(NCF_object, loop=True, count=k)
 

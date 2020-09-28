@@ -347,7 +347,15 @@ def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None, verbose
 
     url = build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean)
     if verbose: print('Downloading mseed file...')
-    data_stream = read(url)
+    
+    #Try downloading data 5 times. If fails every time raise exception
+    for k in range(5):
+        try:
+            data_stream = read(url)
+            break
+        except:
+            if k == 4:
+                raise Exception ('Problem Requesting Data from OOI Server')
     
     hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
