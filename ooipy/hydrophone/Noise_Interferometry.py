@@ -31,6 +31,12 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     stopwatch_start = time.time()
 
     NCF_object = get_audio(NCF_object)
+    
+    #See if get_audio returned data:
+    if NCF_object.length_flag:
+        print('   Error With Time Period. Period Skipped.\n\n')
+        return None
+    
     NCF_object = preprocess_audio(NCF_object)
     NCF_object = calc_xcorr(NCF_object, loop, count)
     
@@ -70,7 +76,7 @@ def get_audio(NCF_object):
     avg_time_seconds = avg_time * 60
     
     if avg_time_seconds % W != 0:
-        print('Error: Average Time Must Be Interval of Window')
+        raise Exception ('Average Time Must Be Interval of Window')
         return None
     
     # Calculate end_time
@@ -121,9 +127,13 @@ def get_audio(NCF_object):
     h1_data = data_stream[0].data[:int(avg_time*60*Fs)]
     h2_data = data_stream[1].data[:int(avg_time*60*Fs)]
 
-    h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
-    h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs))) 
-    
+    try:
+        h1_reshaped = np.reshape(h1_data,(int(avg_time*60/W), int(W*Fs)))
+        h2_reshaped = np.reshape(h2_data,(int(avg_time*60/W), int(W*Fs))) 
+    except:
+        NCF_object.length_flag = True
+        return NCF_object
+
     NCF_object.node1_data = h1_reshaped
     NCF_object.node2_data = h2_reshaped
 
@@ -176,12 +186,15 @@ def preprocess_audio(NCF_object):
 
         preprocess_input_list_node1.append(short_time_input_list_node1)
         preprocess_input_list_node2.append(short_time_input_list_node2)
+    
+    with ThreadPool(processes=mp.cpu_count()) as pool:
 
-    pool = ThreadPool(processes=mp.cpu_count())
-    if verbose: print('   Filtering and Whitening Data for Node 1...')
-    processed_data_list_node1 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node1)
-    if verbose: print('   Filtering and Whitening Data for Node 2...')
-    processed_data_list_node2 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node2)
+    
+    #pool = ThreadPool(processes=mp.cpu_count())
+        if verbose: print('   Filtering and Whitening Data for Node 1...')
+        processed_data_list_node1 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node1)
+        if verbose: print('   Filtering and Whitening Data for Node 2...')
+        processed_data_list_node2 = pool.starmap(preprocess_audio_single_thread, preprocess_input_list_node2)
     
     node1_processed_data = np.array(processed_data_list_node1)
     node2_procesesd_data = np.array(processed_data_list_node2)
@@ -259,10 +272,26 @@ def calc_xcorr_single_thread(h1, h2):
 
 
 def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True, htype='broadband'):
-    
+
+    #Header File Just Contains NCF object
+    NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype, num_periods)
+    filename = './ckpts/0HEADER.pkl'
+    try:
+        with open(filename,'wb') as f:
+            pickle.dump(NCF_object, f)               
+    except:
+        os.makedirs('ckpts')
+        with open(filename,'wb') as f:
+            pickle.dump(NCF_object, f)
+
+
+
+
+
     for k in range(num_periods):
-        NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype)
-        print(f'Calculting NCF for Period {k+1}:')
+        start_time_loop = start_time + timedelta(minutes=(avg_time*k))
+        NCF_object = NCF(avg_time, start_time_loop, node1, node2, filter_cutoffs, W, verbose, whiten, htype)
+        print(f'Calculting NCF for Period {start_time_loop} - {start_time_loop+timedelta(minutes=avg_time)}:')
         xcorr = calculate_NCF(NCF_object, loop=True, count=k)
 
 def filter_bandpass(data, Wlow=15, Whigh=25):
@@ -349,9 +378,13 @@ class NCF:
         indicates whether to whiten data or not
     htype : str
         specifices the type of hydrophone that is used. options include, 'broadband' and 'low_frequency'
+    num_periods : float
+        number of average periods looped through. This attribute exists only for the header file.
+    length_flag : bool
+        set if length of data does not match between hydrophones.
     '''
     
-    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False, whiten=True, htype='broadband'):
+    def __init__(self, avg_time, start_time, node1, node2, filter_cutoffs, W, verbose=False, whiten=True, htype='broadband', num_periods=None):
         self.avg_time = avg_time
         self.start_time = start_time
         self.node1 = node1
@@ -361,6 +394,8 @@ class NCF:
         self.verbose = verbose
         self.whiten = whiten
         self.htype = htype
+        self.num_periods = num_periods
+        self.length_flag = False
         return
 
 
