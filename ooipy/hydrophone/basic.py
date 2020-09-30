@@ -392,7 +392,7 @@ class HydrophoneData(Trace):
             Pxx = Pxx * np.power(10,
                                  self._freq_dependent_sensitivity_correct(
                                      int(nfft / 2 + 1)) / 10) * \
-                                     np.power(10, -128.9 / 10)
+                  np.power(10, -128.9 / 10)
         else:
             raise Exception('scale has to be either "lin" or "log".')
 
