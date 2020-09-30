@@ -20,8 +20,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c9842530-ef95-4a88-8017-17a5b2c9f0a4" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ooipy/hydrophone/Noise_Interferometry.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/hydrophone/Noise_Interferometry.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -63,7 +61,7 @@
       <workItem from="1600118811072" duration="5207000" />
       <workItem from="1600124035166" duration="5904000" />
       <workItem from="1601423450366" duration="271000" />
-      <workItem from="1601491397362" duration="311000" />
+      <workItem from="1601491397362" duration="612000" />
     </task>
     <servers />
   </component>

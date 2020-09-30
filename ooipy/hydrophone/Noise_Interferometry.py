@@ -399,20 +399,20 @@ class Hydrophone_Xcorr:
             '''
             # Compute Cross Correlation for Each Window and Average
             if first_loop:
-                xcorr_avg_period, xcorr_short_time = 
+                xcorr_avg_period, xcorr_short_time =
                 self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr = xcorr_avg_period
                 first_loop = False
             else:
-                xcorr_avg_period, xcorr_short_time = 
+                xcorr_avg_period, xcorr_short_time =
                 self.xcorr_over_avg_period(h1_processed, h2_processed)
                 xcorr += xcorr_avg_period
                 start_time = start_time + timedelta(minutes=self.avg_time)
-            
+
             stopwatch_end = time.time()
             print('Time to Complete 1 period: ',
             stopwatch_end - stopwatch_start)
-            
+
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
 
@@ -420,13 +420,13 @@ class Hydrophone_Xcorr:
                 try:
                     with open(filename,'wb') as f:
                         # Short Time XCORR for all of avg_perd
-                        #pickle.dump(xcorr_short_time, f) 
-                           
-                        # Accumulated xcorr   
-                        pickle.dump(xcorr_avg_period, f)   
-                        
-                        # avg_period number            
-                        pickle.dump(k,f)                    
+                        #pickle.dump(xcorr_short_time, f)
+
+                        # Accumulated xcorr
+                        pickle.dump(xcorr_avg_period, f)
+
+                        # avg_period number
+                        pickle.dump(k,f)
                 except:
                     os.makedirs('ckpts')
                     with open(filename,'wb') as f:
@@ -442,13 +442,13 @@ class Hydrophone_Xcorr:
             dt = self.Ts
             self.xcorr = xcorr
             t = np.arange(-np.shape(xcorr)[0]*dt/2,np.shape(xcorr)[0]*dt/2,dt)
-            
+
         #xcorr = xcorr / num_periods
 
         # Calculate Bearing of Max Peak
         bearing_max_global = self.get_bearing_angle(xcorr, t)
 
-        return t, xcorr, bearing_max_global  
+        return t, xcorr, bearing_max_global
     '''
 
     def plot_map_bearing(self, bearing_angle):
