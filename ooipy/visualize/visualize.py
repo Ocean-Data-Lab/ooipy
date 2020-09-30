@@ -3,7 +3,7 @@ import numpy as np
 import json
 import os
 from matplotlib import pyplot as plt
-from obspy import read,Stream, Trace
+from obspy import read, Stream, Trace
 from obspy.core import UTCDateTime
 import math
 from matplotlib import mlab
@@ -29,4 +29,3 @@ import progressbar
 from datetime import timedelta
 import concurrent.futures
 import logging
-

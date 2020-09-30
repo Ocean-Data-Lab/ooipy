@@ -320,7 +320,6 @@ class Hydrophone_Xcorr:
         xcorr - xcorr for every short time window within average period shape
         [avg_time(s)/W(s), N]
         """
-        verbose = self.verbose
         avg_time = self.avg_time
         M = h1.shape[1]
         N = h2.shape[1]
@@ -328,11 +327,6 @@ class Hydrophone_Xcorr:
         xcorr = np.zeros((int(avg_time * 60 / 30), int(N + M - 1)))
 
         stopwatch_start = time.time()
-        # if verbose:
-        #    bar = progressbar.ProgressBar(maxval=h1.shape[0],
-        #    widgets=[progressbar.Bar('=', '[', ']'), ' ',
-        #    progressbar.Percentage()])
-        #    bar.start()
 
         if self.verbose:
             print('Correlating Data...')
@@ -385,11 +379,9 @@ class Hydrophone_Xcorr:
         """
         verbose = self.verbose
 
-        first_loop = True
         self.count = 0
 
         for k in range(num_periods):
-            stopwatch_start = time.time()
             if verbose:
                 print('\n\nTime Period: ', k + 1)
 
@@ -423,7 +415,7 @@ class Hydrophone_Xcorr:
             
             #Save Checkpoints for every average period
             filename = './ckpts/ckpt_' + str(k) + '.pkl'
-            
+
             if self.ckpts:
                 try:
                     with open(filename,'wb') as f:
