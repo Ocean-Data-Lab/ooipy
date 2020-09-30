@@ -21,6 +21,7 @@
   <component name="ChangeListManager">
     <list default="true" id="c9842530-ef95-4a88-8017-17a5b2c9f0a4" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/hydrophone/basic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ooipy/visualize/visualize.py" beforeDir="false" afterPath="$PROJECT_DIR$/ooipy/visualize/visualize.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +62,7 @@
       <workItem from="1600118811072" duration="5207000" />
       <workItem from="1600124035166" duration="5904000" />
       <workItem from="1601423450366" duration="271000" />
-      <workItem from="1601491397362" duration="828000" />
+      <workItem from="1601491397362" duration="1114000" />
     </task>
     <servers />
   </component>
