@@ -33,8 +33,8 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     NCF_object = get_audio(NCF_object)
     
     #See if get_audio returned data:
-    if NCF_object.length_flag:
-        print('   Error With Time Period. Period Skipped.\n\n')
+    if NCF_object == None:
+        print('   Error with time period. Period Skipped.\n\n')
         return None
     
     NCF_object = preprocess_audio(NCF_object)
@@ -92,24 +92,25 @@ def get_audio(NCF_object):
 
         #Audio from Node 2
         node2_data = hydrophone_request.get_acoustic_data(start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
-        
+        if node2_data == None:
+            return None
         if (node1_data == None) or (node2_data == None):
             print('Error with Getting Audio')
-            return None, None, None
+            return None
     elif htype == 'low_frequency':
         if verbose: print('   Getting Audio from Node 1...')
 
         #Audio from Node 1
         node1_data = hydrophone_request.get_acoustic_data_LF(start_time, end_time, node=node1, verbose=False, zero_mean=True)
-        
+
         if verbose: print('   Getting Audio from Node 2...')
 
         #Audio from Node 2
         node2_data = hydrophone_request.get_acoustic_data_LF(start_time, end_time, node=node2, verbose=False, zero_mean=True)
         
         if (node1_data == None) or (node2_data == None):
-            print('Error with Getting Audio')
-            return None, None, None      
+            print('   Error with Getting Audio')
+            return None    
 
     else:
         raise Exception ('Invalid htype')
@@ -118,8 +119,8 @@ def get_audio(NCF_object):
     data_stream = obspy.Stream(traces=[node1_data, node2_data])
     
     if data_stream[0].data.shape != data_stream[1].data.shape:
-        print('Data streams are not the same length. Flag to be added later')
-        # TODO: Set up flag structure of some kind
+        print('   Data streams are not the same length. Flag to be added later')
+        return None
     
     Fs = node1_data.stats.sampling_rate   
     NCF_object.Fs = Fs
@@ -271,28 +272,27 @@ def calc_xcorr_single_thread(h1, h2):
 
 
 
-def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True, htype='broadband'):
+def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True, htype='broadband', kstart=0):
 
     #Header File Just Contains NCF object
-    NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype, num_periods)
-    filename = './ckpts/0HEADER.pkl'
-    try:
-        with open(filename,'wb') as f:
-            pickle.dump(NCF_object, f)               
-    except:
-        os.makedirs('ckpts')
-        with open(filename,'wb') as f:
-            pickle.dump(NCF_object, f)
-
-
-
-
-
-    for k in range(num_periods):
+    if kstart == 0:
+        NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype, num_periods)
+        filename = './ckpts/0HEADER.pkl'
+        try:
+            with open(filename,'wb') as f:
+                pickle.dump(NCF_object, f)               
+        except:
+            os.makedirs('ckpts')
+            with open(filename,'wb') as f:
+                pickle.dump(NCF_object, f)
+                
+    for k in range(kstart,num_periods):
         start_time_loop = start_time + timedelta(minutes=(avg_time*k))
         NCF_object = NCF(avg_time, start_time_loop, node1, node2, filter_cutoffs, W, verbose, whiten, htype)
-        print(f'Calculting NCF for Period {start_time_loop} - {start_time_loop+timedelta(minutes=avg_time)}:')
-        xcorr = calculate_NCF(NCF_object, loop=True, count=k)
+        print(f'Calculting NCF for Period {k}: {start_time_loop} - {start_time_loop+timedelta(minutes=avg_time)}')
+        calculate_NCF(NCF_object, loop=True, count=k)
+
+    return
 
 def filter_bandpass(data, Wlow=15, Whigh=25):
     

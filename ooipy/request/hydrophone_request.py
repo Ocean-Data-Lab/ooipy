@@ -355,7 +355,11 @@ def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None, verbose
             break
         except:
             if k == 4:
-                raise Exception ('Problem Requesting Data from OOI Server')
+                print('   Specific Time window timed out.')
+                return None
+                
+            #    raise Exception ('Problem Requesting Data from OOI Server')
+
     
     hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
