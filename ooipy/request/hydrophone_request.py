@@ -263,8 +263,13 @@ def __get_mseed_urls(day_str, node):
     mainurl = 'https://rawdata.oceanobservatories.org/files'+array+node+instrument+day_str
 
     FS = fsspec.filesystem('http')
+    
     data_url_list = sorted([f['name'] for f in FS.ls(mainurl) if f['type'] == 'file' and f['name'].endswith('.mseed')])
     
+    if not data_url_list:
+        print('No Data Available for Specified Time')
+        return None
+        
     return data_url_list
 
 def build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=False):
