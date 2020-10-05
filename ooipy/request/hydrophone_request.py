@@ -1,3 +1,12 @@
+'''
+This modules handles the requesting of OOI Data.
+
+
+.. sidebar:: Hydrophone Request Jupyter Notebook
+    
+        For a demo of the hydrophone request module, see the `Hydrophone Request Jupyter Notebook <_static/test_request.html>`_.
+
+'''
 # Import all dependancies
 from ooipy.hydrophone.basic import HydrophoneData
 from obspy import read, Stream
@@ -33,6 +42,12 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_worker
     return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
         between start_time and end_time. Returns None if no data are available for specified time frame
 
+    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
+    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
+    >>> node = '/PC01A'
+    >>> data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+    >>> print(data.stats)
+    
     '''
     
     #data_gap = False
@@ -340,6 +355,10 @@ def get_LF_location_stats(node):
     return network, station, location, channel
     
 def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False):
+    '''
+    Get acoustic data from low frequency OOI Hydrophones
+    '''
+   
     if (fmin and fmax) == None:
         bandpass_range = None
     else:
