@@ -151,7 +151,7 @@ class HydrophoneData(Trace):
                 else:
                     Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime + datetime.timedelta(seconds=n*L / fs))
+                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=n*L / fs))
 
         else:
             for n in range(nbins - 1):
@@ -165,7 +165,7 @@ class HydrophoneData(Trace):
                 else:
                     Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime + datetime.timedelta(seconds=n*avg_time))
+                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=n*avg_time))
 
             # compute PSD for residual segment if segment has more than L samples
             if len(self.data[int((nbins - 1) * fs * avg_time):]) >= L:
@@ -179,7 +179,7 @@ class HydrophoneData(Trace):
                 else:
                     Pxx = 10*np.log10(Pxx * np.power(10, self._freq_dependent_sensitivity_correct(int(L/2 + 1))/10))-128.9
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime + datetime.timedelta(seconds=(nbins-1)*avg_time))
+                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=(nbins-1)*avg_time))
     
         if len(time) == 0:
             if verbose:
