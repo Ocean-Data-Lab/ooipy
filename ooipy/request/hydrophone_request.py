@@ -1,3 +1,12 @@
+'''
+This modules handles the requesting of OOI Data.
+
+
+.. sidebar:: Hydrophone Request Jupyter Notebook
+    
+        For a demo of the hydrophone request module, see the `Hydrophone Request Jupyter Notebook <_static/test_request.html>`_.
+
+'''
 # Import all dependancies
 from ooipy.hydrophone.basic import HydrophoneData
 from obspy import read, Stream
@@ -33,6 +42,12 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_worker
     return (obspy.core.stream.Stream): obspy Stream object containing one Trace and date
         between start_time and end_time. Returns None if no data are available for specified time frame
 
+    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
+    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
+    >>> node = '/PC01A'
+    >>> data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+    >>> print(data.stats)
+    
     '''
     
     #data_gap = False
@@ -147,8 +162,11 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None, max_worker
         st_all.merge(method=1)
         st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
 
-        st_all[0].data.fill_value = 0
-        st_all[0].data = np.ma.filled(st_all[0].data)
+        try:
+            st_all[0].data.fill_value = 0
+            st_all[0].data = np.ma.filled(st_all[0].data)
+        except:
+            if verbose: print('        data has no minor gaps')
     
     
     else:
@@ -245,9 +263,170 @@ def __get_mseed_urls(day_str, node):
     mainurl = 'https://rawdata.oceanobservatories.org/files'+array+node+instrument+day_str
 
     FS = fsspec.filesystem('http')
+    
     data_url_list = sorted([f['name'] for f in FS.ls(mainurl) if f['type'] == 'file' and f['name'].endswith('.mseed')])
     
+    if not data_url_list:
+        print('No Data Available for Specified Time')
+        return None
+        
     return data_url_list
+
+def build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=False):
+    '''
+    Build URL for Lowfrequency Data given the start time, end time, and node
+
+    Parameters
+    ----------
+    node : str
+        node of low frequency hydrophone. Options include 'Easter_Caldera', ...
+    starttime : datetime.datetime
+        start of data segment requested
+    endtime : datetime.datetime
+        end of data segment requested
+    bandpass_range : list
+        list of length two specifying [flow, fhigh] in Hertz. If None are given, no bandpass will be added to data.
+    zero_mean : bool
+        specified whether mean should be removed from data
+    Returns
+    -------
+    url : str
+        url of specified data segment. Format will be in miniseed.
+    '''
+    
+    network, station, location, channel = get_LF_location_stats(node)
+
+    starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
+    endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
+    base_url = 'http://service.iris.edu/irisws/timeseries/1/query?'
+    netw_url = 'net='+network+'&'
+    stat_url = 'sta='+station+'&'
+    chan_url = 'cha='+channel+'&'
+    strt_url = 'start='+starttime+'&'
+    end_url = 'end='+endtime+'&'
+    form_url = 'format=miniseed&'
+    loca_url = 'loc='+location
+    if bandpass_range == None:
+        band_url = ''
+    else:
+        band_url = 'bp='+str(bandpass_range[0])+'-'+str(bandpass_range[1])+'&'
+    if zero_mean:
+        mean_url = 'demean=true&'
+    else:
+        mean_url = ''
+    url = base_url+netw_url+stat_url+chan_url+strt_url+end_url+mean_url+band_url+form_url+loca_url
+    return url
+
+def get_LF_location_stats(node):
+
+    try:
+        if node == 'Slope_Base':
+            network='OO'
+            station='HYSB1'
+            location='--'
+            channel='HHE'
+
+        if node == 'Southern_Hydrate':
+            network='OO'
+            station='HYS14'
+            location='--'
+            channel='HHE'
+
+        if node == 'Axial_Base':
+            network='OO'
+            station='AXBA1'
+            location='--'
+            channel='HHE'
+            
+        if node == 'Central_Caldera':
+            network='OO'
+            station='AXCC1'
+            location='--'
+            channel='HHE'
+
+        if node == 'Eastern_Caldera':
+            network='OO'
+            station='AXEC2'
+            location='--'
+            channel='HHE'
+
+        # Create error if node is invalid
+        network = network
+
+    except:
+        raise Exception ('Invalid Location String')
+        
+        
+    return network, station, location, channel
+    
+def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False):
+    '''
+    Get acoustic data from low frequency OOI Hydrophones
+    '''
+   
+    if (fmin and fmax) == None:
+        bandpass_range = None
+    else:
+        bandpass_range = [fmin, fmax]
+
+    url = build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean)
+    if verbose: print('Downloading mseed file...')
+    
+    #Try downloading data 5 times. If fails every time raise exception
+    for k in range(5):
+        try:
+            data_stream = read(url)
+            break
+        except:
+            if k == 4:
+                print('   Specific Time window timed out.')
+                return None
+                
+            #    raise Exception ('Problem Requesting Data from OOI Server')
+
+    
+    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
+    return hydrophone_data
+
+def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None, verbose=False, data_gap_mode=0, zero_mean=False):
+    '''
+    General Purpose OOIpy read function. Parses input parameters to appropriate, device specific, read function
+    
+    Parameters
+    ----------
+    device : str
+        Specifies device type. Valid option are 'broadband_hydrohpone' and 'low_frequency_hydrophone'
+    node : str
+        Specifies data acquisition device location. TODO add available options
+    starttime : datetime.datetime
+        Specifies start time of data requested
+    endtime : datetime.datetime
+        Specifies end time of data requested
+    fmin : float
+        Low frequency corner for filtering. If None are give, then no filtering happens. 
+        Broadband hydrophone data is filtered using Obspy. 
+        Low frequency hydrophone uses IRIS filtering.
+    fmax : float
+        High frequency corner for filtering.
+    verbose : bool
+        Specifies whether or not to print status update statements.
+    data_gap_mode : int
+        specifies how gaps in data are handled see documentation for get_acoustic_data
+
+    Returns
+    -------
+    hydrophone_data : HydrophoneData
+        Object that stores hydrophone data. Similar to obspy trace.
+    '''
+
+    if device == 'broadband_hydrophone':
+        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin, fmax, verbose=verbose, data_gap_mode=data_gap_mode)
+    elif device == 'low_frequency_hydrophone':
+        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node, fmin=fmin, fmax=fmax, verbose=verbose, zero_mean=zero_mean)
+    else:
+        raise Exception ('Invalid Devic String')
+
+    return hydrophone_data
 
 #Archive
 '''
