@@ -3,7 +3,7 @@ name: unit test
 on: [push, pull_request]
 
 jobs:
-  install_conda:
+  unit_test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
