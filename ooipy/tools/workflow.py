@@ -14,7 +14,7 @@ def save(save_obj, filename, **kwargs):
     elif isinstance(save_obj, Psd):
         save_psd(save_obj, filename, **kwargs)
     else:
-        print('Fuction only supports spectrogram and PSD objects.')
+        raise Exception('Fuction only supports spectrogram and PSD objects.')
 
 def save_psd(psd_obj, filename, **kwargs):
     '''
