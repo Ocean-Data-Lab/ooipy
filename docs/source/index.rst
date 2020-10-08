@@ -13,14 +13,25 @@ datasets from the OOI Raw Data Server. Additionally, tools to
 analyze the data, such as spectrogram and power spectral density
 plotting are also provided.
 
-Table of Contents
-^^^^^^^^^^^^^^^^^
+First Steps
+^^^^^^^^^^^
 .. toctree::
-   :maxdepth: 3
+    :maxdepth: 1
+
+    ooipy_description
+    install_instructions
+    citation_guide
+
+
+Modules
+^^^^^^^
+.. toctree::
+   :maxdepth: 2
 
    ctd
    hydrophone
    request
    surface_buoy
    visualize
+
 

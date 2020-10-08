@@ -1,7 +1,7 @@
 <img src='imgs/OOIPY_Logo.png' align="right" width=150>
 
 # OOIPY 
-![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master)
+![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master) ![unit test](https://github.com/ooipy/ooipy/workflows/unit%20test/badge.svg)
 
 A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data
 
@@ -27,6 +27,15 @@ cd OOI-data-processing-Python
   conda env create -f ooi_linux.yml
   ```
 
-### Demo
+## Node Definitions OOI Broadband Hydrophones
 
-  - demo.ipynb provides examples of some of the most used functions in the library
+'/LJ01D': Oregon Shelf Base Seafloor
+
+'/LJ01A': Oregon Slope Base Seafloore
+
+'/PC01A': Slope Base Shallow
+
+'/PC03A': Base Shallow Profiler
+
+'/LJ01C': Offshore Base Seafloor
+

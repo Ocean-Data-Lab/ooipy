@@ -1,5 +1,6 @@
-OOIPY Documentation
-===================
+What is OOIPY?
+==============
+
 .. image:: ../../imgs/OOIPY_Logo.png
   :width: 200
   :alt: OOIPY Logo
@@ -12,15 +13,3 @@ broadband hydrophone data) is not available through the OOI API
 datasets from the OOI Raw Data Server. Additionally, tools to 
 analyze the data, such as spectrogram and power spectral density
 plotting are also provided.
-
-Table of Contents
-^^^^^^^^^^^^^^^^^
-.. toctree::
-   :maxdepth: 3
-
-   ctd
-   hydrophone
-   request
-   surface_buoy
-   visualize
-

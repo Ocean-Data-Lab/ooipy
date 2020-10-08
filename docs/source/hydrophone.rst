@@ -4,8 +4,11 @@ Hydrophone Tools Module
 
 Basic Tools
 ^^^^^^^^^^^
-Calculate Spectrogram
+
+.. automodule:: ooipy.hydrophone.basic
+    :members:
 
 Noise Interferometry Tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-calc_NCF()
+.. automodule:: ooipy.hydrophone.Noise_Interferometry
+    :members:
