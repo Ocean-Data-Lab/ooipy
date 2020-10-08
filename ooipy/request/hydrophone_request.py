@@ -14,6 +14,7 @@ from obspy.core import UTCDateTime
 from lxml import html
 from datetime import timedelta
 import numpy as np
+import os
 import sys
 import requests
 import multiprocessing as mp
