@@ -2,7 +2,8 @@
 Module for hydrophone (acoustic) data objects
 
 The HydrophoneData objects inherits from obspy.Trace. Furthermore,
-methods for computing spectrograms and power spectral densities are added.
+methods for computing spectrograms and power spectral densities are
+added.
 """
 import numpy as np
 import json
@@ -59,11 +60,8 @@ class HydrophoneData(Trace):
         Same as compute_psd_welch but using multiprocessing
         to parallelize computations.
 
-    Private Methods
-    ---------------
-    __web_crawler_noise(day_str)
-        Fetches URLs from OOI raw data server for specific day.
-    _freq_dependent_sensitivity_correct(N)
+    freq_dependent_sensitivity_correct(N)
+        Undeveloped: full features to be added in future development
         TODO: applies frequency dependent sensitivity correction to
         hydrophone data
     """
@@ -79,8 +77,7 @@ class HydrophoneData(Trace):
         self.psd_list = None
 
     # TODO: use correct frequency response for hydrophones
-
-    def _freq_dependent_sensitivity_correct(self, N):
+    def freq_dependent_sensitivity_correct(self, N):
         # TODO
         """
         Apply a frequency dependent sensitivity correction to the acoustic
@@ -167,7 +164,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = self._freq_dependent_sensitivity_correct(
+                    tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -191,7 +188,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = self._freq_dependent_sensitivity_correct(
+                    tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -214,7 +211,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = self._freq_dependent_sensitivity_correct(
+                    tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -386,11 +383,11 @@ class HydrophoneData(Trace):
 
         if scale == 'log':
             Pxx = 10 * np.log10(
-                Pxx * np.power(10, self._freq_dependent_sensitivity_correct(
+                Pxx * np.power(10, self.freq_dependent_sensitivity_correct(
                     int(nfft / 2 + 1)) / 10)) - 128.9
         elif scale == 'lin':
             Pxx = Pxx * np.power(10,
-                                 self._freq_dependent_sensitivity_correct(
+                                 self.freq_dependent_sensitivity_correct(
                                      int(nfft / 2 + 1)) / 10) * \
                 np.power(10, -128.9 / 10)
         else:

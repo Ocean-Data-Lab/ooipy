@@ -1,3 +1,25 @@
+'''
+This modules provides a toolset for calculating Noise Correlation
+Functions (NCFs). To calculate NCF follow the below sequence (this is 
+also accomplished in the calculate_NCF() function)::
+    avg_time = 60  #minutes
+    start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
+    node1 = '/LJ01C'
+    node2 = '/PC01A'
+    filter_cutoffs = [12, 30]
+    W = 90
+    htype = 'broadband'
+    # Initialize NCF_object
+    NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, htype=htype)
+    
+    # Calculate NCF
+    NCF_object = get_audio(NCF_object)   
+    NCF_object = preprocess_audio(NCF_object)
+    NCF_object = calc_xcorr(NCF_object)
+
+    # Access NCF
+    NCF_object.NCF
+'''
 # Import all dependencies
 import numpy as np
 import os
@@ -20,7 +42,44 @@ sys.path.append(ooipy_dir)
 from ooipy.request import hydrophone_request
 
 def calculate_NCF(NCF_object, loop=False, count=None):
+    '''
+    Do all required signal processing, and calculate average Noise
+    Correlation Function (NCF) for given average time.
+
+    Example
+    -------
+    To calculate and access Noise Correlation Function (NCF) execute
+    the following code::
+        avg_time = 60  #minutes
+        start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
+        node1 = '/LJ01C'
+        node2 = '/PC01A'
+        filter_cutoffs = [12, 30]
+        W = 90
+        htype = 'broadband'
+        NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, htype=htype)
+        calculate_NCF(NCF_object)
+        # To access NCF:
+        NCF_object.NCF
     
+    Parameters
+    ----------
+    NCF_object : NCF
+        object specifying all details about NCF calculation
+    loop : boolean
+        specifies whether the NCF is calculated in stand alone or loop
+        mode. If you plan to use loop mode, use the function
+        calculate_NCF_loop
+    count : int
+        specifies specific index of loop calculation. Default is None 
+        for stand alone operation
+
+    Returns
+    -------
+    NCF_object : NCF
+        object specifying all details about NCF calculation
+    '''
+
     #Start Timing
     stopwatch_start = time.time()
 
@@ -54,7 +113,9 @@ def get_audio(NCF_object):
     Returns
     -------
     NCF_object : NCF
-        object specifying all details about NCF calculation
+        object specifying all details about NCF calculation. This function
+        adds the NCF_object attributes NCF_object.node1_data and 
+        NCF_object.node2_data
     '''
     # unpack values from NCF_object
     avg_time = NCF_object.avg_time
@@ -136,7 +197,10 @@ def get_audio(NCF_object):
 
 def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
     '''
-    Frequency whiten and filter data from single hydrophone.
+    Frequency whiten and filter data from single hydrophone. This function
+    is used by preprocess_audio() for multiprocessing and is not usually 
+    called in normal operation. Documentation maintained for debug 
+    purposes.
 
     Parameters
     ----------
@@ -165,6 +229,27 @@ def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
     return h1_data_processed
 
 def preprocess_audio(NCF_object):
+    '''
+    Perform all signal processing to hydrophone data before correlating.
+    Processing steps include:
+    - seperate acoustic data into short time data segments
+    - normalize each short time acoustic data segment
+    - frequency whiten across entire spectrum (using `GWPy <https://gwpy.github.io/>`_)
+    - filter data to specifed frequency (using `GWPy <https://gwpy.github.io/>`_)
+
+    Parameters
+    ----------
+    NCF_object : NCF
+        NCF data object specifying NCF calculation details
+    
+    Returns
+    -------
+    NCF_object : NCF
+        NCF data object specifying NCF calculation details. This function
+        adds the NCF_object attributes NCF_object.node1_processed_data
+        and NCF_object.node2_processed_data
+
+    '''
     h1_data = NCF_object.node1_data
     h2_data = NCF_object.node2_data
     W = NCF_object.W
@@ -200,6 +285,30 @@ def preprocess_audio(NCF_object):
     return NCF_object
 
 def calc_xcorr(NCF_object, loop=False, count=None):
+    '''
+    Takes pre-processed data and correlates all corresponding short time
+    data segments. It then sums all short time correlations together
+    to create a single NCF.
+
+    Parameters
+    ----------
+    NCF_object : NCF
+        data object specifying details of NCF calcuation
+    loop : bool
+        specifies if this function is being using within a loop. If calling
+        this function, leave as default (False)
+    count : int
+        specifies number of loop iteration. If calling this function,
+        leave as default (None)
+
+    Returns
+    -------
+    NCF_object : NCF
+        data object specifying details of NCF calcuation. This function
+        adds NCF attribute NCF_object.NCF
+
+    '''
+    
     # Unpack needed values from NCF_object
     h1 = NCF_object.node1_processed_data
     h2 = NCF_object.node2_processed_data
@@ -242,7 +351,10 @@ def calc_xcorr(NCF_object, loop=False, count=None):
 
 def calc_xcorr_single_thread(h1, h2):
     '''
-    Calculate single short time correlation of h1 and h2. fftconvolve is used for slightly faster performance:
+    Calculate single short time correlation of h1 and h2. fftconvolve 
+    is used for slightly faster performance. In normal operation, this 
+    function should not be called (it is called within calc_xcorr).
+    Documentation is maintained for debugging purposes.
 
     Parameters
     ----------
@@ -267,7 +379,65 @@ def calc_xcorr_single_thread(h1, h2):
 
 
 def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=True, htype='broadband', kstart=0):
+    '''
+    This function loops through multiple average periods and calculates
+    the NCF. The resulting NCF is saved to disk in the file directory 
+    ./ckpts/\n\n
+    This allows for calculating the NCF for longer time segments than the
+    RAM of the machine can allow.
 
+    Example
+    -------
+    To loop through multiple average periods and calculate NCF, execute
+    following code::
+        # Loop through 5 hours to calculate NCF
+        num_periods = 5 
+        avg_time = 60  #minutes
+        start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
+        node1 = '/LJ01C'
+        node2 = '/PC01A'
+        filter_cutoffs = [12, 30]
+        W = 90
+        htype = 'broadband'
+        whiten= True
+        kstart= 0
+
+        calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filter_cutoffs, verbose=True, whiten=whiten, htype=htype, kstart=0)
+
+    Parameters
+    ----------
+    num_periods : int
+        number of average periods to loop through for NCF calculation
+    node1 : str
+        specifies the node location specifier for node 1
+    node2 : str
+        specifies the node location specifier for node 2
+    avg_time : float
+        length in minutes of single NCF average time for single loop instance
+    start_time : datetime.datetime
+        specifies the start time to calculate NCF from
+    W : float
+        short-time window given in seconds. avg_time must be divisible by W
+    filter_cutoffs : list
+        list of low and high frequency cutoffs for filtering
+    verbose : bool
+        specifies whether updates should be printed or not
+    whiten: bool
+        specifies whether or not to whiten the data
+    htype : str
+        specifies if low frequency or broadband hydrophone is being used.
+        Acceptable inputs are:
+        - 'low_frequency'
+        - 'broadband'
+    kstart : int
+        specifies number to start looping from. This is a useful parameter 
+        to change if there is an error partially through a loop.
+
+    Returns
+    -------
+    This function returns None, results are saved in ./ckpts/ directory
+
+    '''
     #Header File Just Contains NCF object
     if kstart == 0:
         NCF_object = NCF(avg_time, start_time, node1, node2, filter_cutoffs, W, verbose, whiten, htype, num_periods)
@@ -288,7 +458,7 @@ def calculate_NCF_loop(num_periods, node1, node2, avg_time, start_time, W,  filt
 
     return
 
-def filter_bandpass(data, Wlow=15, Whigh=25):
+
     
     #make data zero mean
     data = data - np.mean(data)
@@ -313,7 +483,7 @@ def filter_bandpass(data, Wlow=15, Whigh=25):
 
 def freq_whiten(x, Fs):
     '''
-    Whiten time series data. Python package GWpy utilized for this function
+    Whiten time series data. Python package `GWPy <https://gwpy.github.io/>`_ utilized for this function
 
     Parameters
     ----------
@@ -336,7 +506,8 @@ def freq_whiten(x, Fs):
 
 class NCF:
     '''
-    Object that stores NCF Data
+    Object that stores NCF Data. All steps of data calculation are saved in 
+    this data object. 
 
     Attributes
     ----------
@@ -987,3 +1158,6 @@ class Hydrophone_Xcorr:
         B = np.arccos(1480 * t / self.distance)
         plt.polar(B, xcorr)
         print(type(B))
+
+
+def filter_bandpass(data, Wlow=15, Whigh=25):

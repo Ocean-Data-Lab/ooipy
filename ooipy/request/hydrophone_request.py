@@ -1,6 +1,5 @@
 '''
-This modules handles the requesting of OOI Data.
-
+This modules handles the downloading of OOI Data.
 
 .. sidebar:: Hydrophone Request Jupyter Notebook
     
@@ -27,7 +26,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     max_workers=-1, append=True, verbose=False,
     data_gap_mode=0):
     '''
-    Get acoustic data for specific time frame and node:
+    Get broadband acoustic data for specific time frame and sensor node:
 
     start_time (datetime.datetime): time of the first noise sample
     end_time (datetime.datetime): time of the last noise sample
