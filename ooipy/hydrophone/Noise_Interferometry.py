@@ -197,7 +197,7 @@ def get_audio(NCF_object):
             h1_data, (int(avg_time * 60 / W), int(W * Fs)))
         h2_reshaped = np.reshape(
             h2_data, (int(avg_time * 60 / W), int(W * Fs)))
-    except:
+    except Exception:
         NCF_object.length_flag = True
         return NCF_object
 
@@ -355,7 +355,7 @@ def calc_xcorr(NCF_object, loop=False, count=None):
             with open(filename, 'wb') as f:
                 pickle.dump(xcorr_stack, f)               # Accumulated xcorr
 
-        except:
+        except Exception:
             os.makedirs('ckpts')
             with open(filename, 'wb') as f:
                 # pickle.dump(xcorr_short_time, f)
@@ -470,7 +470,7 @@ def calculate_NCF_loop(
         try:
             with open(filename, 'wb') as f:
                 pickle.dump(NCF_object, f)
-        except:
+        except Exception:
             os.makedirs('ckpts')
             with open(filename, 'wb') as f:
                 pickle.dump(NCF_object, f)
