@@ -188,6 +188,11 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
             else:
                 st_all += st
 
+    if st_all is None:
+        if verbose:
+            print('No data available for selected time')
+        return None
+
     # Merge all traces together
     # Interpolation
     if data_gap_mode == 0:
