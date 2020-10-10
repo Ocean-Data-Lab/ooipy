@@ -19,6 +19,7 @@ import requests
 import multiprocessing as mp
 import concurrent.futures
 import fsspec
+import aiohttp
 
 sys.path.append("..")  # TODO: remove this before publishing
 
@@ -74,16 +75,18 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     if verbose:
         print('Fetching URLs...')
 
-    # Save last mseed of previous day to data_url_list
+    # Save last mseed of previous day to data_url_list if not None
     prev_day = starttime - timedelta(days=1)
     data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"),
-                                              node)
-    data_url_prev_day = data_url_list_prev_day[-1]
+                                              node, verbose)
+    if data_url_list_prev_day is not None:
+        data_url_prev_day = data_url_list_prev_day[-1]
 
     # get URL for first day
     day_start = UTCDateTime(starttime.year, starttime.month, starttime.day,
                             0, 0, 0)
-    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node)
+    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node,
+                                     verbose)
 
     if data_url_list is None:
         if verbose:
@@ -97,12 +100,12 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     # get all urls for each day until endtime is reached
     while day_start < endtime:
         data_url_list.extend(__get_mseed_urls(starttime.strftime("/%Y/%m/%d/"),
-                                              node))
+                                              node, verbose))
         day_start = day_start + 24 * 3600
 
     # get 1 more day of urls
     data_url_last_day_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"),
-                                              node)
+                                              node, verbose)
     data_url_last_day = data_url_last_day_list[0]
 
     # add 1 extra mseed file at beginning and end to handle gaps if append is
@@ -273,7 +276,7 @@ def __read_mseed(url):
         return None
 
 
-def __get_mseed_urls(day_str, node):
+def __get_mseed_urls(day_str, node, verbose):
     '''
     get URLs for a specific day from OOI raw data server
 
@@ -311,12 +314,19 @@ def __get_mseed_urls(day_str, node):
 
     FS = fsspec.filesystem('http')
 
-    data_url_list = sorted([f['name'] for f in FS.ls(mainurl)
-                           if f['type'] == 'file'
-                           and f['name'].endswith('.mseed')])
+    try:
+        data_url_list = sorted([f['name'] for f in FS.ls(mainurl)
+                               if f['type'] == 'file'
+                               and f['name'].endswith('.mseed')])
+    except Exception as e:
+        if isinstance(e, aiohttp.client_exceptions.ClientResponseError):
+            if verbose:
+                print('Client resonse: No Data Available for Specified Time')
+            return None
 
     if not data_url_list:
-        print('No Data Available for Specified Time')
+        if verbose:
+            print('No Data Available for Specified Time')
         return None
 
     return data_url_list
