@@ -26,7 +26,7 @@ sys.path.append("..")  # TODO: remove this before publishing
 
 def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                       max_workers=-1, append=True, verbose=False,
-                      data_gap_mode=0):
+                      data_gap_mode=0, mseed_file_limit=None):
     '''
     Get broadband acoustic data for specific time frame and sensor node:
 
@@ -38,21 +38,33 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         time of the last noise sample
     node : str
         hydrophone
-    fmin : float
+    fmin : float, optional
         lower cutoff frequency of hydrophone's bandpass filter. Default
         is None which results in no filtering.
-    fmax : float
+    fmax : float, optional
         higher cutoff frequency of hydrophones bandpass filter. Default
         is None which results in no filtering.
-    print_exceptions : bool
+    print_exceptions : bool, optional
         whether or not exeptions are printed in the terminal line
-    max_workers : int
+    max_workers : int, optional
         number of maximum workers for concurrent processing
-    append : bool
+    append : bool, optional
         specifies if extra mseed files should be appended at beginning
         and end in case of boundary gaps in data
-    verbose : bool
+    verbose : bool, optional
         specifies whether print statements should occur or not
+    data_gap_mode : int, optional
+        How gaps in the raw data will be handled. Options are:
+        '0': gaps will be linearly interpolated
+        '1': no interpolation; mask array is returned
+        '2': subtract mean of data and fill gap with zeros; mask array
+        is returned
+    mseed_file_limit: int, optional
+        If the number of mseed files to be merged exceed this value, the
+        function returns None. For some days the mseed files contain
+        only a few seconds or milli seconds of data and merging a huge
+        amount of files can dramatically slow down the program. if None
+        (default), the number of mseed files will not be limited.
 
     Returns
     -------
@@ -173,6 +185,12 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                 if append:
                     valid_data_url_list.append(data_url_list[i])
                 break
+
+    if isinstance(mseed_file_limit, int):
+        if len(valid_data_url_list) > mseed_file_limit:
+            if verbose:
+                print('Number of mseed files to be merged exceed limit.')
+            return None
 
     if verbose:
         print('Downloading mseed files...')
