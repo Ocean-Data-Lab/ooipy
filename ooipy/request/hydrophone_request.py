@@ -342,10 +342,9 @@ def __get_mseed_urls(day_str, node, verbose):
                                if f['type'] == 'file'
                                and f['name'].endswith('.mseed')])
     except Exception as e:
-        if isinstance(e, aiohttp.client_exceptions.ClientResponseError):
-            if verbose:
-                print('Client resonse: No Data Available for Specified Time')
-            return None
+        if verbose:
+            print('Client response: ', e)
+        return None
 
     if not data_url_list:
         if verbose:
