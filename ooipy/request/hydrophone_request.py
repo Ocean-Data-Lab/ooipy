@@ -19,7 +19,6 @@ import requests
 import multiprocessing as mp
 import concurrent.futures
 import fsspec
-import aiohttp
 
 sys.path.append("..")  # TODO: remove this before publishing
 
@@ -100,9 +99,6 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node,
                                      verbose)
 
-    #for k in data_url_list:
-    #    print(f'{k}\n') # Checks Out
-
     if data_url_list is None:
         if verbose:
             print('No data available for specified day and node. '
@@ -119,13 +115,14 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         day_start = day_start + 24 * 3600
 
     # get 1 more day of urls
-    data_url_last_day_list = __get_mseed_urls((day_start).strftime("/%Y/%m/%d/"),
+    data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
                                               node, verbose)
     data_url_last_day = data_url_last_day_list[0]
 
     # add 1 extra mseed file at beginning and end to handle gaps if append
     if append:
-        data_url_list = [data_url_prev_day] + data_url_list + [data_url_last_day]
+        data_url_list = [
+            data_url_prev_day] + data_url_list + [data_url_last_day]
 
     if verbose:
         print('Sorting valid URLs for Time Window...')
