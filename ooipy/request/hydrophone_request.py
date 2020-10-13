@@ -110,9 +110,13 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
 
     # get all urls for each day until endtime is reached
     while day_start < endtime:
-        data_url_list.extend(__get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
-                                              node, verbose))
-        day_start = day_start + 24 * 3600
+        urls_list_next_day = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
+                                              node, verbose)
+        if urls_list_next_day is None:
+            day_start = day_start + 24 * 3600
+        else:
+            data_url_list.extend(urls_list_next_day)
+            day_start = day_start + 24 * 3600
 
     # get 1 more day of urls
     data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
