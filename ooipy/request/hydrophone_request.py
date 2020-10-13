@@ -25,7 +25,8 @@ sys.path.append("..")  # TODO: remove this before publishing
 
 def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                       max_workers=-1, append=True, verbose=False,
-                      data_gap_mode=0, mseed_file_limit=None):
+                      data_gap_mode=0, mseed_file_limit=None,
+                      large_gap_limit=1800.0):
     '''
     Get broadband acoustic data for specific time frame and sensor node:
 
@@ -64,6 +65,15 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         only a few seconds or milli seconds of data and merging a huge
         amount of files can dramatically slow down the program. if None
         (default), the number of mseed files will not be limited.
+    large_gap_limit: float, optional
+        Defines the length in second of large gaps in the data.
+        Sometimes, large data gaps are present on particular days. This
+        can cause long interpolation times if data_gap_mode 0 or 2 are
+        used, possibly resulting in a memory overflow. If a data gap is
+        longer than large_gap_limit, data are only retrieved before (if
+        the gap stretches beyond the requested time) or after (if the gap
+        starts prior to the requested time) the gap, or not at all (if
+        the gap is within the requested time).
 
     Returns
     -------
@@ -188,6 +198,38 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         if len(valid_data_url_list) > mseed_file_limit:
             if verbose:
                 print('Number of mseed files to be merged exceed limit.')
+            return None
+
+    # handle large data gaps within one day
+    if len(valid_data_url_list) >= 2:
+        # find gaps
+        gaps = []
+        for i in range(len(valid_data_url_list) - 1):
+            utc_time_url_first = UTCDateTime(
+                valid_data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
+            utc_time_url_second = UTCDateTime(
+                valid_data_url_list[i + 1].split('YDH')[1][1:].split(
+                    '.mseed')[0])
+            if utc_time_url_second - utc_time_url_first >= large_gap_limit:
+                gaps.append(i)
+
+        gap_cnt = 0
+        # check if gap at beginning
+        if 0 in gaps:
+            del valid_data_url_list[0]
+            gap_cnt += 1
+            if verbose:
+                print('Removed large data gap at beginning of requested time')
+        # check if gap at the end
+        if len(valid_data_url_list) - 2 in gaps:
+            del valid_data_url_list[-1]
+            gap_cnt += 1
+            if verbose:
+                print('Removed large data gap at end of requested time')
+        # check if gap within requested time
+        if len(gaps) > gap_cnt:
+            if verbose:
+                print('Found large data gap within requested time')
             return None
 
     if verbose:
