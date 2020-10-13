@@ -117,7 +117,8 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     # get 1 more day of urls
     data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
                                               node, verbose)
-    data_url_last_day = data_url_last_day_list[0]
+    if data_url_last_day_list is not None:
+        data_url_last_day = data_url_last_day_list[0]
 
     # add 1 extra mseed file at beginning and end to handle gaps if append
     if append:
