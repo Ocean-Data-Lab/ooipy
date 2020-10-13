@@ -86,13 +86,6 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     if verbose:
         print('Fetching URLs...')
 
-    # Save last mseed of previous day to data_url_list if not None
-    prev_day = starttime - timedelta(days=1)
-    data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"),
-                                              node, verbose)
-    if data_url_list_prev_day is not None:
-        data_url_prev_day = data_url_list_prev_day[-1]
-
     # get URL for first day
     day_start = UTCDateTime(starttime.year, starttime.month, starttime.day,
                             0, 0, 0)
@@ -118,16 +111,19 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
             data_url_list.extend(urls_list_next_day)
             day_start = day_start + 24 * 3600
 
-    # get 1 more day of urls
-    data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"),
-                                              node, verbose)
-    if data_url_last_day_list is not None:
-        data_url_last_day = data_url_last_day_list[0]
-
-    # add 1 extra mseed file at beginning and end to handle gaps if append
     if append:
-        data_url_list = [
-            data_url_prev_day] + data_url_list + [data_url_last_day]
+        # Save last mseed of previous day to data_url_list if not None
+        prev_day = starttime - timedelta(days=1)
+        data_url_list_prev_day = \
+            __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node, verbose)
+        if data_url_list_prev_day is not None:
+            data_url_list = [data_url_list_prev_day[-1]] + data_url_list
+
+        # get 1 more day of urls
+        data_url_last_day_list = \
+            __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
+        if data_url_last_day_list is not None:
+            data_url_list = data_url_list + [data_url_last_day_list[0]]
 
     if verbose:
         print('Sorting valid URLs for Time Window...')
