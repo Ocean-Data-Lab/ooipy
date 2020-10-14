@@ -457,7 +457,7 @@ class Spectrogram:
     # TODO: move visualization into separate module
     def visualize(self, plot_spec=True, save_spec=False, filename='spectrogram.png', title='spectrogram',
         xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0, fmax=32000, vmin=20, vmax=80, vdelta=1.0,
-        vdelta_cbar=5, figsize=(16,9), dpi=96, res_reduction_time=1, res_reduction_freq=1):
+        vdelta_cbar=5, figsize=(16,9), dpi=96, res_reduction_time=1, res_reduction_freq=1, time_limits=None):
         '''
         !!!!! This function will be moved into a difffernt module in the future. The current documentation
         might not be accurate !!!!!
@@ -483,6 +483,8 @@ class Spectrogram:
         vdelta_cbar (int): label ticks in colorbar are in vdelta_cbar steps
         figsize (tuple(int)): size of figure
         dpi (int): dots per inch
+        time_limits : list
+            specifices xlimits on spectrogram. List contains two datetime.datetime objects
         '''
 
         #set backend for plotting/saving:
@@ -493,10 +495,17 @@ class Spectrogram:
 
         v = self.values[::res_reduction_time,::res_reduction_freq]
 
+        
         if len(self.time) != len(self.values):
             t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_time))
         else:
             t = self.time[::res_reduction_time]
+        
+        #Convert t to np.array of datetime.datetime
+        if type(t[0]) == UTCDateTime:
+            for k in range(len(t)):
+                t[k] = t[k].datetime
+
 
         if len(self.freq) != len(self.values[0]):
             f = np.linspace(0, len(self.values[0]) - 1, int(len(self.values[0]) / res_reduction_freq))
@@ -509,6 +518,7 @@ class Spectrogram:
         plt.ylabel(ylabel)
         plt.xlabel(xlabel)
         plt.ylim([fmin, fmax])
+        if time_limits != None: plt.xlim(time_limits)
         plt.xticks(rotation=xlabel_rot)
         plt.title(title)
         plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax+vdelta, vdelta_cbar))
