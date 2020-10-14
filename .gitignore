@@ -8,3 +8,4 @@ __pycache__/
 *.pkl
 build/
 _build/
+flake8_log.txt
