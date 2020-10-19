@@ -42,7 +42,7 @@ ooipy_dir = os.path.dirname(os.path.dirname(cwd))
 sys.path.append(ooipy_dir)
 
 
-def calculate_NCF(NCF_object, loop=False, count=None):
+def calculate_NCF(NCF_object, loop=False, count=None, preprocessing_method='sabra'):
     '''
     Do all required signal processing, and calculate average Noise
     Correlation Function (NCF) for given average time.
@@ -75,6 +75,8 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     count : int
         specifies specific index of loop calculation. Default is None
         for stand alone operation.
+    process_method : str
+        specifies with method of processing should be used
 
     Returns
     -------
@@ -92,7 +94,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         print('   Error with time period. Period Skipped.\n\n')
         return None
 
-    NCF_object = preprocess_audio(NCF_object)
+    NCF_object = sabra_processing(NCF_object)
     NCF_object = calc_xcorr(NCF_object, loop, count)
 
     # End Timing
@@ -315,7 +317,7 @@ def preprocess_audio(NCF_object):
     return NCF_object
 
 
-def preprocess_audio_sabra(h1_data, Fs, filter_cutoffs, whiten):
+def sabra_processing(NCF_object):
     '''
     preprocess audio using signal processing method from sabra. This function
     is designed to replace preprocess_audio single thread in the signal
@@ -331,6 +333,58 @@ def preprocess_audio_sabra(h1_data, Fs, filter_cutoffs, whiten):
     - clipping to 3*std of data of short time noise
     - frequency whitening short time noise
     '''
+    node1 = NCF_object.node1_data
+    node2 = NCF_object.node2_data
+
+    Fs = NCF_object.Fs
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter Data to Specific Range (fiter_cutoffs)
+    print('    Filtering Data from node 1')
+    node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
+    print('    Filtering Data from node 2')
+    node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
+
+    # Clip Data to amplitude
+    thresh1 = 3*np.std(np.ndarray.flatten(node1_filt))
+    thresh2 = 3*np.std(np.ndarray.flatten(node2_filt))
+    node1_clip = np.clip(node1_filt, -thresh1, thresh1)
+    node2_clip = np.clip(node2_filt, -thresh2, thresh2)
+
+    # Frequency Whiten Data
+    node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
+    node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
+
+
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
+
+    return(NCF_object)
+
+    if plot:
+        N = len(NCF_object.node1_data[0,:])
+        t = np.linspace(0, N/NCF_object.Fs, N)
+        f = np.linspace(0, NCF_object.Fs, N)
+        # new style method 2; use an axes array
+        fig1, axs = plt.subplots(1, 2, figsize=(10,5))
+        axs[0].plot(t, NCF_object.node1_data[0,:])
+        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
+        axs[0].set_xlabel('time (s)')
+        axs[1].plot(t, NCF_object.node1_filtered[0,:])
+        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
+        axs[1].set_xlabel('time (s)')
+
+        fig2, axs = plt.subplots(1, 2, figsize=(10,5), sharex=True)
+        axs[0].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_data[0,:])))
+        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
+        axs[0].set_xlabel('frequency (Hz)')
+        axs[0].set_xlim([0,1000])
+        axs[1].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_filtered[0,:])))
+        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
+        axs[1].set_xlabel('frequency (Hz)')
+        axs[1].set_xlim([0,1000])
+
+    return NCF_object
 
 
 def calc_xcorr(NCF_object, loop=False, count=None):
@@ -518,7 +572,7 @@ def calculate_NCF_loop(
     return
 
 
-def freq_whiten(x, Fs):
+def freq_whiten(data, Fs, filter_cutoffs):
     '''
     Whiten time series data. Python package `GWPy <https://gwpy.github.io/>`_
     utilized for this function
@@ -535,45 +589,62 @@ def freq_whiten(x, Fs):
     x_new : numpy array
         array containing frequency whitened time series data
     '''
+
+    # Old Method
+    '''
     series = TimeSeries(x, sample_rate=Fs)
     white = series.whiten()
     x_new = white.value
     return x_new
+    '''
+    shape = np.shape(data)
+    data = np.ndarray.flatten(data)
+
+    # assumes data from node1 and node2 have same length
+    N = np.shape(data)[0]
+
+    f = np.arange(0,N)/N*Fs
+    win = scipy.signal.windows.hann(N)
+
+    data_win = data*win
 
 
-def filter_bandpass(NCF_object, plot=True):
+    dataf = scipy.fft.fft(data_win)
+
+
+    data_mag = np.abs(dataf)
+
+
+    data_phase = np.angle(dataf)
+
+
+    idx1 = np.argmin(np.abs(f-filter_cutoffs[0]))
+    idx2 = np.argmin(np.abs(f-filter_cutoffs[1]))
+
+    freq_clip_level = np.mean(data_mag) + (np.max(data_mag) - \
+                            np.mean(data_mag) / 2)
+    data_mag[idx1:idx2] = freq_clip_level
+    data_mag[N-idx2:N-idx1] = freq_clip_level
+
+    data_whiten_f = data_mag*np.exp(data_phase*1j)
+
+    data_whiten = np.real(scipy.fft.ifft(data_whiten_f))
+
+    data_whiten = np.reshape(data_whiten, shape)
+
+    return data_whiten
+
+def filter_bandpass(data, Fs, filter_cutoffs):
     '''
     designed to go after get_audio
     '''
 
-    b,a = signal.butter(4, NCF_object.filter_cutoffs/(NCF_object.Fs/2), btype='bandpass')
-    NCF_object.node1_filtered = signal.lfilter(b,a,NCF_object.node1_data, axis=1)
-    NCF_object.node2_filtered = signal.lfilter(b,a,NCF_object.node2_data, axis=1)
 
-    if plot:
-        N = len(NCF_object.node1_data[0,:])
-        t = np.linspace(0, N/NCF_object.Fs, N)
-        f = np.linspace(0, NCF_object.Fs, N)
-        # new style method 2; use an axes array
-        fig1, axs = plt.subplots(1, 2, figsize=(10,5))
-        axs[0].plot(t, NCF_object.node1_data[0,:])
-        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
-        axs[0].set_xlabel('time (s)')
-        axs[1].plot(t, NCF_object.node1_filtered[0,:])
-        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
-        axs[1].set_xlabel('time (s)')
+    b,a = signal.butter(4, filter_cutoffs/(Fs/2), btype='bandpass')
+    filtered_data = signal.lfilter(b,a,data, axis=1)
 
-        fig2, axs = plt.subplots(1, 2, figsize=(10,5), sharex=True)
-        axs[0].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_data[0,:])))
-        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
-        axs[0].set_xlabel('frequency (Hz)')
-        axs[0].set_xlim([0,1000])
-        axs[1].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_filtered[0,:])))
-        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
-        axs[1].set_xlabel('frequency (Hz)')
-        axs[1].set_xlim([0,1000])
 
-    return NCF_object
+    return filtered_data
 
 
 class NCF:
