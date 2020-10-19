@@ -34,6 +34,8 @@ from datetime import timedelta
 import pickle
 from gwpy.timeseries import TimeSeries
 from multiprocessing.pool import ThreadPool
+import scipy
+from matplotlib import pyplot as plt
 
 cwd = os.getcwd()
 ooipy_dir = os.path.dirname(os.path.dirname(cwd))
@@ -132,7 +134,6 @@ def get_audio(NCF_object):
 
     if avg_time_seconds % W != 0:
         raise Exception('Average Time Must Be Interval of Window')
-        return None
 
     # Calculate end_time
     end_time = start_time + timedelta(minutes=avg_time)
@@ -151,6 +152,7 @@ def get_audio(NCF_object):
         # Audio from Node 2
         node2_data = hydrophone_request.get_acoustic_data(
             start_time, end_time, node=node2, verbose=False, data_gap_mode=2)
+
         if node2_data is None:
             return None
         if (node1_data is None) or (node2_data is None):
@@ -178,19 +180,30 @@ def get_audio(NCF_object):
     else:
         raise Exception('Invalid htype')
 
-    # Combine Data into Stream
-    data_stream = obspy.Stream(traces=[node1_data, node2_data])
-
-    if data_stream[0].data.shape != data_stream[1].data.shape:
+    if node1_data.data.shape != node2_data.data.shape:
         print('   Data streams are not the same length. Flag to be \
             added later')
         return None
 
+    # Decimate broadband hydrophone to Fs = 2000 for easier processing
+    if htype == 'broadband':
+        # Decimate by 4
+        node1_data_dec = scipy.signal.decimate(node1_data.data,4)
+        node2_data_dec = scipy.signal.decimate(node2_data.data,4)
+        # Decimate by 8 (total of 32)
+        node1_data_dec = scipy.signal.decimate(node1_data_dec,8)
+        node2_data_dec = scipy.signal.decimate(node2_data_dec,8)
+        # save data back into node1_data and node2_data
+        node1_data.data = node1_data_dec
+        node2_data.data = node2_data_dec
+        node1_data.stats.sampling_rate = node1_data.stats.sampling_rate/32
+        node2_data.stats.sampling_rate = node2_data.stats.sampling_rate/32
+
     Fs = node1_data.stats.sampling_rate
     NCF_object.Fs = Fs
     # Cut off extra points if present
-    h1_data = data_stream[0].data[:int(avg_time * 60 * Fs)]
-    h2_data = data_stream[1].data[:int(avg_time * 60 * Fs)]
+    h1_data = node1_data.data[:int(avg_time * 60 * Fs)]
+    h2_data = node2_data.data[:int(avg_time * 60 * Fs)]
 
     try:
         h1_reshaped = np.reshape(
@@ -300,6 +313,24 @@ def preprocess_audio(NCF_object):
     NCF_object.node2_processed_data = node2_procesesd_data
 
     return NCF_object
+
+
+def preprocess_audio_sabra(h1_data, Fs, filter_cutoffs, whiten):
+    '''
+    preprocess audio using signal processing method from sabra. This function
+    is designed to replace preprocess_audio single thread in the signal
+    processing flow.
+
+    Sabra, K. G., Roux, P., and Kuperman, W. A. (2005). “Emergence rate of the
+    time-domain Green’s function from the ambient noise cross-correlation
+    function,” The Journal of the Acoustical Society of America, 118,
+    3524–3531. doi:10.1121/1.2109059
+
+    This includes:
+    - filtering data to desired frequency band
+    - clipping to 3*std of data of short time noise
+    - frequency whitening short time noise
+    '''
 
 
 def calc_xcorr(NCF_object, loop=False, count=None):
@@ -508,6 +539,41 @@ def freq_whiten(x, Fs):
     white = series.whiten()
     x_new = white.value
     return x_new
+
+
+def filter_bandpass(NCF_object, plot=True):
+    '''
+    designed to go after get_audio
+    '''
+
+    b,a = signal.butter(4, NCF_object.filter_cutoffs/(NCF_object.Fs/2), btype='bandpass')
+    NCF_object.node1_filtered = signal.lfilter(b,a,NCF_object.node1_data, axis=1)
+    NCF_object.node2_filtered = signal.lfilter(b,a,NCF_object.node2_data, axis=1)
+
+    if plot:
+        N = len(NCF_object.node1_data[0,:])
+        t = np.linspace(0, N/NCF_object.Fs, N)
+        f = np.linspace(0, NCF_object.Fs, N)
+        # new style method 2; use an axes array
+        fig1, axs = plt.subplots(1, 2, figsize=(10,5))
+        axs[0].plot(t, NCF_object.node1_data[0,:])
+        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
+        axs[0].set_xlabel('time (s)')
+        axs[1].plot(t, NCF_object.node1_filtered[0,:])
+        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
+        axs[1].set_xlabel('time (s)')
+
+        fig2, axs = plt.subplots(1, 2, figsize=(10,5), sharex=True)
+        axs[0].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_data[0,:])))
+        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
+        axs[0].set_xlabel('frequency (Hz)')
+        axs[0].set_xlim([0,1000])
+        axs[1].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_filtered[0,:])))
+        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
+        axs[1].set_xlabel('frequency (Hz)')
+        axs[1].set_xlim([0,1000])
+
+    return NCF_object
 
 
 class NCF:

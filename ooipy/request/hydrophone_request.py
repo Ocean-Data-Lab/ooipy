@@ -303,7 +303,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                 print('No data available for selected time frame.')
         else:
             if verbose:
-                print('Other exception')
+                print(Exception)
         return None
 
 
