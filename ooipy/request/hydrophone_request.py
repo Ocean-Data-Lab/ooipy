@@ -92,6 +92,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     '''
 
     # data_gap = False
+    sampling_rate = 64000.0
 
     if verbose:
         print('Fetching URLs...')
@@ -241,10 +242,14 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     st_all = None
     for st in st_list:
         if st:
-            if not isinstance(st_all, Stream):
-                st_all = st
+            if st[0].stats.sampling_rate != sampling_rate:
+                if verbose:
+                    print('Some data have different sampling rate')
             else:
-                st_all += st
+                if not isinstance(st_all, Stream):
+                    st_all = st
+                else:
+                    st_all += st
 
     if st_all is None:
         if verbose:
