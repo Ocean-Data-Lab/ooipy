@@ -9,3 +9,4 @@ __pycache__/
 build/
 _build/
 flake8_log.txt
+ooipy/tests/figures

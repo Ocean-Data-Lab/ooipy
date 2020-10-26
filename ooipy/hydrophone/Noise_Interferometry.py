@@ -29,7 +29,6 @@ import sys
 from scipy import signal
 import time
 import multiprocessing as mp
-import obspy
 from datetime import timedelta
 import pickle
 from gwpy.timeseries import TimeSeries
@@ -42,7 +41,7 @@ ooipy_dir = os.path.dirname(os.path.dirname(cwd))
 sys.path.append(ooipy_dir)
 
 
-def calculate_NCF(NCF_object, loop=False, count=None, preprocessing_method='sabra'):
+def calculate_NCF(NCF_object, loop=False, count=None):
     '''
     Do all required signal processing, and calculate average Noise
     Correlation Function (NCF) for given average time.
@@ -83,7 +82,7 @@ def calculate_NCF(NCF_object, loop=False, count=None, preprocessing_method='sabr
     NCF_object : NCF
         object specifying all details about NCF calculation
     '''
-
+    sp_method = NCF_object.sp_method
     # Start Timing
     stopwatch_start = time.time()
 
@@ -94,17 +93,25 @@ def calculate_NCF(NCF_object, loop=False, count=None, preprocessing_method='sabr
         print('   Error with time period. Period Skipped.\n\n')
         return None
 
-    NCF_object = sabra_processing(NCF_object)
-    NCF_object = calc_xcorr(NCF_object, loop, count)
-
+    if sp_method == 'sabra':
+        NCF_object = sabra_processing(NCF_object)
+        NCF_object = calc_xcorr(NCF_object, loop, count)
+    elif sp_method == 'brown':
+        NCF_object = brown_processing(NCF_object)
+    else:
+        raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
     stopwatch_end = time.time()
     print(f'   Time to Calculate NCF for 1 Average\
         Period: {stopwatch_end - stopwatch_start} \n\n')
+
+    # Save NCF to .pkl file if loop is true
+    if loop is True:
+        save_avg_period(NCF_object, count=count)
+        return None
     if loop is False:
         return NCF_object
-    else:
-        return None
+
 
 
 def get_audio(NCF_object):
@@ -190,16 +197,16 @@ def get_audio(NCF_object):
     # Decimate broadband hydrophone to Fs = 2000 for easier processing
     if htype == 'broadband':
         # Decimate by 4
-        node1_data_dec = scipy.signal.decimate(node1_data.data,4)
-        node2_data_dec = scipy.signal.decimate(node2_data.data,4)
+        node1_data_dec = scipy.signal.decimate(node1_data.data, 4)
+        node2_data_dec = scipy.signal.decimate(node2_data.data, 4)
         # Decimate by 8 (total of 32)
-        node1_data_dec = scipy.signal.decimate(node1_data_dec,8)
-        node2_data_dec = scipy.signal.decimate(node2_data_dec,8)
+        node1_data_dec = scipy.signal.decimate(node1_data_dec, 8)
+        node2_data_dec = scipy.signal.decimate(node2_data_dec, 8)
         # save data back into node1_data and node2_data
         node1_data.data = node1_data_dec
         node2_data.data = node2_data_dec
-        node1_data.stats.sampling_rate = node1_data.stats.sampling_rate/32
-        node2_data.stats.sampling_rate = node2_data.stats.sampling_rate/32
+        node1_data.stats.sampling_rate = node1_data.stats.sampling_rate / 32
+        node2_data.stats.sampling_rate = node2_data.stats.sampling_rate / 32
 
     Fs = node1_data.stats.sampling_rate
     NCF_object.Fs = Fs
@@ -317,7 +324,7 @@ def preprocess_audio(NCF_object):
     return NCF_object
 
 
-def sabra_processing(NCF_object):
+def sabra_processing(NCF_object, plot=False):
     '''
     preprocess audio using signal processing method from sabra. This function
     is designed to replace preprocess_audio single thread in the signal
@@ -340,51 +347,125 @@ def sabra_processing(NCF_object):
     filter_cutoffs = NCF_object.filter_cutoffs
 
     # Filter Data to Specific Range (fiter_cutoffs)
-    print('    Filtering Data from node 1')
+    print('   Filtering Data from node 1')
     node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
-    print('    Filtering Data from node 2')
+    print('   Filtering Data from node 2')
     node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
 
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            node1[0, :], 'Before Filtering', node1_filt[0, :],
+            'After Filtering', Fs, 'sabra')
+
     # Clip Data to amplitude
-    thresh1 = 3*np.std(np.ndarray.flatten(node1_filt))
-    thresh2 = 3*np.std(np.ndarray.flatten(node2_filt))
+    thresh1 = 3 * np.std(np.ndarray.flatten(node1_filt))
+    thresh2 = 3 * np.std(np.ndarray.flatten(node2_filt))
     node1_clip = np.clip(node1_filt, -thresh1, thresh1)
     node2_clip = np.clip(node2_filt, -thresh2, thresh2)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_filt[0, :], 'Before Clipping', node1_clip[0, :],
+            'After Clipping', Fs, 'sabra')
 
     # Frequency Whiten Data
     node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
     node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
 
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
+            'After Whitening', Fs, 'sabra')
 
     NCF_object.node1_processed_data = node1_whit
     NCF_object.node2_processed_data = node2_whit
 
-    return(NCF_object)
-
-    if plot:
-        N = len(NCF_object.node1_data[0,:])
-        t = np.linspace(0, N/NCF_object.Fs, N)
-        f = np.linspace(0, NCF_object.Fs, N)
-        # new style method 2; use an axes array
-        fig1, axs = plt.subplots(1, 2, figsize=(10,5))
-        axs[0].plot(t, NCF_object.node1_data[0,:])
-        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
-        axs[0].set_xlabel('time (s)')
-        axs[1].plot(t, NCF_object.node1_filtered[0,:])
-        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
-        axs[1].set_xlabel('time (s)')
-
-        fig2, axs = plt.subplots(1, 2, figsize=(10,5), sharex=True)
-        axs[0].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_data[0,:])))
-        axs[0].set_title('Time Domain Data Before Filtering',y=1.08)
-        axs[0].set_xlabel('frequency (Hz)')
-        axs[0].set_xlim([0,1000])
-        axs[1].plot(f, np.abs(scipy.fft.fft(NCF_object.node1_filtered[0,:])))
-        axs[1].set_title('Time Domain Data After Filtering',y=1.08)
-        axs[1].set_xlabel('frequency (Hz)')
-        axs[1].set_xlim([0,1000])
-
     return NCF_object
+
+
+def brown_processing(NCF_object, plot=False):
+    h1 = NCF_object.node1_data
+    h2 = NCF_object.node2_data
+    Fs = NCF_object.Fs
+
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter data and save in processed data attribute of NCF_object
+    print('   Filtering Data from Node 1...')
+    NCF_object.node1_processed_data = filter_bandpass(h1, Fs, filter_cutoffs)
+    print('   Filtering Data from Node 2...')
+    NCF_object.node2_processed_data = filter_bandpass(h2, Fs, filter_cutoffs)
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            h1[0, :], 'Before Filtering',
+            NCF_object.node1_processed_data[0, :], 'After Filtering', Fs,
+            'brown')
+    NCF_object = calc_xcorr(NCF_object)
+    st_NCFs = NCF_object.st_NCFs
+    # Whiten short-time NCFs
+    print('   Whitening short-time data...')
+    NCF_whiten = freq_whiten(st_NCFs, Fs, filter_cutoffs)
+
+    # Create before/after plot of Whitening
+    if plot:
+        plot_sp_step(
+            st_NCFs[0, :], 'Before Whitening',
+            NCF_whiten[0, :], 'After Whitening', Fs, 'brown')
+
+    # Normalize short-time NCFs
+    max_value = np.max(np.abs(NCF_whiten),axis=1)
+    NCF_norm = (NCF_whiten.T / max_value).T
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            NCF_whiten[0, :], 'Before Normalization',
+            NCF_norm[0, :], 'After Normalization', Fs, 'brown')
+
+    # Add up short-time NCFs
+    NCF = np.sum(NCF_norm, axis=0)
+
+    NCF_object.NCF = NCF
+    return NCF_object
+
+
+def plot_sp_step(old, old_title, new, new_title, Fs, method):
+
+    N = len(old)
+    t = np.linspace(0, N / Fs, N)
+    f = np.linspace(0, Fs, N)
+    # new style method 2; use an axes array
+    fig1, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].plot(t, old)
+    axs[0].set_title('Time Domain ' + old_title, y=1.08)
+    axs[0].set_xlabel('time (s)')
+    axs[1].plot(t, new)
+    axs[1].set_title('Time Domain ' + new_title, y=1.08)
+    axs[1].set_xlabel('time (s)')
+
+    fig2, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
+    axs[0].plot(f, np.abs(scipy.fft.fft(old)))
+    axs[0].set_title('Frequency Domain ' + old_title, y=1.08)
+    axs[0].set_xlabel('frequency (Hz)')
+    axs[0].set_xlim([0, 1000])
+    axs[1].plot(f, np.abs(scipy.fft.fft(new)))
+    axs[1].set_title('Frequency Domain ' + new_title, y=1.08)
+    axs[1].set_xlabel('frequency (Hz)')
+    axs[1].set_xlim([0, 1000])
+
+    fig1.savefig(
+        'figures/' + method + '_' + old_title + new_title + '_time.png',
+        dpi=400)
+    fig2.savefig(
+        'figures/' + method + '_' + old_title + new_title + '_freq.png',
+        dpi=400)
+
+    return
 
 
 def calc_xcorr(NCF_object, loop=False, count=None):
@@ -411,7 +492,6 @@ def calc_xcorr(NCF_object, loop=False, count=None):
         adds NCF attribute NCF_object.NCF
 
     '''
-
     # Unpack needed values from NCF_object
     h1 = NCF_object.node1_processed_data
     h2 = NCF_object.node2_processed_data
@@ -432,24 +512,27 @@ def calc_xcorr(NCF_object, loop=False, count=None):
 
     xcorr_stack = np.sum(xcorr, axis=0)
 
-    if loop:
-        # Save Checkpoints for every average period
-        filename = './ckpts/ckpt_' + str(count) + '.pkl'
-
-        try:
-            with open(filename, 'wb') as f:
-                pickle.dump(xcorr_stack, f)               # Accumulated xcorr
-
-        except Exception:
-            os.makedirs('ckpts')
-            with open(filename, 'wb') as f:
-                # pickle.dump(xcorr_short_time, f)
-                pickle.dump(xcorr_stack, f)
-                # pickle.dump(k,f)
-
-        return None
     NCF_object.NCF = xcorr_stack
+    NCF_object.st_NCFs = xcorr
     return NCF_object
+
+
+def save_avg_period(NCF_object, count=None):
+    # Save Checkpoints for every average period
+    filename = './ckpts/ckpt_' + str(count) + '.pkl'
+
+    try:
+        with open(filename, 'wb') as f:
+            pickle.dump(NCF_object.NCF, f)               # Accumulated xcorr
+
+    except Exception:
+        os.makedirs('ckpts')
+        with open(filename, 'wb') as f:
+            # pickle.dump(xcorr_short_time, f)
+            pickle.dump(NCF_object.NCF, f)
+            # pickle.dump(k,f)
+
+    return None
 
 
 def calc_xcorr_single_thread(h1, h2):
@@ -477,14 +560,15 @@ def calc_xcorr_single_thread(h1, h2):
     xcorr = signal.fftconvolve(h1, np.flip(h2, axis=0), 'full', axes=0)
 
     # normalize single short time correlation
-    xcorr_norm = xcorr / np.max(xcorr)
+    # xcorr_norm = xcorr / np.max(xcorr)
 
-    return xcorr_norm
+    return xcorr
 
 
 def calculate_NCF_loop(
     num_periods, node1, node2, avg_time, start_time, W, filter_cutoffs,
-        verbose=True, whiten=True, htype='broadband', kstart=0):
+        verbose=True, whiten=True, htype='broadband', kstart=0,
+        sp_method='sabra'):
     '''
     This function loops through multiple average periods and calculates
     the NCF. The resulting NCF is saved to disk in the file directory
@@ -550,7 +634,7 @@ def calculate_NCF_loop(
     if kstart == 0:
         NCF_object = NCF(
             avg_time, start_time, node1, node2, filter_cutoffs, W, verbose,
-            whiten, htype, num_periods)
+            whiten, htype, num_periods, sp_method)
         filename = './ckpts/0HEADER.pkl'
         try:
             with open(filename, 'wb') as f:
@@ -564,7 +648,7 @@ def calculate_NCF_loop(
         start_time_loop = start_time + timedelta(minutes=(avg_time * k))
         NCF_object = NCF(
             avg_time, start_time_loop, node1, node2, filter_cutoffs, W,
-            verbose, whiten, htype)
+            verbose, whiten, htype, sp_method=sp_method)
         print(f'Calculting NCF for Period {k}: {start_time_loop} - \
             {start_time_loop+timedelta(minutes=avg_time)}')
         calculate_NCF(NCF_object, loop=True, count=k)
@@ -598,51 +682,46 @@ def freq_whiten(data, Fs, filter_cutoffs):
     return x_new
     '''
     shape = np.shape(data)
-    data = np.ndarray.flatten(data)
+    #data = np.ndarray.flatten(data)
 
     # assumes data from node1 and node2 have same length
-    N = np.shape(data)[0]
+    N = shape[1]
 
-    f = np.arange(0,N)/N*Fs
+    f = np.arange(0, N) / N * Fs
     win = scipy.signal.windows.hann(N)
+    win = win[:,np.newaxis]
 
-    data_win = data*win
+    data_win = (data.T * win).T
 
-
-    dataf = scipy.fft.fft(data_win)
-
+    dataf = scipy.fft.fft(data_win, axis=1)
 
     data_mag = np.abs(dataf)
 
-
     data_phase = np.angle(dataf)
 
+    idx1 = np.argmin(np.abs(f - filter_cutoffs[0]))
+    idx2 = np.argmin(np.abs(f - filter_cutoffs[1]))
 
-    idx1 = np.argmin(np.abs(f-filter_cutoffs[0]))
-    idx2 = np.argmin(np.abs(f-filter_cutoffs[1]))
+    freq_clip_level = \
+        np.mean(data_mag) + (np.max(data_mag) - np.mean(data_mag) / 2)
+    data_mag[:,idx1:idx2] = freq_clip_level
+    data_mag[:,N - idx2:N - idx1] = freq_clip_level
 
-    freq_clip_level = np.mean(data_mag) + (np.max(data_mag) - \
-                            np.mean(data_mag) / 2)
-    data_mag[idx1:idx2] = freq_clip_level
-    data_mag[N-idx2:N-idx1] = freq_clip_level
 
-    data_whiten_f = data_mag*np.exp(data_phase*1j)
+    data_whiten_f = data_mag * np.exp(data_phase * 1j)
 
-    data_whiten = np.real(scipy.fft.ifft(data_whiten_f))
-
-    data_whiten = np.reshape(data_whiten, shape)
+    data_whiten = np.real(scipy.fft.ifft(data_whiten_f, axis=1))
 
     return data_whiten
+
 
 def filter_bandpass(data, Fs, filter_cutoffs):
     '''
     designed to go after get_audio
     '''
 
-
-    b,a = signal.butter(4, filter_cutoffs/(Fs/2), btype='bandpass')
-    filtered_data = signal.lfilter(b,a,data, axis=1)
-
+    b, a = signal.butter(4, filter_cutoffs / (Fs / 2), btype='bandpass')
+    filtered_data = signal.lfilter(b, a, data, axis=1)
 
     return filtered_data
 
@@ -697,11 +776,14 @@ class NCF:
         for the header file.
     length_flag : bool
         set if length of data does not match between hydrophones.
+    st_NCFs : numpy array
+        all short time correlations for average period
     '''
 
     def __init__(
         self, avg_time, start_time, node1, node2, filter_cutoffs, W,
-            verbose=False, whiten=True, htype='broadband', num_periods=None):
+            verbose=False, whiten=True, htype='broadband', num_periods=None,
+            sp_method='sabra'):
 
         self.avg_time = avg_time
         self.start_time = start_time
@@ -714,6 +796,7 @@ class NCF:
         self.htype = htype
         self.num_periods = num_periods
         self.length_flag = False
+        self.sp_method = sp_method
         return
 
 
