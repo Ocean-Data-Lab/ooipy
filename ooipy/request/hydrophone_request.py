@@ -376,6 +376,9 @@ def __get_mseed_urls(day_str, node, verbose):
     if node == '/LJ01C':  # Oregon Offshore Base Seafloor
         array = '/CE04OSBP'
         instrument = '/11-HYDBBA105'
+    if node == '/LJ03A':  # Axial Base Seafloor
+        array = '/RS03AXBS'
+        instrument = '/09-HYDBBA302'
 
     mainurl = 'https://rawdata.oceanobservatories.org/files' + array + node \
               + instrument + day_str
