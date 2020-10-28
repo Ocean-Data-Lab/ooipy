@@ -110,8 +110,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         save_avg_period(NCF_object, count=count)
         return None
     if loop is False:
-        return NCF_object
-
+        return NCF_objec
 
 
 def get_audio(NCF_object):
@@ -197,11 +196,11 @@ def get_audio(NCF_object):
     # Decimate broadband hydrophone to Fs = 2000 for easier processing
     if htype == 'broadband':
         # Decimate by 4
-        node1_data_dec = scipy.signal.decimate(node1_data.data, 4)
-        node2_data_dec = scipy.signal.decimate(node2_data.data, 4)
+        node1_data_dec = scipy.signal.decimate(node1_data.data, 4, zero_phase=True)
+        node2_data_dec = scipy.signal.decimate(node2_data.data, 4, zero_phase=True)
         # Decimate by 8 (total of 32)
-        node1_data_dec = scipy.signal.decimate(node1_data_dec, 8)
-        node2_data_dec = scipy.signal.decimate(node2_data_dec, 8)
+        node1_data_dec = scipy.signal.decimate(node1_data_dec, 8, zero_phase=True)
+        node2_data_dec = scipy.signal.decimate(node2_data_dec, 8, zero_phase=True)
         # save data back into node1_data and node2_data
         node1_data.data = node1_data_dec
         node2_data.data = node2_data_dec
@@ -380,8 +379,8 @@ def sabra_processing(NCF_object, plot=False):
             node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
             'After Whitening', Fs, 'sabra')
 
-    NCF_object.node1_processed_data = node1_whit
-    NCF_object.node2_processed_data = node2_whit
+    NCF_object.node1_processed_data = node1_clip
+    NCF_object.node2_processed_data = node2_clip
 
     return NCF_object
 
@@ -452,11 +451,11 @@ def plot_sp_step(old, old_title, new, new_title, Fs, method):
     axs[0].plot(f, np.abs(scipy.fft.fft(old)))
     axs[0].set_title('Frequency Domain ' + old_title, y=1.08)
     axs[0].set_xlabel('frequency (Hz)')
-    axs[0].set_xlim([0, 1000])
+    axs[0].set_xlim([0, Fs/2])
     axs[1].plot(f, np.abs(scipy.fft.fft(new)))
     axs[1].set_title('Frequency Domain ' + new_title, y=1.08)
     axs[1].set_xlabel('frequency (Hz)')
-    axs[1].set_xlim([0, 1000])
+    axs[1].set_xlim([0, Fs/2])
 
     fig1.savefig(
         'figures/' + method + '_' + old_title + new_title + '_time.png',
@@ -507,7 +506,7 @@ def calc_xcorr(NCF_object, loop=False, count=None):
     if verbose:
         print('   Correlating Data...')
     xcorr_list = pool.starmap(calc_xcorr_single_thread, xcorr_input_list)
-
+    pool.terminate()
     xcorr = np.array(xcorr_list)
 
     xcorr_stack = np.sum(xcorr, axis=0)
@@ -721,7 +720,7 @@ def filter_bandpass(data, Fs, filter_cutoffs):
     '''
 
     b, a = signal.butter(4, filter_cutoffs / (Fs / 2), btype='bandpass')
-    filtered_data = signal.lfilter(b, a, data, axis=1)
+    filtered_data = signal.filtfilt(b, a, data, axis=1)
 
     return filtered_data
 
