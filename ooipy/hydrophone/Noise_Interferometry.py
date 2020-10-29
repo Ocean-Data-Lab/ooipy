@@ -94,7 +94,12 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         return None
 
     if sp_method == 'sabra':
-        NCF_object = sabra_processing(NCF_object)
+        #create step by step sp figures onces
+        if count == 0:
+            NCF_object = sabra_processing(NCF_object, plot=True)
+        else:
+            NCF_object = sabra_processing(NCF_object, plot=False)
+
         NCF_object = calc_xcorr(NCF_object, loop, count)
     elif sp_method == 'brown':
         NCF_object = brown_processing(NCF_object)
@@ -443,6 +448,7 @@ def plot_sp_step(old, old_title, new, new_title, Fs, method):
     axs[0].plot(t, old)
     axs[0].set_title('Time Domain ' + old_title, y=1.08)
     axs[0].set_xlabel('time (s)')
+    axs[0].set_ylabel('Amplitude')
     axs[1].plot(t, new)
     axs[1].set_title('Time Domain ' + new_title, y=1.08)
     axs[1].set_xlabel('time (s)')
@@ -457,13 +463,28 @@ def plot_sp_step(old, old_title, new, new_title, Fs, method):
     axs[1].set_xlabel('frequency (Hz)')
     axs[1].set_xlim([0, Fs/2])
 
+    fig3, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
+    axs[0].plot(f, np.rad2deg(np.angle(scipy.fft.fft(old))))
+    axs[0].set_title('Frequency Domain ' + old_title, y=1.08)
+    axs[0].set_xlabel('frequency (Hz)')
+    axs[0].set_xlim([0, Fs/2])
+    axs[1].plot(f, np.rad2deg(np.angle(scipy.fft.fft(new))))
+    axs[1].set_title('Frequency Domain ' + new_title, y=1.08)
+    axs[1].set_xlabel('frequency (Hz)')
+    axs[1].set_xlim([0, Fs/2])
+
+    if not os.path.exists('figures'):
+        os.makedirs('figures')
+
     fig1.savefig(
         'figures/' + method + '_' + old_title + new_title + '_time.png',
         dpi=400)
     fig2.savefig(
-        'figures/' + method + '_' + old_title + new_title + '_freq.png',
+        'figures/' + method + '_' + old_title + new_title + '_freq_mag.png',
         dpi=400)
-
+    fig3.savefig(
+        'figures/' + method + '_' + old_title + new_title + '_freq_ang.png',
+        dpi=400)
     return
 
 
@@ -509,9 +530,9 @@ def calc_xcorr(NCF_object, loop=False, count=None):
     pool.terminate()
     xcorr = np.array(xcorr_list)
 
-    xcorr_stack = np.sum(xcorr, axis=0)
+    xcorr_avg = np.mean(xcorr, axis=0)
 
-    NCF_object.NCF = xcorr_stack
+    NCF_object.NCF = xcorr_avg
     NCF_object.st_NCFs = xcorr
     return NCF_object
 
@@ -567,7 +588,7 @@ def calc_xcorr_single_thread(h1, h2):
 def calculate_NCF_loop(
     num_periods, node1, node2, avg_time, start_time, W, filter_cutoffs,
         verbose=True, whiten=True, htype='broadband', kstart=0,
-        sp_method='sabra'):
+        sp_method='sabra', other_notes=None):
     '''
     This function loops through multiple average periods and calculates
     the NCF. The resulting NCF is saved to disk in the file directory
@@ -633,7 +654,7 @@ def calculate_NCF_loop(
     if kstart == 0:
         NCF_object = NCF(
             avg_time, start_time, node1, node2, filter_cutoffs, W, verbose,
-            whiten, htype, num_periods, sp_method)
+            whiten, htype, num_periods, sp_method, other_notes)
         filename = './ckpts/0HEADER.pkl'
         try:
             with open(filename, 'wb') as f:
@@ -720,7 +741,7 @@ def filter_bandpass(data, Fs, filter_cutoffs):
     '''
 
     b, a = signal.butter(4, filter_cutoffs / (Fs / 2), btype='bandpass')
-    filtered_data = signal.filtfilt(b, a, data, axis=1)
+    filtered_data = signal.lfilter(b, a, data, axis=1)
 
     return filtered_data
 
@@ -777,12 +798,16 @@ class NCF:
         set if length of data does not match between hydrophones.
     st_NCFs : numpy array
         all short time correlations for average period
+    sp_method : str
+        signal processing method (sabra or brown)
+    other_notes : str
+        other notes about experiment
     '''
 
     def __init__(
         self, avg_time, start_time, node1, node2, filter_cutoffs, W,
             verbose=False, whiten=True, htype='broadband', num_periods=None,
-            sp_method='sabra'):
+            sp_method='sabra', other_notes=None):
 
         self.avg_time = avg_time
         self.start_time = start_time
@@ -796,6 +821,7 @@ class NCF:
         self.num_periods = num_periods
         self.length_flag = False
         self.sp_method = sp_method
+        self.other_notes = other_notes
         return
 
 
