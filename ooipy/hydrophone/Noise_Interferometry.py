@@ -384,8 +384,8 @@ def sabra_processing(NCF_object, plot=False):
             node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
             'After Whitening', Fs, 'sabra')
 
-    NCF_object.node1_processed_data = node1_clip
-    NCF_object.node2_processed_data = node2_clip
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
 
     return NCF_object
 
@@ -741,7 +741,7 @@ def filter_bandpass(data, Fs, filter_cutoffs):
     '''
 
     b, a = signal.butter(4, filter_cutoffs / (Fs / 2), btype='bandpass')
-    filtered_data = signal.lfilter(b, a, data, axis=1)
+    filtered_data = signal.filtfilt(b, a, data, axis=1)
 
     return filtered_data
 
