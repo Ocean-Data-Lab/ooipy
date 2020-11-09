@@ -13,7 +13,7 @@ def test_get_acoustic_data_archive():
     end_time = datetime.datetime(2017,3,10,0,5,0)
     node = '/PC01A'
 
-    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+    data = hyd_request.__get_acoustic_data_archive(start_time, end_time, node)
 
     assert type(data) == HydrophoneData
     assert type(data.data) == np.ndarray
@@ -28,7 +28,7 @@ def test_get_acoustic_data_archive():
     end_time = datetime.datetime(2017,10,10,15,35,0)
     node = '/LJ01C'
 
-    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+    data = hyd_request.__get_acoustic_data_archive(start_time, end_time, node)
 
     assert data is None
 
@@ -37,7 +37,7 @@ def test_get_acoustic_data_archive():
     end_time = datetime.datetime(2017,10,10,15,20,0)
     node = '/LJ01C'
 
-    data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
+    data = hyd_request.__get_acoustic_data_archive(start_time, end_time, node)
 
     assert type(data) == HydrophoneData
     assert type(data.data) == np.ndarray
