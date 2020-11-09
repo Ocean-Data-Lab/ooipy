@@ -1,5 +1,7 @@
 '''
-This modules handles the downloading of OOI Data.
+This modules handles the downloading of OOI Data. As of current, the supported
+OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
+frequency hydrophones (Fs = 200 Hz).
 
 .. sidebar:: Hydrophone Request Jupyter Notebook
 
@@ -28,7 +30,21 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                       data_gap_mode=0, mseed_file_limit=None,
                       large_gap_limit=1800.0):
     '''
-    Get broadband acoustic data for specific time frame and sensor node:
+    Get broadband acoustic data for specific time frame and sensor node. The
+    data is returned as a :class:`.HydrophoneData` object. This object is
+    based on the obspy data trace. Example usage is shown below. For a more in
+    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
+    <_static/test_request.html>`_.
+
+    >>> import ooipy
+    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
+    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
+    >>> node = '/PC01A'
+    >>> data = ooipy.request.get_acoustic_data(start_time, end_time, node)
+    >>> # To access stats for retrieved data:
+    >>> print(data.stats)
+    >>> # To access numpy array of data:
+    >>> print(data.data)
 
     Parameters
     ----------
@@ -82,12 +98,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         start_time and end_time. Returns None if no data are available
         for specified time frame
 
-    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
-    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
-    >>> node = '/PC01A'
-    >>> data = hyd_request.get_acoustic_data_archive(start_time,
-            end_time, node)
-    >>> print(data.stats)
+
 
     '''
 
@@ -312,6 +323,130 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         return None
 
 
+def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
+                         verbose=False, zero_mean=False):
+    '''
+    Get low frequency acoustic data for specific time frame and sensor node. The
+    data is returned as a :class:`.HydrophoneData` object. This object is
+    based on the obspy data trace. Example usage is shown below. For a more in
+    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
+    <_static/test_request.html>`_. This function does not include the full
+    functionality provided by the `IRIS data portal
+    <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
+
+
+    >>> starttime = datetime.datetime(2017,3,10,7,0,0)
+    >>> endtime = datetime.datetime(2017,3,10,7,1,30)
+    >>> location = 'Axial_Base'
+    >>> fmin = None
+    >>> fmax = None
+    >>> # Returns ooipy.ooipy.hydrophone.base.HydrophoneData Object
+    >>> data_trace = hydrophone_request.get_acoustic_data_LF(starttime, endtime, location, fmin, fmax, zero_mean=True)
+    >>> # Access data stats
+    >>> data_trace.stats
+    >>> # Access numpy array containing data
+    >>> data_trace.data
+
+    Parameters
+    ----------
+    start_time : datetime.datetime
+        time of the first noise sample
+    end_time : datetime.datetime
+        time of the last noise sample
+    node : str
+        hydrophone
+    fmin : float, optional
+        lower cutoff frequency of hydrophone's bandpass filter. Default
+        is None which results in no filtering.
+    fmax : float, optional
+        higher cutoff frequency of hydrophones bandpass filter. Default
+        is None which results in no filtering.
+    verbose : bool, optional
+        specifies whether print statements should occur or not
+    zero_mean : bool, optional
+        specifies whether the mean should be removed. Default to False
+    '''
+
+    if fmin is None and fmax is None:
+        bandpass_range = None
+    else:
+        bandpass_range = [fmin, fmax]
+
+    url = __build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
+                       zero_mean=zero_mean)
+    if verbose:
+        print('Downloading mseed file...')
+
+    # Try downloading data 5 times. If fails every time raise exception
+    for k in range(5):
+        try:
+            data_stream = read(url)
+            break
+        except Exception:
+            if k == 4:
+                print('   Specific Time window timed out.')
+                return None
+
+            # raise Exception ('Problem Requesting Data from OOI Server')
+
+    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats,
+                                     node)
+    return hydrophone_data
+
+
+def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None,
+               verbose=False, data_gap_mode=0, zero_mean=False):
+    '''
+    General Purpose OOIpy read function. Parses input parameters to
+    appropriate, device specific, read function. This function is under
+    development but is included as is. There is no gurentee that this
+    function works as expected.
+
+    Parameters
+    ----------
+    device : str
+        Specifies device type. Valid option are 'broadband_hydrohpone'
+        and 'low_frequency_hydrophone'
+    node : str
+        Specifies data acquisition device location. TODO add available
+        options
+    starttime : datetime.datetime
+        Specifies start time of data requested
+    endtime : datetime.datetime
+        Specifies end time of data requested
+    fmin : float
+        Low frequency corner for filtering. If None are give, then no
+        filtering happens. Broadband hydrophone data is filtered using
+        Obspy. Low frequency hydrophone uses IRIS filtering.
+    fmax : float
+        High frequency corner for filtering.
+    verbose : bool
+        Specifies whether or not to print status update statements.
+    data_gap_mode : int
+        specifies how gaps in data are handled see documentation for
+        get_acoustic_data
+
+    Returns
+    -------
+    hydrophone_data : HydrophoneData
+        Object that stores hydrophone data. Similar to obspy trace.
+    '''
+
+    if device == 'broadband_hydrophone':
+        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin,
+                                            fmax, verbose=verbose,
+                                            data_gap_mode=data_gap_mode)
+    elif device == 'low_frequency_hydrophone':
+        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node,
+                                               fmin=fmin, fmax=fmax,
+                                               verbose=verbose,
+                                               zero_mean=zero_mean)
+    else:
+        raise Exception('Invalid Devic String')
+
+    return hydrophone_data
+
+
 def __map_concurrency(func, iterator, args=(), max_workers=-1):
     # automatically set max_workers to 2x(available cores)
     if max_workers == -1:
@@ -497,109 +632,7 @@ def __get_LF_locations_stats(node):
     return network, station, location, channel
 
 
-def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
-                         verbose=False, zero_mean=False):
-    '''
-    Get acoustic data from low frequency OOI Hydrophones.
 
-    Parameters
-    ----------
-    start_time : datetime.datetime
-        time of the first noise sample
-    end_time : datetime.datetime
-        time of the last noise sample
-    node : str
-        hydrophone
-    fmin : float, optional
-        lower cutoff frequency of hydrophone's bandpass filter. Default
-        is None which results in no filtering.
-    fmax : float, optional
-        higher cutoff frequency of hydrophones bandpass filter. Default
-        is None which results in no filtering.
-    verbose : bool, optional
-        specifies whether print statements should occur or not
-    zero_mean : bool, optional
-        specifies whether the mean should be removed. Default to False
-    '''
-
-    if fmin is None and fmax is None:
-        bandpass_range = None
-    else:
-        bandpass_range = [fmin, fmax]
-
-    url = __build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
-                       zero_mean=zero_mean)
-    if verbose:
-        print('Downloading mseed file...')
-
-    # Try downloading data 5 times. If fails every time raise exception
-    for k in range(5):
-        try:
-            data_stream = read(url)
-            break
-        except Exception:
-            if k == 4:
-                print('   Specific Time window timed out.')
-                return None
-
-            # raise Exception ('Problem Requesting Data from OOI Server')
-
-    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats,
-                                     node)
-    return hydrophone_data
-
-
-def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None,
-               verbose=False, data_gap_mode=0, zero_mean=False):
-    '''
-    General Purpose OOIpy read function. Parses input parameters to
-    appropriate, device specific, read function. This function is under
-    development but is concluded as is. There is not gurentee that this
-    function works as expected.
-
-    Parameters
-    ----------
-    device : str
-        Specifies device type. Valid option are 'broadband_hydrohpone'
-        and 'low_frequency_hydrophone'
-    node : str
-        Specifies data acquisition device location. TODO add available
-        options
-    starttime : datetime.datetime
-        Specifies start time of data requested
-    endtime : datetime.datetime
-        Specifies end time of data requested
-    fmin : float
-        Low frequency corner for filtering. If None are give, then no
-        filtering happens. Broadband hydrophone data is filtered using
-        Obspy. Low frequency hydrophone uses IRIS filtering.
-    fmax : float
-        High frequency corner for filtering.
-    verbose : bool
-        Specifies whether or not to print status update statements.
-    data_gap_mode : int
-        specifies how gaps in data are handled see documentation for
-        get_acoustic_data
-
-    Returns
-    -------
-    hydrophone_data : HydrophoneData
-        Object that stores hydrophone data. Similar to obspy trace.
-    '''
-
-    if device == 'broadband_hydrophone':
-        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin,
-                                            fmax, verbose=verbose,
-                                            data_gap_mode=data_gap_mode)
-    elif device == 'low_frequency_hydrophone':
-        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node,
-                                               fmin=fmin, fmax=fmax,
-                                               verbose=verbose,
-                                               zero_mean=zero_mean)
-    else:
-        raise Exception('Invalid Devic String')
-
-    return hydrophone_data
 
 
 # Archive
