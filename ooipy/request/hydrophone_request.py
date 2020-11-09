@@ -452,7 +452,7 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     else:
         mean_url = ''
     url = base_url + netw_url + stat_url + chan_url + strt_url + end_url \
-        + mean_url + band_url + form_url + loca_url # + corr_url
+        + mean_url + band_url + form_url + loca_url + corr_url
     return url
 
 

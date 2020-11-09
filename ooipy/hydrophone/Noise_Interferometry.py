@@ -94,7 +94,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         return None
 
     if sp_method == 'sabra':
-        #create step by step sp figures onces
+        # create step by step sp figures onces
         if count == 0:
             NCF_object = sabra_processing(NCF_object, plot=True)
         else:
@@ -115,7 +115,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         save_avg_period(NCF_object, count=count)
         return None
     if loop is False:
-        return NCF_objec
+        return NCF_object
 
 
 def get_audio(NCF_object):
@@ -201,11 +201,15 @@ def get_audio(NCF_object):
     # Decimate broadband hydrophone to Fs = 2000 for easier processing
     if htype == 'broadband':
         # Decimate by 4
-        node1_data_dec = scipy.signal.decimate(node1_data.data, 4, zero_phase=True)
-        node2_data_dec = scipy.signal.decimate(node2_data.data, 4, zero_phase=True)
+        node1_data_dec = scipy.signal.decimate(
+            node1_data.data, 4, zero_phase=True)
+        node2_data_dec = scipy.signal.decimate(
+            node2_data.data, 4, zero_phase=True)
         # Decimate by 8 (total of 32)
-        node1_data_dec = scipy.signal.decimate(node1_data_dec, 8, zero_phase=True)
-        node2_data_dec = scipy.signal.decimate(node2_data_dec, 8, zero_phase=True)
+        node1_data_dec = scipy.signal.decimate(
+            node1_data_dec, 8, zero_phase=True)
+        node2_data_dec = scipy.signal.decimate(
+            node2_data_dec, 8, zero_phase=True)
         # save data back into node1_data and node2_data
         node1_data.data = node1_data_dec
         node2_data.data = node2_data_dec
@@ -422,7 +426,7 @@ def brown_processing(NCF_object, plot=False):
             NCF_whiten[0, :], 'After Whitening', Fs, 'brown')
 
     # Normalize short-time NCFs
-    max_value = np.max(np.abs(NCF_whiten),axis=1)
+    max_value = np.max(np.abs(NCF_whiten), axis=1)
     NCF_norm = (NCF_whiten.T / max_value).T
 
     # Create before/after plot of filtering
@@ -457,21 +461,21 @@ def plot_sp_step(old, old_title, new, new_title, Fs, method):
     axs[0].plot(f, np.abs(scipy.fft.fft(old)))
     axs[0].set_title('Frequency Domain ' + old_title, y=1.08)
     axs[0].set_xlabel('frequency (Hz)')
-    axs[0].set_xlim([0, Fs/2])
+    axs[0].set_xlim([0, Fs / 2])
     axs[1].plot(f, np.abs(scipy.fft.fft(new)))
     axs[1].set_title('Frequency Domain ' + new_title, y=1.08)
     axs[1].set_xlabel('frequency (Hz)')
-    axs[1].set_xlim([0, Fs/2])
+    axs[1].set_xlim([0, Fs / 2])
 
     fig3, axs = plt.subplots(1, 2, figsize=(10, 5), sharex=True)
     axs[0].plot(f, np.rad2deg(np.angle(scipy.fft.fft(old))))
     axs[0].set_title('Frequency Domain ' + old_title, y=1.08)
     axs[0].set_xlabel('frequency (Hz)')
-    axs[0].set_xlim([0, Fs/2])
+    axs[0].set_xlim([0, Fs / 2])
     axs[1].plot(f, np.rad2deg(np.angle(scipy.fft.fft(new))))
     axs[1].set_title('Frequency Domain ' + new_title, y=1.08)
     axs[1].set_xlabel('frequency (Hz)')
-    axs[1].set_xlim([0, Fs/2])
+    axs[1].set_xlim([0, Fs / 2])
 
     if not os.path.exists('figures'):
         os.makedirs('figures')
@@ -702,14 +706,14 @@ def freq_whiten(data, Fs, filter_cutoffs):
     return x_new
     '''
     shape = np.shape(data)
-    #data = np.ndarray.flatten(data)
+    # data = np.ndarray.flatten(data)
 
     # assumes data from node1 and node2 have same length
     N = shape[1]
 
     f = np.arange(0, N) / N * Fs
     win = scipy.signal.windows.hann(N)
-    win = win[:,np.newaxis]
+    win = win[:, np.newaxis]
 
     data_win = (data.T * win).T
 
@@ -724,9 +728,8 @@ def freq_whiten(data, Fs, filter_cutoffs):
 
     freq_clip_level = \
         np.mean(data_mag) + (np.max(data_mag) - np.mean(data_mag) / 2)
-    data_mag[:,idx1:idx2] = freq_clip_level
-    data_mag[:,N - idx2:N - idx1] = freq_clip_level
-
+    data_mag[:, idx1:idx2] = freq_clip_level
+    data_mag[:, N - idx2:N - idx1] = freq_clip_level
 
     data_whiten_f = data_mag * np.exp(data_phase * 1j)
 
