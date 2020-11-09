@@ -440,6 +440,8 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     end_url = 'end=' + endtime + '&'
     form_url = 'format=miniseed&'
     loca_url = 'loc=' + location
+    corr_url = '&correct=true'
+
     if bandpass_range is None:
         band_url = ''
     else:
@@ -450,7 +452,7 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     else:
         mean_url = ''
     url = base_url + netw_url + stat_url + chan_url + strt_url + end_url \
-        + mean_url + band_url + form_url + loca_url
+        + mean_url + band_url + form_url + loca_url # + corr_url
     return url
 
 
@@ -460,31 +462,31 @@ def get_LF_location_stats(node):
             network = 'OO'
             station = 'HYSB1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Southern_Hydrate':
             network = 'OO'
             station = 'HYS14'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Axial_Base':
             network = 'OO'
             station = 'AXBA1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Central_Caldera':
             network = 'OO'
             station = 'AXCC1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Eastern_Caldera':
             network = 'OO'
             station = 'AXEC2'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         # Create error if node is invalid
         network = network
