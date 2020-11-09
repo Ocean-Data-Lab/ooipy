@@ -402,7 +402,7 @@ def __get_mseed_urls(day_str, node, verbose):
     return data_url_list
 
 
-def build_LF_URL(node, starttime, endtime, bandpass_range=None,
+def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
                  zero_mean=False):
     '''
     Build URL for Lowfrequency Data given the start time, end time, and
@@ -428,7 +428,7 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
         url of specified data segment. Format will be in miniseed.
     '''
 
-    network, station, location, channel = get_LF_location_stats(node)
+    network, station, location, channel = __get_LF_locations_stats(node)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -456,7 +456,7 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     return url
 
 
-def get_LF_location_stats(node):
+def __get_LF_locations_stats(node):
     try:
         if node == 'Slope_Base':
             network = 'OO'
@@ -500,7 +500,26 @@ def get_LF_location_stats(node):
 def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
                          verbose=False, zero_mean=False):
     '''
-    Get acoustic data from low frequency OOI Hydrophones
+    Get acoustic data from low frequency OOI Hydrophones.
+
+    Parameters
+    ----------
+    start_time : datetime.datetime
+        time of the first noise sample
+    end_time : datetime.datetime
+        time of the last noise sample
+    node : str
+        hydrophone
+    fmin : float, optional
+        lower cutoff frequency of hydrophone's bandpass filter. Default
+        is None which results in no filtering.
+    fmax : float, optional
+        higher cutoff frequency of hydrophones bandpass filter. Default
+        is None which results in no filtering.
+    verbose : bool, optional
+        specifies whether print statements should occur or not
+    zero_mean : bool, optional
+        specifies whether the mean should be removed. Default to False
     '''
 
     if fmin is None and fmax is None:
@@ -508,7 +527,7 @@ def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
     else:
         bandpass_range = [fmin, fmax]
 
-    url = build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
+    url = __build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
                        zero_mean=zero_mean)
     if verbose:
         print('Downloading mseed file...')
@@ -534,7 +553,9 @@ def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None,
                verbose=False, data_gap_mode=0, zero_mean=False):
     '''
     General Purpose OOIpy read function. Parses input parameters to
-    appropriate, device specific, read function
+    appropriate, device specific, read function. This function is under
+    development but is concluded as is. There is not gurentee that this
+    function works as expected.
 
     Parameters
     ----------
@@ -705,7 +726,7 @@ def _web_crawler_acoustic_data(day_str, node):
     return data_url_list
 
 
-def get_acoustic_data_archive(starttime, endtime, node, fmin=None, fmax=None,
+def __get_acoustic_data_archive(starttime, endtime, node, fmin=None, fmax=None,
                               append=True, verbose=False,
                               limit_seed_files=True, data_gap_mode=0):
     '''
