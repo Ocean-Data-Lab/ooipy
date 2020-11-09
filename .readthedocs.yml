@@ -1,4 +1,4 @@
-name: ooi
+name: readthedocs
 channels:
   - anaconda
   - conda-forge
