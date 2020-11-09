@@ -22,4 +22,4 @@ python:
   version: 3.7
 
 conda:
-  environment: conda_envs/ooi_mac.yml
+  environment: conda_envs/ooipy_rtd.yml

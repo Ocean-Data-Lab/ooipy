@@ -31,7 +31,6 @@ import time
 import multiprocessing as mp
 from datetime import timedelta
 import pickle
-from gwpy.timeseries import TimeSeries
 from multiprocessing.pool import ThreadPool
 import scipy
 from matplotlib import pyplot as plt
