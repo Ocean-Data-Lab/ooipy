@@ -32,7 +32,7 @@ release = '0.0.1'
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage','sphinx.ext.napoleon']
 
-autodoc_mock_imports = ['numpy', 'matplotlib', 'obspy', 'scipy', 'pandas', 'thredds_crawler', 'gwpy', 'lxml', 'requests', 'seaborn']
+autodoc_mock_imports = ['numpy', 'matplotlib', 'obspy', 'scipy', 'pandas', 'thredds_crawler', 'lxml', 'requests', 'seaborn', 'ffspec']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
