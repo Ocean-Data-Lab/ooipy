@@ -1,5 +1,7 @@
 '''
-This modules handles the downloading of OOI Data.
+This modules handles the downloading of OOI Data. As of current, the supported
+OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
+frequency hydrophones (Fs = 200 Hz).
 
 .. sidebar:: Hydrophone Request Jupyter Notebook
 
@@ -28,7 +30,21 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                       data_gap_mode=0, mseed_file_limit=None,
                       large_gap_limit=1800.0):
     '''
-    Get broadband acoustic data for specific time frame and sensor node:
+    Get broadband acoustic data for specific time frame and sensor node. The
+    data is returned as a :class:`.HydrophoneData` object. This object is
+    based on the obspy data trace. Example usage is shown below. For a more in
+    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
+    <_static/test_request.html>`_.
+
+    >>> import ooipy
+    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
+    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
+    >>> node = '/PC01A'
+    >>> data = ooipy.request.get_acoustic_data(start_time, end_time, node)
+    >>> # To access stats for retrieved data:
+    >>> print(data.stats)
+    >>> # To access numpy array of data:
+    >>> print(data.data)
 
     Parameters
     ----------
@@ -82,12 +98,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         start_time and end_time. Returns None if no data are available
         for specified time frame
 
-    >>> start_time = datetime.datetime(2017,3,10,0,0,0)
-    >>> end_time = datetime.datetime(2017,3,10,0,5,0)
-    >>> node = '/PC01A'
-    >>> data = hyd_request.get_acoustic_data_archive(start_time,
-            end_time, node)
-    >>> print(data.stats)
+
 
     '''
 
@@ -312,6 +323,130 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
         return None
 
 
+def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
+                         verbose=False, zero_mean=False):
+    '''
+    Get low frequency acoustic data for specific time frame and sensor node. The
+    data is returned as a :class:`.HydrophoneData` object. This object is
+    based on the obspy data trace. Example usage is shown below. For a more in
+    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
+    <_static/test_request.html>`_. This function does not include the full
+    functionality provided by the `IRIS data portal
+    <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
+
+
+    >>> starttime = datetime.datetime(2017,3,10,7,0,0)
+    >>> endtime = datetime.datetime(2017,3,10,7,1,30)
+    >>> location = 'Axial_Base'
+    >>> fmin = None
+    >>> fmax = None
+    >>> # Returns ooipy.ooipy.hydrophone.base.HydrophoneData Object
+    >>> data_trace = hydrophone_request.get_acoustic_data_LF(starttime, endtime, location, fmin, fmax, zero_mean=True)
+    >>> # Access data stats
+    >>> data_trace.stats
+    >>> # Access numpy array containing data
+    >>> data_trace.data
+
+    Parameters
+    ----------
+    start_time : datetime.datetime
+        time of the first noise sample
+    end_time : datetime.datetime
+        time of the last noise sample
+    node : str
+        hydrophone
+    fmin : float, optional
+        lower cutoff frequency of hydrophone's bandpass filter. Default
+        is None which results in no filtering.
+    fmax : float, optional
+        higher cutoff frequency of hydrophones bandpass filter. Default
+        is None which results in no filtering.
+    verbose : bool, optional
+        specifies whether print statements should occur or not
+    zero_mean : bool, optional
+        specifies whether the mean should be removed. Default to False
+    '''
+
+    if fmin is None and fmax is None:
+        bandpass_range = None
+    else:
+        bandpass_range = [fmin, fmax]
+
+    url = __build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
+                       zero_mean=zero_mean)
+    if verbose:
+        print('Downloading mseed file...')
+
+    # Try downloading data 5 times. If fails every time raise exception
+    for k in range(5):
+        try:
+            data_stream = read(url)
+            break
+        except Exception:
+            if k == 4:
+                print('   Specific Time window timed out.')
+                return None
+
+            # raise Exception ('Problem Requesting Data from OOI Server')
+
+    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats,
+                                     node)
+    return hydrophone_data
+
+
+def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None,
+               verbose=False, data_gap_mode=0, zero_mean=False):
+    '''
+    General Purpose OOIpy read function. Parses input parameters to
+    appropriate, device specific, read function. This function is under
+    development but is included as is. There is no gurentee that this
+    function works as expected.
+
+    Parameters
+    ----------
+    device : str
+        Specifies device type. Valid option are 'broadband_hydrohpone'
+        and 'low_frequency_hydrophone'
+    node : str
+        Specifies data acquisition device location. TODO add available
+        options
+    starttime : datetime.datetime
+        Specifies start time of data requested
+    endtime : datetime.datetime
+        Specifies end time of data requested
+    fmin : float
+        Low frequency corner for filtering. If None are give, then no
+        filtering happens. Broadband hydrophone data is filtered using
+        Obspy. Low frequency hydrophone uses IRIS filtering.
+    fmax : float
+        High frequency corner for filtering.
+    verbose : bool
+        Specifies whether or not to print status update statements.
+    data_gap_mode : int
+        specifies how gaps in data are handled see documentation for
+        get_acoustic_data
+
+    Returns
+    -------
+    hydrophone_data : HydrophoneData
+        Object that stores hydrophone data. Similar to obspy trace.
+    '''
+
+    if device == 'broadband_hydrophone':
+        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin,
+                                            fmax, verbose=verbose,
+                                            data_gap_mode=data_gap_mode)
+    elif device == 'low_frequency_hydrophone':
+        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node,
+                                               fmin=fmin, fmax=fmax,
+                                               verbose=verbose,
+                                               zero_mean=zero_mean)
+    else:
+        raise Exception('Invalid Devic String')
+
+    return hydrophone_data
+
+
 def __map_concurrency(func, iterator, args=(), max_workers=-1):
     # automatically set max_workers to 2x(available cores)
     if max_workers == -1:
@@ -402,8 +537,8 @@ def __get_mseed_urls(day_str, node, verbose):
     return data_url_list
 
 
-def build_LF_URL(node, starttime, endtime, bandpass_range=None,
-                 zero_mean=False):
+def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
+                 zero_mean=False, correct=False):
     '''
     Build URL for Lowfrequency Data given the start time, end time, and
     node
@@ -422,13 +557,16 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
         are given, no bandpass will be added to data.
     zero_mean : bool
         specified whether mean should be removed from data
+    correct : bool
+        specifies whether to do sensitivity correction on hydrophone data
+
     Returns
     -------
     url : str
         url of specified data segment. Format will be in miniseed.
     '''
 
-    network, station, location, channel = get_LF_location_stats(node)
+    network, station, location, channel = __get_LF_locations_stats(node)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -440,6 +578,11 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     end_url = 'end=' + endtime + '&'
     form_url = 'format=miniseed&'
     loca_url = 'loc=' + location
+    if correct:
+        corr_url = '&correct=true'
+    else:
+        corr_url = ''
+
     if bandpass_range is None:
         band_url = ''
     else:
@@ -450,41 +593,41 @@ def build_LF_URL(node, starttime, endtime, bandpass_range=None,
     else:
         mean_url = ''
     url = base_url + netw_url + stat_url + chan_url + strt_url + end_url \
-        + mean_url + band_url + form_url + loca_url
+        + mean_url + band_url + form_url + loca_url + corr_url
     return url
 
 
-def get_LF_location_stats(node):
+def __get_LF_locations_stats(node):
     try:
         if node == 'Slope_Base':
             network = 'OO'
             station = 'HYSB1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Southern_Hydrate':
             network = 'OO'
             station = 'HYS14'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Axial_Base':
             network = 'OO'
             station = 'AXBA1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Central_Caldera':
             network = 'OO'
             station = 'AXCC1'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         if node == 'Eastern_Caldera':
             network = 'OO'
             station = 'AXEC2'
             location = '--'
-            channel = 'HHE'
+            channel = 'HDH'
 
         # Create error if node is invalid
         network = network
@@ -493,417 +636,3 @@ def get_LF_location_stats(node):
         raise Exception('Invalid Location String')
 
     return network, station, location, channel
-
-
-def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
-                         verbose=False, zero_mean=False):
-    '''
-    Get acoustic data from low frequency OOI Hydrophones
-    '''
-
-    if fmin is None and fmax is None:
-        bandpass_range = None
-    else:
-        bandpass_range = [fmin, fmax]
-
-    url = build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
-                       zero_mean=zero_mean)
-    if verbose:
-        print('Downloading mseed file...')
-
-    # Try downloading data 5 times. If fails every time raise exception
-    for k in range(5):
-        try:
-            data_stream = read(url)
-            break
-        except Exception:
-            if k == 4:
-                print('   Specific Time window timed out.')
-                return None
-
-            # raise Exception ('Problem Requesting Data from OOI Server')
-
-    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats,
-                                     node)
-    return hydrophone_data
-
-
-def ooipy_read(device, node, starttime, endtime, fmin=None, fmax=None,
-               verbose=False, data_gap_mode=0, zero_mean=False):
-    '''
-    General Purpose OOIpy read function. Parses input parameters to
-    appropriate, device specific, read function
-
-    Parameters
-    ----------
-    device : str
-        Specifies device type. Valid option are 'broadband_hydrohpone'
-        and 'low_frequency_hydrophone'
-    node : str
-        Specifies data acquisition device location. TODO add available
-        options
-    starttime : datetime.datetime
-        Specifies start time of data requested
-    endtime : datetime.datetime
-        Specifies end time of data requested
-    fmin : float
-        Low frequency corner for filtering. If None are give, then no
-        filtering happens. Broadband hydrophone data is filtered using
-        Obspy. Low frequency hydrophone uses IRIS filtering.
-    fmax : float
-        High frequency corner for filtering.
-    verbose : bool
-        Specifies whether or not to print status update statements.
-    data_gap_mode : int
-        specifies how gaps in data are handled see documentation for
-        get_acoustic_data
-
-    Returns
-    -------
-    hydrophone_data : HydrophoneData
-        Object that stores hydrophone data. Similar to obspy trace.
-    '''
-
-    if device == 'broadband_hydrophone':
-        hydrophone_data = get_acoustic_data(starttime, endtime, node, fmin,
-                                            fmax, verbose=verbose,
-                                            data_gap_mode=data_gap_mode)
-    elif device == 'low_frequency_hydrophone':
-        hydrophone_data = get_acoustic_data_LF(starttime, endtime, node,
-                                               fmin=fmin, fmax=fmax,
-                                               verbose=verbose,
-                                               zero_mean=zero_mean)
-    else:
-        raise Exception('Invalid Devic String')
-
-    return hydrophone_data
-
-
-# Archive
-'''
-def get_acoustic_data_archive_mp(starttime, endtime, node,n_process=None,
-    fmin=None, fmax=None,
-    append=True, verbose=False, limit_seed_files=True, data_gap_mode=0):
-
-    Same as function get acoustic data but using multiprocessing.
-
-    # entire time frame is divided into n_process parts of equal length
-    if n_process == None:
-        N  = mp.cpu_count()
-    else:
-        N = n_process
-
-    seconds_per_process = (endtime - starttime).total_seconds() / N
-
-    get_data_list = [(starttime + datetime.timedelta(
-        seconds=i * seconds_per_process),
-        starttime + datetime.timedelta(seconds=(i + 1) * seconds_per_process),
-        node, fmin, fmax) for i in range(N)]
-
-    # create pool of processes require one part of the data in each process
-    with mp.get_context("spawn").Pool(N) as p:
-        try:
-            data_list = p.starmap(self.get_acoustic_data_archive,
-            get_data_list)
-        except:
-            if verbose:
-                print('Data cannot be requested.')
-            #data_available = False
-            return None
-
-    #if all data is None, return None and set flags
-    if (all(x==None for x in data_list)):
-        if verbose:
-            print('No data available for specified time and node')
-        self.data = None
-        self.data_available = False
-        st_all = None
-
-
-    #if only some of data is none, remove None entries
-    if (None in data_list):
-        if self.print_exceptions:
-            print('Some mseed files missing or corrupted for time range')
-        data_list = list(filter(None.__ne__, data_list))
-
-
-    # merge data segments together
-    st_all = data_list[0]
-    if len(data_list) > 1:
-        for d in data_list[1:]:
-            st_all = st_all + d
-    self._data_segmented = data_list
-    st_all.merge(method=1)
-
-    if isinstance(st_all[0].data, np.ma.core.MaskedArray):
-        self.data_gap = True
-        if self.print_exceptions: print('Data has gaps')
-
-    # apply bandpass filter to st_all if desired
-    if (self.fmin != None and self.fmax != None):
-        st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-        print('data filtered')
-    self.data = st_all[0]
-    self.data_available = True
-
-    self.starttime = starttime
-    self.endtime = endtime
-    return st_all
-'''
-
-
-def _web_crawler_acoustic_data(day_str, node):
-    '''
-    get URLs for a specific day from OOI raw data server
-
-    Parameters
-    ----------
-    day_str : str
-        date for which URLs are requested;
-        format: yyyy/mm/dd, e.g. 2016/07/15
-
-    Returns
-    -------
-    [str]
-        list of URLs, each URL refers to one data file. If no data are
-        available for specified date, None is returned.
-    '''
-
-    if node == '/LJ01D':  # LJ01D'  Oregon Shelf Base Seafloor
-        array = '/CE02SHBP'
-        instrument = '/11-HYDBBA106'
-    if node == '/LJ01A':  # LJ01A Oregon Slope Base Seafloore
-        array = '/RS01SLBS'
-        instrument = '/09-HYDBBA102'
-    if node == '/PC01A':  # Oregan Slope Base Shallow
-        array = '/RS01SBPS'
-        instrument = '/08-HYDBBA103'
-    if node == '/PC03A':  # Axial Base Shallow Profiler
-        array = '/RS03AXPS'
-        instrument = '/08-HYDBBA303'
-    if node == '/LJ01C':  # Oregon Offshore Base Seafloor
-        array = '/CE04OSBP'
-        instrument = '/11-HYDBBA105'
-
-    mainurl = 'https://rawdata.oceanobservatories.org/files' + array + node \
-              + instrument + day_str
-    try:
-        mainurlpage = requests.get(mainurl, timeout=60)
-    except Exception:
-        print('Timeout URL request')
-        return None
-    webpage = html.fromstring(mainurlpage.content)
-    suburl = webpage.xpath('//a/@href')
-
-    FileNum = len(suburl)
-    data_url_list = []
-    for filename in suburl[6:FileNum]:
-        data_url_list.append(str(mainurl + filename[2:]))
-
-    return data_url_list
-
-
-def get_acoustic_data_archive(starttime, endtime, node, fmin=None, fmax=None,
-                              append=True, verbose=False,
-                              limit_seed_files=True, data_gap_mode=0):
-    '''
-    Get acoustic data for specific time frame and node:
-
-    start_time (datetime.datetime): time of the first noise sample
-    end_time (datetime.datetime): time of the last noise sample
-    node (str): hydrophone
-    fmin (float): lower cutoff frequency of hydrophone's bandpass filter.
-        Default is None which results in no filtering.
-    fmax (float): higher cutoff frequency of hydrophones bandpass filter.
-        Default is None which results in no filtering.
-    print_exceptions (bool): whether or not exeptions are printed in the
-        terminal line
-    verbose (bool) : Determines if information is printed to command line
-
-    return (obspy.core.stream.Stream): obspy Stream object containing
-        one Trace and date
-        between start_time and end_time. Returns None if no data are
-        available for specified time frame
-
-    '''
-
-    # data_gap = False
-
-    # Save last mseed of previous day to data_url_list
-    prev_day = starttime - timedelta(days=1)
-
-    if append:
-        data_url_list_prev_day = \
-            _web_crawler_acoustic_data(prev_day.strftime("/%Y/%m/%d/"), node)
-        # keep only .mseed files
-        del_list = []
-        for i in range(len(data_url_list_prev_day)):
-            url = data_url_list_prev_day[i].split('.')
-            if url[len(url) - 1] != 'mseed':
-                del_list.append(i)
-        data_url_prev_day = np.delete(data_url_list_prev_day, del_list)
-        data_url_prev_day = data_url_prev_day[-1]
-
-    # get URL for first day
-    day_start = UTCDateTime(starttime.year, starttime.month,
-                            starttime.day, 0, 0, 0)
-    data_url_list = \
-        _web_crawler_acoustic_data(starttime.strftime("/%Y/%m/%d/"), node)
-    if data_url_list is None:
-        if verbose:
-            print('No data available for specified day and node. '
-                  'Please change the day or use a different node')
-        return None
-
-    # increment day start by 1 day
-    day_start = day_start + 24 * 3600
-
-    # get all urls for each day untill endtime is reached
-    while day_start < endtime:
-        data_url_list.extend(_web_crawler_acoustic_data(
-                             starttime.strftime("/%Y/%m/%d/"), node))
-        day_start = day_start + 24 * 3600
-
-    if limit_seed_files:
-        # if too many files for one day -> skip day (otherwise program takes
-        # too long to terminate)
-        if len(data_url_list) > 1000:
-            if verbose:
-                print('Too many files for specified day. Cannot request data '
-                      'as web crawler cannot terminate.')
-            return None
-
-    # keep only .mseed files
-    del_list = []
-    for i in range(len(data_url_list)):
-        url = data_url_list[i].split('.')
-        if url[len(url) - 1] != 'mseed':
-            del_list.append(i)
-    data_url_list = np.delete(data_url_list, del_list)
-
-    if append:
-        data_url_list = np.insert(data_url_list, 0, data_url_prev_day)
-
-    st_all = None
-    first_file = True
-    # only acquire data for desired time
-
-    for i in range(len(data_url_list)):
-        # get UTC time of current and next item in URL list
-        # extract start time from ith file
-        utc_time_url_start = UTCDateTime(
-            data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
-
-        # this line assumes no gaps between current and next file
-        if i != len(data_url_list) - 1:
-            utc_time_url_stop = UTCDateTime(
-                data_url_list[i + 1].split('YDH')[1][1:].split('.mseed')[0])
-        else:
-            utc_time_url_stop = UTCDateTime(
-                data_url_list[i].split('YDH')[1][1:].split('.mseed')[0])
-            utc_time_url_stop.hour = 23
-            utc_time_url_stop.minute = 59
-            utc_time_url_stop.second = 59
-            utc_time_url_stop.microsecond = 999999
-
-        # if current segment contains desired data, store data segment
-        if (utc_time_url_start >= starttime
-            and utc_time_url_start < endtime) \
-            or (utc_time_url_stop >= starttime
-                and utc_time_url_stop < endtime) \
-            or (utc_time_url_start <= starttime
-                and utc_time_url_stop >= endtime):
-
-            if (first_file) and (i != 0):
-                first_file = False
-                try:
-                    if append:
-                        # add one extra file on front end
-                        st = read(data_url_list[i - 1], apply_calib=True)
-                        st += read(data_url_list[i], apply_calib=True)
-                    else:
-                        st = read(data_url_list[i], apply_calib=True)
-                except Exception:
-                    if verbose:
-                        print(f"Data Segment, {data_url_list[i-1]} \
-                              or {data_url_list[i] } Broken")
-                    # self.data = None
-                    # self.data_available = False
-                    # return None
-            # normal operation (not first or last file)
-            else:
-                try:
-                    st = read(data_url_list[i], apply_calib=True)
-                except Exception:
-                    if verbose:
-                        print(f"Data Segment, {data_url_list[i]} Broken")
-                    # self.data = None
-                    # self.data_available = False
-                    # return None
-
-            # Add st to acculation of all data st_all
-            if st_all is None:
-                st_all = st
-            else:
-                st_all += st
-        # adds one more mseed file to st_ll
-        else:
-            # Checks if last file has been downloaded within time period
-            if first_file is False:
-                first_file = True
-                try:
-                    if append:
-                        st = read(data_url_list[i], apply_calib=True)
-                except Exception:
-                    if verbose:
-                        print(f"Data Segment, {data_url_list[i]} Broken")
-                    # self.data = None
-                    # self.data_available = False
-                    # return None
-
-                if append:
-                    st_all += st
-
-    # Merge all traces together
-    if data_gap_mode == 0:
-        st_all.merge(fill_value='interpolate', method=1)
-    # Returns Masked Array if there are data gaps
-    elif data_gap_mode == 1:
-        st_all.merge(method=1)
-    else:
-        if verbose:
-            print('Invalid Data Gap Mode')
-        return None
-    # Slice data to desired window
-    st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
-
-    if len(st_all) == 0:
-        if verbose:
-            print('No data available for selected time frame.')
-        return None
-
-    if isinstance(st_all[0].data, np.ma.core.MaskedArray):
-        # data_gap = True
-
-        # Note this will only trip if masked array is returned
-        if verbose:
-            print('Data has Gaps')
-        # interpolated is treated as if there is no gap
-
-    # Filter Data
-    try:
-        if fmin is not None and fmax is not None:
-            st_all = st_all.filter("bandpass", freqmin=fmin, freqmax=fmax)
-            if verbose:
-                print('Signal Filtered')
-        data = st_all[0]
-        # data_available = True
-        return HydrophoneData(data.data, data.stats, node)
-    except Exception:
-        if st_all is None:
-            if verbose:
-                print('No data available for selected time frame.')
-        else:
-            if verbose:
-                print('Other exception')
-        return None

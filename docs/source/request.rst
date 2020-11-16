@@ -1,6 +1,12 @@
+.. image:: ../../imgs/ooipy_banner2.png
+  :width: 700
+  :alt: OOIPY Logo
+  :align: left
+
 Request Module
 ==============
-This module provides the tools to download OOI data from the OOI Raw Data Server.
+This module provides the tools to download OOI data from the OOI Raw Data
+Server.
 
 Hydrophone
 ^^^^^^^^^^
