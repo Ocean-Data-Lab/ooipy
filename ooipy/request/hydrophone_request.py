@@ -538,7 +538,7 @@ def __get_mseed_urls(day_str, node, verbose):
 
 
 def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
-                 zero_mean=False):
+                 zero_mean=False, correct=False):
     '''
     Build URL for Lowfrequency Data given the start time, end time, and
     node
@@ -557,6 +557,9 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
         are given, no bandpass will be added to data.
     zero_mean : bool
         specified whether mean should be removed from data
+    correct : bool
+        specifies whether to do sensitivity correction on hydrophone data
+
     Returns
     -------
     url : str
@@ -575,7 +578,10 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
     end_url = 'end=' + endtime + '&'
     form_url = 'format=miniseed&'
     loca_url = 'loc=' + location
-    corr_url = '&correct=true'
+    if correct:
+        corr_url = '&correct=true'
+    else:
+        corr_url = ''
 
     if bandpass_range is None:
         band_url = ''
