@@ -40,30 +40,16 @@ class HydrophoneData(Trace):
 
     Methods
     -------
-    compute_spectrogram(win='hann', L=4096, avg_time=None, overlap=0.5)
-        Computes spectrogram for data attribute.
+    :meth:`HydrophoneData.compute_spectrogram`
 
-    compute_spectrogram_mp(split=None, n_process=None, win='hann',
-        L=4096, avg_time=None, overlap=0.5)
+    :meth:`HydrophoneData.compute_spectrogram_mp`
 
-        Same as compute_spectrogram but using multiprocessing to
-        parallelize computations.
+    :meth:'HydrophoneData.compute_psd_welch'
 
-    compute_psd_welch(win='hann', L=4096, overlap=0.5, avg_method='median',
-        interpolate=None, scale='log')
+    :meth:'HydrophoneData.commpute_psd_welch_mp'
 
-        Compute power spectral density estimate for data attribute.
+    :meth:'HydrophoneData.freq_dependent_sensitivity_correct'
 
-    compute_psd_welch_mp(split, n_process=None, win='hann', L=4096,
-        overlap=0.5,avg_method='median', interpolate=None, scale='log')
-
-        Same as compute_psd_welch but using multiprocessing
-        to parallelize computations.
-
-    freq_dependent_sensitivity_correct(N)
-        Undeveloped: full features to be added in future development
-        TODO: applies frequency dependent sensitivity correction to
-        hydrophone data
     """
 
     def __init__(self, data=np.array([]), header=None, node=''):
@@ -83,10 +69,14 @@ class HydrophoneData(Trace):
         Apply a frequency dependent sensitivity correction to the acoustic
         data (in frequency domain).
 
+        Parameters
+        ----------
         N (int): length of the data segment
 
-        return (np.array): array with correction coefficient for every
-        frequency
+        Returns
+        -------
+        output_array : np.array
+            array with correction coefficient for every frequency
         """
         # f_calib = [0, 13500, 27100, 40600, 54100]
         # sens_calib = [169, 169.4, 168.1, 169.7, 171.5]
@@ -95,8 +85,8 @@ class HydrophoneData(Trace):
         # f = np.linspace(0, 32000, N)
 
         # return sens_interpolated(f)
-
-        return 169.0 * np.ones(N)
+        output_array = 169.0 * np.ones(N)
+        return output_array
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
                             overlap=0.5, verbose=True):
