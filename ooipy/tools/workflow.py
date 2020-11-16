@@ -1,3 +1,8 @@
+'''
+This modules provides some useful functions for saving spectrograms and
+power spectral density objects.
+'''
+
 # Import all dependancies
 import numpy as np
 from ooipy.hydrophone.basic import Spectrogram, Psd
@@ -17,14 +22,19 @@ def save(save_obj, filename, **kwargs):
         raise Exception('Fuction only supports spectrogram and PSD objects.')
 
 def save_psd(psd_obj, filename, **kwargs):
-    '''
-    Save PSD estimates along with with ancillary data (stored in dictionary) in json file.
+     """
+    Save a :calss:`~ooipy.hydrophone.basic.Psd` object in a json file.
 
-    filename (str): directory for saving the data
-    ancillary_data ([array like]): list of ancillary data
-    ancillary_data_label ([str]): labels for ancillary data used as keys in the output dictionary.
-        Array has same length as ancillary_data array.
-    '''
+    Parameters
+    ----------
+    spec_obj : :calss:`~ooipy.hydrophone.basic.Psd`
+        Psd object to be saved
+    filename : str
+        name of file.
+    **kwargs : int, float, or list
+        Ancillary data saved with the PSD object. Keyword and value
+        will be saved as dictionary entries
+    """
 
     if len(psd_obj.freq) != len(psd_obj.values):
         f = np.linspace(0, len(psd_obj.values)-1, len(psd_obj.values))
@@ -42,6 +52,7 @@ def save_psd(psd_obj, filename, **kwargs):
         'values': f
         }
 
+    # store ancillary data in dictionary
     for key, value in kwargs.items():
         if isinstance(value, int) or isinstance(value, float):
             dct[key] = value
@@ -54,20 +65,29 @@ def save_psd(psd_obj, filename, **kwargs):
         json.dump(dct, outfile)
 
 def save_spectrogram(spectrogram_obj, filename, **kwargs):
-        '''
-        Save spectrogram in pickle file.
+    """
+    Save a :calss:`~ooipy.hydrophone.basic.Spectrogram` object in a
+    pickle file.
 
-        filename (str): directory where spectrogram data is saved. Ending has to be ".pickle".
-        '''
+    Parameters
+    ----------
+    spectrogram_obj : :calss:`~ooipy.hydrophone.basic.Spectrogram`
+        Spectrogram object to be saved
+    filename : str
+        name of file.
+    **kwargs : any datatype
+        Ancillary data saved with the Spectrogram object. Keyword and
+        value will be saved as dictionary entries
+    """
 
-        dct = {
-            'time': spectrogram_obj.time,
-            'frequency': spectrogram_obj.freq,
-            'values': spectrogram_obj.values
-            }
+    dct = {
+        'time': spectrogram_obj.time,
+        'frequency': spectrogram_obj.freq,
+        'values': spectrogram_obj.values
+        }
 
-        for key, value in kwargs.items():
-            dct[key] = value
+    for key, value in kwargs.items():
+        dct[key] = value
 
-        with open(filename, 'wb') as outfile:
-            pickle.dump(dct, outfile)
+    with open(filename, 'wb') as outfile:
+        pickle.dump(dct, outfile)

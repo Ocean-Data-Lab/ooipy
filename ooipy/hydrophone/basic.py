@@ -170,12 +170,8 @@ class HydrophoneData(Trace):
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
 
                     specgram.append(Pxx)
-<<<<<<< HEAD
-                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=n*L / fs))
-=======
                     time.append(self.stats.starttime + datetime.timedelta(
                         seconds=n * L / fs))
->>>>>>> master
 
         else:
             for n in range(nbins - 1):
@@ -197,12 +193,8 @@ class HydrophoneData(Trace):
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
-<<<<<<< HEAD
-                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=n*avg_time))
-=======
                     time.append(self.stats.starttime + datetime.timedelta(
                         seconds=n * avg_time))
->>>>>>> master
 
             # compute PSD for residual segment
             # if segment has more than L samples
@@ -224,14 +216,9 @@ class HydrophoneData(Trace):
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
-<<<<<<< HEAD
-                    time.append(self.stats.starttime.datetime + datetime.timedelta(seconds=(nbins-1)*avg_time))
-    
-=======
                     time.append(self.stats.starttime + datetime.timedelta(
                         seconds=(nbins - 1) * avg_time))
 
->>>>>>> master
         if len(time) == 0:
             if verbose:
                 print('Spectrogram does not contain any data')
