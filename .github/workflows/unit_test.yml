@@ -9,7 +9,7 @@ jobs:
     - name: Checkout Repo
       uses: actions/checkout@v2
     - name: Install conda
-      uses: goanpeca/setup-miniconda@v1
+      uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: ooi
         environment-file: conda_envs/ooi_linux.yml
