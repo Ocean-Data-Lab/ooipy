@@ -30,7 +30,7 @@ def test_get_acoustic_data_archive():
 
     data = hyd_request.get_acoustic_data_archive(start_time, end_time, node)
 
-    assert data == None
+    assert data is None
 
     # 3. case: partial data coverage (data available until 15:17:50)
     start_time = datetime.datetime(2017,10,10,15,15,0)
@@ -72,7 +72,7 @@ def test_get_acoustic_data():
 
     data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
 
-    assert data == None
+    assert data is None
 
     # 3. case: partial data coverage (data available until 15:17:50)
     start_time = datetime.datetime(2017,10,10,15,15,0)
@@ -88,3 +88,12 @@ def test_get_acoustic_data():
     diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
     assert diff_start <= 100
     assert diff_end > 100
+
+    # 4. case: 0% data coverage for entire day (directory does not exists)
+    start_time = datetime.datetime(2019,11,1,0,0,0)
+    end_time = datetime.datetime(2019,11,1,0,5,0)
+    node = '/LJ01D'
+
+    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
+
+    assert data is None
