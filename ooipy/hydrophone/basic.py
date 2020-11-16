@@ -33,22 +33,22 @@ class HydrophoneData(Trace):
         power spectral density estimate of HydrophoneData.data.data.
         Spectral level and frequency bins can be accessed by
         psd.values and psd.freq
-    psd_list : list of Psd
+    psd_list : list of :class:`.Psd`
         the data object is divided into N segments and for each
         segment a separate power spectral density estimate is computed and
         stored in psd_list. psd_list is computed by compute_psd_welch_mp
 
     Methods
     -------
-    :meth:`HydrophoneData.compute_spectrogram`
+    :meth:`.HydrophoneData.compute_spectrogram`
 
-    :meth:`HydrophoneData.compute_spectrogram_mp`
+    :meth:`.HydrophoneData.compute_spectrogram_mp`
 
-    :meth:'HydrophoneData.compute_psd_welch'
+    :meth:'.HydrophoneData.compute_psd_welch'
 
-    :meth:'HydrophoneData.commpute_psd_welch_mp'
+    :meth:'.HydrophoneData.commpute_psd_welch_mp'
 
-    :meth:'HydrophoneData.freq_dependent_sensitivity_correct'
+    :meth:'.HydrophoneData.freq_dependent_sensitivity_correct'
 
     """
 
