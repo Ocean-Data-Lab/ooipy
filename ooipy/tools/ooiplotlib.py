@@ -19,26 +19,10 @@ from obspy.core import UTCDateTime
 def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     """
     An extension to the matplotlib.pyplot.plot function that allows for
-    the nice plotting of :calss:`~ooipy.hydrophone.basic.Spectrogram`
-    and :calss:`~ooipy.hydrophone.basic.Psd` objects. For a description
+    the nice plotting of :calss:`ooipy.hydrophone.basic.Spectrogram`
+    and :calss:`ooipy.hydrophone.basic.Psd` objects. For a description
     of the input parameters, please refer to the matplotlib
     documentation.
-
-    Parameters
-    ----------
-    *args : :calss:`~ooipy.hydrophone.basic.Spectrogram`, or
-    :calss:`~ooipy.hydrophone.basic.Psd`, or array
-        object or array to be plotted
-    scalex :
-        see matplotlib documentation
-    scaley :
-        see matplotlib doccumentation
-    data :
-        see matplotlib doccumentation
-    **kwargs :
-        see matplotlib doccumentation,
-        :func:`~ooipy.tools.ooiplotlib.plot_spectrogram`, and
-        :func:`~ooipy.tools.ooiplotlib.plot_psd` for arguments
 
     >>> from ooipy.request import hydrophone_request
     >>> from ooipy.tools import ooiplotlib as ooiplt
@@ -62,6 +46,22 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     >>> ooiplt.plot(hydrophone_data.psd)
     >>> plt.title('my PSD')
     >>> plt.show()
+
+    Parameters
+    ----------
+    *args : :calss:`ooipy.hydrophone.basic.Spectrogram`, or
+    :calss:`ooipy.hydrophone.basic.Psd`, or array
+        object or array to be plotted
+    scalex :
+        see matplotlib documentation
+    scaley :
+        see matplotlib doccumentation
+    data :
+        see matplotlib doccumentation
+    **kwargs :
+        see matplotlib doccumentation,
+        :func:`ooipy.tools.ooiplotlib.plot_spectrogram`, and
+        :func:`ooipy.tools.ooiplotlib.plot_psd` for arguments
     """
     for arg in args:
         if isinstance(arg, Spectrogram):
@@ -76,12 +76,12 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
 
 def plot_spectrogram(spec_obj, **kwargs):
     """
-    Plot a :calss:`~ooipy.hydrophone.basic.Spectrogram` object using the
+    Plot a :calss:`ooipy.hydrophone.basic.Spectrogram` object using the
     matplotlib package.
 
     Parameters
     ----------
-    spec_obj : :calss:`~ooipy.hydrophone.basic.Spectrogram`
+    spec_obj : :calss:`ooipy.hydrophone.basic.Spectrogram`
         spectrogram object to be plotted
     **kwargs :
         See matplotlib doccumentation for list of arguments. Additional
@@ -203,12 +203,12 @@ def plot_spectrogram(spec_obj, **kwargs):
 
 def plot_psd(psd_obj, **kwargs):
     """
-    Plot a :calss:`~ooipy.hydrophone.basic.Psd` object using the
+    Plot a :calss:`ooipy.hydrophone.basic.Psd` object using the
     matplotlib package.
 
     Parameters
     ----------
-    spec_obj : :calss:`~ooipy.hydrophone.basic.Psd`
+    spec_obj : :calss:`ooipy.hydrophone.basic.Psd`
         Psd object to be plotted
     **kwargs :
         See matplotlib doccumentation for list of arguments. Additional
