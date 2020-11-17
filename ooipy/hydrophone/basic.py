@@ -18,7 +18,6 @@ import datetime
 import multiprocessing as mp
 import pickle
 
-
 class HydrophoneData(Trace):
     """
     Object that stores hydrophone data
