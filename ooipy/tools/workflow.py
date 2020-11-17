@@ -12,16 +12,16 @@ import pickle
 
 def save(save_obj, filename, **kwargs):
     """
-    Save :calss:`ooipy.hydrophone.basic.Spectrogram` and
-    :calss:`ooipy.hydrophone.basic.Psd` objects. Spectrograms along
+    Save :class:`ooipy.hydrophone.basic.Spectrogram` and
+    :class:`ooipy.hydrophone.basic.Psd` objects. Spectrograms along
     with ancillary data will be saved in a pickle file as a dictionary.
     PSD object along with ancillary data will be saved in a json file as
     a dictionary.
 
     Parameters
     ----------
-    save_obj : :calss:`ooipy.hydrophone.basic.Psd` or
-    :calss:`ooipy.hydrophone.basic.Spectrogram`
+    save_obj : :class:`ooipy.hydrophone.basic.Psd` or
+    :class:`ooipy.hydrophone.basic.Spectrogram`
         Psd or specrogram object to be saved
     filename : str
         name of file.
@@ -40,11 +40,11 @@ def save(save_obj, filename, **kwargs):
 
 def save_psd(psd_obj, filename, **kwargs):
     """
-    Save a :calss:`ooipy.hydrophone.basic.Psd` object in a json file.
+    Save a :class:`ooipy.hydrophone.basic.Psd` object in a json file.
 
     Parameters
     ----------
-    spec_obj : :calss:`ooipy.hydrophone.basic.Psd`
+    spec_obj : :class:`ooipy.hydrophone.basic.Psd`
         Psd object to be saved
     filename : str
         name of file.
@@ -82,12 +82,12 @@ def save_psd(psd_obj, filename, **kwargs):
 
 def save_spectrogram(spectrogram_obj, filename, **kwargs):
     """
-    Save a :calss:`ooipy.hydrophone.basic.Spectrogram` object in a
+    Save a :class:`ooipy.hydrophone.basic.Spectrogram` object in a
     pickle file.
 
     Parameters
     ----------
-    spectrogram_obj : :calss:`ooipy.hydrophone.basic.Spectrogram`
+    spectrogram_obj : :class:`ooipy.hydrophone.basic.Spectrogram`
         Spectrogram object to be saved
     filename : str
         name of file.

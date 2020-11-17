@@ -19,8 +19,8 @@ from obspy.core import UTCDateTime
 def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     """
     An extension to the matplotlib.pyplot.plot function that allows for
-    the nice plotting of :calss:`ooipy.hydrophone.basic.Spectrogram`
-    and :calss:`ooipy.hydrophone.basic.Psd` objects. For a description
+    the nice plotting of :class:`ooipy.hydrophone.basic.Spectrogram`
+    and :class:`ooipy.hydrophone.basic.Psd` objects. For a description
     of the input parameters, please refer to the matplotlib
     documentation.
 
@@ -49,8 +49,8 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
 
     Parameters
     ----------
-    *args : :calss:`ooipy.hydrophone.basic.Spectrogram`, or
-    :calss:`ooipy.hydrophone.basic.Psd`, or array
+    args : :class:`ooipy.hydrophone.basic.Spectrogram`, or
+    :class:`ooipy.hydrophone.basic.Psd`, or array
         object or array to be plotted
     scalex :
         see matplotlib documentation
@@ -58,7 +58,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
         see matplotlib doccumentation
     data :
         see matplotlib doccumentation
-    **kwargs :
+    kwargs :
         see matplotlib doccumentation,
         :func:`ooipy.tools.ooiplotlib.plot_spectrogram`, and
         :func:`ooipy.tools.ooiplotlib.plot_psd` for arguments
@@ -76,12 +76,12 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
 
 def plot_spectrogram(spec_obj, **kwargs):
     """
-    Plot a :calss:`ooipy.hydrophone.basic.Spectrogram` object using the
+    Plot a :class:`ooipy.hydrophone.basic.Spectrogram` object using the
     matplotlib package.
 
     Parameters
     ----------
-    spec_obj : :calss:`ooipy.hydrophone.basic.Spectrogram`
+    spec_obj : :class:`ooipy.hydrophone.basic.Spectrogram`
         spectrogram object to be plotted
     **kwargs :
         See matplotlib doccumentation for list of arguments. Additional
@@ -163,14 +163,14 @@ def plot_spectrogram(spec_obj, **kwargs):
     v = spec_obj.values[::kwargs['res_reduction_time'],
                         ::kwargs['res_reduction_freq']]
     if len(spec_obj.time) != len(spec_obj.values):
-        t = np.linspace(0, len(spec_obj.values) - 1, int(len(spec_obj.values) \
-            / kwargs['res_reduction_time']))
+        t = np.linspace(0, len(spec_obj.values) - 1, int(len(spec_obj.values)
+                        / kwargs['res_reduction_time']))
     else:
         t = spec_obj.time[::kwargs['res_reduction_time']]
     if len(spec_obj.freq) != len(spec_obj.values[0]):
         f = np.linspace(0, len(spec_obj.values[0]) - 1,
-                        int(len(spec_obj.values[0]) / \
-                            kwargs['res_reduction_freq']))
+                        int(len(spec_obj.values[0]) /
+                        kwargs['res_reduction_freq']))
     else:
         f = spec_obj.freq[::kwargs['res_reduction_freq']]
 
@@ -180,13 +180,13 @@ def plot_spectrogram(spec_obj, **kwargs):
     fig, ax = plt.subplots(figsize=kwargs['figsize'])
     im = ax.contourf(t, f, np.transpose(v), cbarticks,
                      norm=Normalize(vmin=kwargs['vmin'], vmax=kwargs['vmax']),
-                                    cmap=plt.cm.jet, **kwargs)
+                     cmap=plt.cm.jet, **kwargs)
     plt.ylabel(kwargs['ylabel'])
     plt.xlabel(kwargs['xlabel'])
     plt.ylim([kwargs['fmin'], kwargs['fmax']])
     plt.xticks(rotation=kwargs['xlabel_rot'])
     plt.title(kwargs['title'])
-    plt.colorbar(im, ax=ax, ticks=np.arange(kwargs['vmin'], kwargs['vmax'] + \
+    plt.colorbar(im, ax=ax, ticks=np.arange(kwargs['vmin'], kwargs['vmax'] +
                                             kwargs['vdelta'],
                                             kwargs['vdelta_cbar']))
     plt.tick_params(axis='y')
@@ -203,12 +203,12 @@ def plot_spectrogram(spec_obj, **kwargs):
 
 def plot_psd(psd_obj, **kwargs):
     """
-    Plot a :calss:`ooipy.hydrophone.basic.Psd` object using the
+    Plot a :class:`ooipy.hydrophone.basic.Psd` object using the
     matplotlib package.
 
     Parameters
     ----------
-    spec_obj : :calss:`ooipy.hydrophone.basic.Psd`
+    spec_obj : :class:`ooipy.hydrophone.basic.Psd`
         Psd object to be plotted
     **kwargs :
         See matplotlib doccumentation for list of arguments. Additional

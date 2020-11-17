@@ -22,8 +22,6 @@ import multiprocessing as mp
 import concurrent.futures
 import fsspec
 
-#sys.path.append("..")  # TODO: remove this before publishing
-
 
 def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
                       max_workers=-1, append=True, verbose=False,
@@ -326,12 +324,13 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
 def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
                          verbose=False, zero_mean=False):
     '''
-    Get low frequency acoustic data for specific time frame and sensor node. The
-    data is returned as a :class:`.HydrophoneData` object. This object is
-    based on the obspy data trace. Example usage is shown below. For a more in
-    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
-    <_static/test_request.html>`_. This function does not include the full
-    functionality provided by the `IRIS data portal
+    Get low frequency acoustic data for specific time frame and sensor
+    node. The data is returned as a :class:`.HydrophoneData` object.
+    This object is based on the obspy data trace. Example usage is shown
+    below. For a more in depth tutorial, see the `Hydrophone Request
+    Jupyter Notebook Example <_static/test_request.html>`_. This
+    function does not include the full functionality provided by the
+    `IRIS data portal
     <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
 
 
@@ -341,7 +340,8 @@ def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
     >>> fmin = None
     >>> fmax = None
     >>> # Returns ooipy.ooipy.hydrophone.base.HydrophoneData Object
-    >>> data_trace = hydrophone_request.get_acoustic_data_LF(starttime, endtime, location, fmin, fmax, zero_mean=True)
+    >>> data_trace = hydrophone_request.get_acoustic_data_LF(
+            starttime, endtime, location, fmin, fmax, zero_mean=True)
     >>> # Access data stats
     >>> data_trace.stats
     >>> # Access numpy array containing data
@@ -372,8 +372,8 @@ def get_acoustic_data_LF(starttime, endtime, node, fmin=None, fmax=None,
     else:
         bandpass_range = [fmin, fmax]
 
-    url = __build_LF_URL(node, starttime, endtime, bandpass_range=bandpass_range,
-                       zero_mean=zero_mean)
+    url = __build_LF_URL(node, starttime, endtime,
+                         bandpass_range=bandpass_range, zero_mean=zero_mean)
     if verbose:
         print('Downloading mseed file...')
 
@@ -538,7 +538,7 @@ def __get_mseed_urls(day_str, node, verbose):
 
 
 def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
-                 zero_mean=False, correct=False):
+                   zero_mean=False, correct=False):
     '''
     Build URL for Lowfrequency Data given the start time, end time, and
     node

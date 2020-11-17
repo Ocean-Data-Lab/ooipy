@@ -19,6 +19,7 @@ import datetime
 import multiprocessing as mp
 import pickle
 
+
 class HydrophoneData(Trace):
     """
     Object that stores hydrophone data
@@ -91,65 +92,65 @@ class HydrophoneData(Trace):
         """
 
         f = np.linspace(0, 32000, N)
-        if node == '/LJ01C': # Oregon Offshore Base Seafloor
-            if time >= datetime.datetime(2014,8,15,0,12,0) and \
-            time <= datetime.datetime(2015,8,2,0,0,0) or \
-            time >= datetime.datetime(2016,7,22,22,50,0) and \
-            time <= datetime.datetime(2017,8,10,4,0,0): #1249
+        if node == '/LJ01C':  # Oregon Offshore Base Seafloor
+            if time >= datetime.datetime(2014, 8, 15, 0, 12, 0) and \
+                    time <= datetime.datetime(2015, 8, 2, 0, 0, 0) or \
+                    time >= datetime.datetime(2016, 7, 22, 22, 50, 0) and \
+                    time <= datetime.datetime(2017, 8, 10, 4, 0, 0):  # 1249
                 f_calib = [0, 26, 13500, 27100, 40600, 54100]
                 sens_calib = [168.49, 168.49, 169.3, 169.6, 172.6, 171.8]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2020,9,1,0,0,0): #1249
+            elif time >= datetime.datetime(2020, 9, 1, 0, 0, 0):  # 1249
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [168.5, 168.5, 167.6, 169.45, 171.85,
                               172.65, 171.7]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2018,6,25,0,0,0) and \
-            time <= datetime.datetime(2019,6,19,4,17,0): #1248
+            elif time >= datetime.datetime(2018, 6, 25, 0, 0, 0) and \
+                    time <= datetime.datetime(2019, 6, 19, 4, 17, 0):  # 1248
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [170.5, 170.5, 169.75, 172.85, 173.35,
                               172.85, 172.25]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2015,8,3,22,45,0) and \
-            time <= datetime.datetime(2016,7,22,22,49,59) or \
-            time >= datetime.datetime(2017,8,10,16,0,0) and \
-            time <= datetime.datetime(2018,6,25,0,0,0) or \
-            time >= datetime.datetime(2019,6,23,22,52,0) and \
-            time <= datetime.datetime(2020,9,1,0,0,0): #1250 (after 27-09-2018)
+            elif time >= datetime.datetime(2015, 8, 3, 22, 45, 0) and \
+                    time <= datetime.datetime(2016, 7, 22, 22, 49, 59) or \
+                    time >= datetime.datetime(2017, 8, 10, 16, 0, 0) and \
+                    time <= datetime.datetime(2018, 6, 25, 0, 0, 0) or \
+                    time >= datetime.datetime(2019, 6, 23, 22, 52, 0) and \
+                    time <= datetime.datetime(2020, 9, 1, 0, 0, 0):  # 1250
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [168.2, 168.2, 168.05, 169.85, 170.05,
                               169.6, 170.45]
                 sens_interpolated = interp1d(f_calib, sens_calib)
 
-        elif node == '/LJ01D': # Oregon Shelf Base Seafloor
-            if time >= datetime.datetime(2018,6,30,2,30,0) and \
-            time <= datetime.datetime(2019,6,19,23,31,0): #1249
+        elif node == '/LJ01D':  # Oregon Shelf Base Seafloor
+            if time >= datetime.datetime(2018, 6, 30, 2, 30, 0) and \
+                    time <= datetime.datetime(2019, 6, 19, 23, 31, 0):  # 1249
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [168.5, 168.5, 167.6, 169.45, 171.85,
                               172.65, 171.7]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2014,9,10,15,43,0) and \
-            time <= datetime.datetime(2015,8,1,0,0,0) or \
-            time >= datetime.datetime(2016,7,22,22,50,0) and \
-            time <= datetime.datetime(2017,9,9,3,30,0): #1249
+            elif time >= datetime.datetime(2014, 9, 10, 15, 43, 0) and \
+                    time <= datetime.datetime(2015, 8, 1, 0, 0, 0) or \
+                    time >= datetime.datetime(2016, 7, 22, 22, 50, 0) and \
+                    time <= datetime.datetime(2017, 9, 9, 3, 30, 0):  # 1249
                 f_calib = [0, 26, 13500, 27100, 40600, 54100]
                 sens_calib = [170.53, 170.53, 175.1, 174.5, 174.6, 173.5]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2020,9,1,0,0,0): #1248
+            elif time >= datetime.datetime(2020, 9, 1, 0, 0, 0):  # 1248
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [170.5, 170.5, 169.75, 172.85, 173.35,
                               172.85, 172.25]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2015,8,2,5,47,0) and \
-            time <= datetime.datetime(2016,7,22,22,49,59) or \
-            time >= datetime.datetime(2017,9,10,14,30,0) and \
-            time <= datetime.datetime(2018,6,29,2,30,0): #1411
+            elif time >= datetime.datetime(2015, 8, 2, 5, 47, 0) and \
+                    time <= datetime.datetime(2016, 7, 22, 22, 49, 59) or \
+                    time >= datetime.datetime(2017, 9, 10, 14, 30, 0) and \
+                    time <= datetime.datetime(2018, 6, 29, 2, 30, 0):  # 1411
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [168.6, 168.6, 169.2, 170.9, 171.45,
                               171.55, 174.2]
                 sens_interpolated = interp1d(f_calib, sens_calib)
-            elif time >= datetime.datetime(2019,6,23,3,36,0) and \
-            time <= datetime.datetime(2020,9,1,0,0,0): #1411
+            elif time >= datetime.datetime(2019, 6, 23, 3, 36, 0) and \
+                    time <= datetime.datetime(2020, 9, 1, 0, 0, 0):  # 1411
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
                 sens_calib = [168.6, 168.6, 168.75, 169.6, 169.65,
                               170.0, 170.2]
@@ -158,9 +159,8 @@ class HydrophoneData(Trace):
         else:
             output_array = 169.0 * np.ones(N)
             return output_array
-        
-        return sens_interpolated(f)
 
+        return sens_interpolated(f)
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
                             overlap=0.5, verbose=True):
@@ -235,8 +235,8 @@ class HydrophoneData(Trace):
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
 
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime \
-                        + datetime.timedelta(seconds=n * L / fs))
+                    time.append(self.stats.starttime.datetime
+                                + datetime.timedelta(seconds=n * L / fs))
 
         else:
             for n in range(nbins - 1):
@@ -259,8 +259,8 @@ class HydrophoneData(Trace):
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime \
-                        +  datetime.timedelta(seconds=n * avg_time))
+                    time.append(self.stats.starttime.datetime
+                                + datetime.timedelta(seconds=n * avg_time))
 
             # compute PSD for residual segment
             # if segment has more than L samples
@@ -283,8 +283,9 @@ class HydrophoneData(Trace):
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime \
-                        + datetime.timedelta(seconds=(nbins - 1) * avg_time))
+                    time.append(self.stats.starttime.datetime
+                                + datetime.timedelta(seconds=(nbins - 1)
+                                                     * avg_time))
 
         if len(time) == 0:
             if verbose:
@@ -450,7 +451,7 @@ class HydrophoneData(Trace):
 
         calib_time = self.stats.starttime.datetime
         sense_corr = self.freq_dependent_sensitivity_correct(
-                int(nfft / 2 + 1), self.stats.location, calib_time)
+            int(nfft / 2 + 1), self.stats.location, calib_time)
         if scale == 'log':
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10)) - 128.9
         elif scale == 'lin':
