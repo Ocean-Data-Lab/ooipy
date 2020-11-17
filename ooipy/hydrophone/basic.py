@@ -228,7 +228,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.to_pydatetime()
+                    calib_time = self.stats.starttime.datetime
                     tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1), self.stats.location, calib_time)
 
@@ -253,7 +253,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.to_pydatetime()
+                    calib_time = self.stats.starttime.datetime
                     tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1), self.stats.location, calib_time)
 
@@ -277,7 +277,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.to_pydatetime()
+                    calib_time = self.stats.starttime.datetime
                     tmp = self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1), self.stats.location, calib_time)
 
@@ -448,7 +448,7 @@ class HydrophoneData(Trace):
             self.psd = None
             return None
 
-        calib_time = self.stats.starttime.to_pydatetime()
+        calib_time = self.stats.starttime.datetime
         sense_corr = self.freq_dependent_sensitivity_correct(
                 int(nfft / 2 + 1), self.stats.location, calib_time)
         if scale == 'log':
