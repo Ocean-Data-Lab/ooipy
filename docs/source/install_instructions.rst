@@ -6,5 +6,4 @@
 How to Install OOIPY
 ====================
 
-
-Section to describe install instructions
+This section is under development and will be updated in the future.

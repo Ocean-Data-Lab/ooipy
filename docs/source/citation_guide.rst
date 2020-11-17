@@ -6,4 +6,4 @@
 How to Cite OOIPY
 =================
 
-- citation information
+Please cite using this `link <https://zenodo.org/record/4276862#.X7QsVNNKhhE>`_.
