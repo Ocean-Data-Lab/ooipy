@@ -121,78 +121,83 @@ def plot_spectrogram(spec_obj, **kwargs):
     """
     # check for keys
     if 'plot_spec' not in kwargs:
-        plot_spec = True
+        kwargs['plot_spec'] = True
     if 'save_spec' not in kwargs:
-        save_spec = False
+        kwargs['save_spec'] = False
     if 'filename' not in kwargs:
-        filename = 'spectrogram.png'
+        kwargs['filename'] = 'spectrogram.png'
     if 'title' not in kwargs:
-        title = 'Spectrogram'
+        kwargs['title'] = 'Spectrogram'
     if 'xlabel' not in kwargs:
-        xlabel = 'time'
+        kwargs['xlabel'] = 'time'
     if 'xlabel_rot' not in kwargs:
-        xlabel_rot = 70
+        kwargs['xlabel_rot'] = 70
     if 'ylabel' not in kwargs:
-        ylabel = 'frequency'
+        kwargs['ylabel'] = 'frequency'
     if 'fmin' not in kwargs:
-        fmin = 0.0
+        kwargs['fmin'] = 0.0
     if 'fmax' not in kwargs:
-        fmax = 32000.0
+        kwargs['fmax'] = 32000.0
     if 'vmin' not in kwargs:
-        vmin = 20.0
+        kwargs['vmin'] = 20.0
     if 'vmax' not in kwargs:
-        vmax = 80.0
+        kwargs['vmax'] = 80.0
     if 'vdelta' not in kwargs:
-        vdelta = 1.0
+        kwargs['vdelta'] = 1.0
     if 'vdelta_cbar' not in kwargs:
-        vdelta_cbar = 5.0
+        kwargs['vdelta_cbar'] = 5.0
     if 'figsize' not in kwargs:
-        figsize = (16, 9)
+        kwargs['figsize'] = (16, 9)
     if 'res_reduction_time' not in kwargs:
-        res_reduction_time = 1
+        kwargs['res_reduction_time'] = 1
     if 'res_reduction_freq' not in kwargs:
-        res_reduction_freq = 1
+        kwargs['res_reduction_freq'] = 1
 
     # set backend for plotting/saving:
-    if not plot_spec:
+    if not kwargs['plot_spec']:
         matplotlib.use('Agg')
     font = {'size': 22}
     matplotlib.rc('font', **font)
 
     # reduce resolution in time and frequency
-    v = spec_obj.values[::res_reduction_time, ::res_reduction_freq]
+    v = spec_obj.values[::kwargs['res_reduction_time'],
+                        ::kwargs['res_reduction_freq']]
     if len(spec_obj.time) != len(spec_obj.values):
-        t = np.linspace(0, len(spec_obj.values) - 1,
-                        int(len(spec_obj.values) / res_reduction_time))
+        t = np.linspace(0, len(spec_obj.values) - 1, int(len(spec_obj.values) \
+            / kwargs['res_reduction_time']))
     else:
-        t = spec_obj.time[::res_reduction_time]
+        t = spec_obj.time[::kwargs['res_reduction_time']]
     if len(spec_obj.freq) != len(spec_obj.values[0]):
         f = np.linspace(0, len(spec_obj.values[0]) - 1,
-                        int(len(spec_obj.values[0]) / res_reduction_freq))
+                        int(len(spec_obj.values[0]) / \
+                            kwargs['res_reduction_freq']))
     else:
-        f = spec_obj.freq[::res_reduction_freq]
+        f = spec_obj.freq[::kwargs['res_reduction_freq']]
 
     # plot spectrogram object
-    cbarticks = np.arange(vmin, vmax + vdelta, vdelta)
-    fig, ax = plt.subplots(figsize=figsize)
+    cbarticks = np.arange(kwargs['vmin'], kwargs['vmax'] + kwargs['vdelta'],
+                          kwargs['vdelta'])
+    fig, ax = plt.subplots(figsize=kwargs['figsize'])
     im = ax.contourf(t, f, np.transpose(v), cbarticks,
-                     norm=Normalize(vmin=vmin, vmax=vmax), cmap=plt.cm.jet,
-                     **kwargs)
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.ylim([fmin, fmax])
-    plt.xticks(rotation=xlabel_rot)
-    plt.title(title)
-    plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar))
+                     norm=Normalize(vmin=kwargs['vmin'], vmax=kwargs['vmax']),
+                                    cmap=plt.cm.jet, **kwargs)
+    plt.ylabel(kwargs['ylabel'])
+    plt.xlabel(kwargs['xlabel'])
+    plt.ylim([kwargs['fmin'], kwargs['fmax']])
+    plt.xticks(rotation=kwargs['xlabel_rot'])
+    plt.title(kwargs['title'])
+    plt.colorbar(im, ax=ax, ticks=np.arange(kwargs['vmin'], kwargs['vmax'] + \
+                                            kwargs['vdelta'],
+                                            kwargs['vdelta_cbar']))
     plt.tick_params(axis='y')
 
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%y-%m-%d %H:%M'))
 
-    if save_spec:
-        plt.savefig(filename, bbox_inches='tight')
+    if kwargs['save_spec']:
+        plt.savefig(kwargs['filename'], bbox_inches='tight')
 
-    if not plot_spec:
+    if not kwargs['plot_spec']:
         plt.close(fig)
 
 
@@ -235,31 +240,31 @@ def plot_psd(psd_obj, **kwargs):
 
     # check for keys
     if 'plot_psd' not in kwargs:
-        plot_psd = True
+        kwargs['plot_psd'] = True
     if 'save_psd' not in kwargs:
-        save_psd = False
+        kwargs['save_psd'] = False
     if 'new_fig' not in kwargs:
-        new_fig = True
+        kwargs['new_fig'] = True
     if 'filename' not in kwargs:
-        filename = 'psd.png'
+        kwargs['filename'] = 'psd.png'
     if 'title' not in kwargs:
-        title = 'PSD'
+        kwargs['title'] = 'PSD'
     if 'xlabel' not in kwargs:
-        xlabel = 'frequency'
+        kwargs['xlabel'] = 'frequency'
     if 'xlabel_rot' not in kwargs:
-        xlabel_rot = 0
+        kwargs['xlabel_rot'] = 0
     if 'ylabel' not in kwargs:
-        ylabel = 'spectral level'
+        kwargs['ylabel'] = 'spectral level'
     if 'fmin' not in kwargs:
-        fmin = 0.0
+        kwargs['fmin'] = 0.0
     if 'fmax' not in kwargs:
-        fmax = 32000.0
+        kwargs['fmax'] = 32000.0
     if 'vmin' not in kwargs:
-        vmin = 20.0
+        kwargs['vmin'] = 20.0
     if 'vmax' not in kwargs:
-        vmax = 80.0
+        kwargs['vmax'] = 80.0
     if 'figsize' not in kwargs:
-        figsize = (16, 9)
+        kwargs['figsize'] = (16, 9)
 
     # set backend for plotting/saving:
     if not plot_psd:
@@ -273,19 +278,19 @@ def plot_psd(psd_obj, **kwargs):
         f = psd_obj.freq
 
     # plot PSD object
-    if new_fig:
-        fig, ax = plt.subplots(figsize=figsize)
+    if kwargs['new_fig']:
+        fig, ax = plt.subplots(figsize=kwargs['figsize'])
     plt.semilogx(f, psd_obj.values)
-    plt.ylabel(ylabel)
-    plt.xlabel(xlabel)
-    plt.xlim([fmin, fmax])
-    plt.ylim([vmin, vmax])
-    plt.xticks(rotation=xlabel_rot)
-    plt.title(title)
+    plt.ylabel(kwargs['ylabel'])
+    plt.xlabel(kwargs['xlabel'])
+    plt.xlim([kwargs['fmin'], kwargs['fmax']])
+    plt.ylim([kwargs['vmin'], kwargs['vmax']])
+    plt.xticks(rotation=kwargs['xlabel_rot'])
+    plt.title(kwargs['title'])
     plt.grid(True)
 
-    if save_psd:
-        plt.savefig(filename, bbox_inches='tight')
+    if kwargs['save_psd']:
+        plt.savefig(kwargs['filename'], bbox_inches='tight')
 
-    if not plot_psd:
+    if not kwargs['plot_psd']:
         plt.close(fig)
