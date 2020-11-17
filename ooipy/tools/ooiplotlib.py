@@ -9,7 +9,6 @@ import datetime
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
-import ooipy
 from ooipy.hydrophone.basic import Spectrogram, Psd
 from matplotlib.colors import Normalize
 import matplotlib.dates as mdates
