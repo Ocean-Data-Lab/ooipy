@@ -20,12 +20,12 @@ def save(save_obj, filename, **kwargs):
 
     Parameters
     ----------
-    save_obj : :class:`ooipy.hydrophone.basic.Psd` or
-    :class:`ooipy.hydrophone.basic.Spectrogram`
-        Psd or specrogram object to be saved
+    save_obj :
+        :class:`ooipy.hydrophone.basic.Psd` or
+        :class:`ooipy.hydrophone.basic.Spectrogram` object to be saved
     filename : str
         name of file.
-    **kwargs : int, float, or list for Psd amd arbitrary for spectrogram
+    kwargs : int, float, or list for Psd and arbitrary for spectrogram
         Ancillary data saved with the objects. Keyword and value
         will be saved as dictionary entries
     """
@@ -48,7 +48,7 @@ def save_psd(psd_obj, filename, **kwargs):
         Psd object to be saved
     filename : str
         name of file.
-    **kwargs : int, float, or list
+    kwargs : int, float, or list
         Ancillary data saved with the PSD object. Keyword and value
         will be saved as dictionary entries
     """
@@ -91,7 +91,7 @@ def save_spectrogram(spectrogram_obj, filename, **kwargs):
         Spectrogram object to be saved
     filename : str
         name of file.
-    **kwargs : any datatype
+    kwargs : any datatype
         Ancillary data saved with the Spectrogram object. Keyword and
         value will be saved as dictionary entries
     """

@@ -49,9 +49,9 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
 
     Parameters
     ----------
-    args : :class:`ooipy.hydrophone.basic.Spectrogram`, or
-    :class:`ooipy.hydrophone.basic.Psd`, or array
-        object or array to be plotted
+    args :
+        object (either :class:`ooipy.hydrophone.basic.Spectrogram` or
+        :class:`ooipy.hydrophone.basic.Psd`) or array to be plotted
     scalex :
         see matplotlib documentation
     scaley :
@@ -83,9 +83,9 @@ def plot_spectrogram(spec_obj, **kwargs):
     ----------
     spec_obj : :class:`ooipy.hydrophone.basic.Spectrogram`
         spectrogram object to be plotted
-    **kwargs :
+    kwargs :
         See matplotlib doccumentation for list of arguments. Additional
-        arguments are:
+        arguments are
         * plot_spec : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
@@ -210,9 +210,9 @@ def plot_psd(psd_obj, **kwargs):
     ----------
     spec_obj : :class:`ooipy.hydrophone.basic.Psd`
         Psd object to be plotted
-    **kwargs :
+    kwargs :
         See matplotlib doccumentation for list of arguments. Additional
-        arguments are:
+        arguments are
         * plot_spec : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
