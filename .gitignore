@@ -11,3 +11,4 @@ _build/
 flake8_log.txt
 ooipy/tests/figures
 .idea
+debug.ipynb

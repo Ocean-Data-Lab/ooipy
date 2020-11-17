@@ -32,6 +32,6 @@ Modules Documentation
    hydrophone
    request
    surface_buoy
-   visualize
+   tools
 
 
