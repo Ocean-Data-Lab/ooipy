@@ -1,41 +1,10 @@
 <img src='imgs/OOIPY_Logo.png' align="right" width=150>
 
-# OOIPY 
+# OOIPY
 ![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master) ![unit test](https://github.com/ooipy/ooipy/workflows/unit%20test/badge.svg)
 
-A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data
+OOIPY is a python toolbox designed to aid in scientific analysis of Ocean Observatories Initiative (OOI) data. Some data (such as broadband hydrophone data) is not available through the OOI API (M2M). This package is designed to help with the acquiring of datasets from the OOI Raw Data Server. Additionally, tools to analyze the data, such as spectrogram and power spectral density plotting are also provided.
 
-## Python Package for OOI Data Processing
+For information on usage and complete documentation, go to [OOIPY Documentation](https://ooipy.readthedocs.io/en/latest/)
 
-ooi_data_processing_library.py contains functions for processing and visualizing the hydrophone data from the OOI. In the current version, the library, while being far from exhaustive, contains basic functions for loading acoustic data and computing and plotting spectrograms and power spectral density (PSD) estimates. It also provides functions for computing spectrograms and PSD estimates using Pythons multiprocessing library to handle large amounts of acoustic data.
-
-The demo.ipynb provides examples on how to use the functions in the library.
-
-## Getting Started
-### Installation
-
-- Clone this repo:
-```bash
-git clone https://github.com/FelixSchwock/OOI-data-processing-Python
-cd OOI-data-processing-Python
-```
-
-- Install Conda Packages
-  - we have provided a .yml to create a new conda enviroment. Navigate to ./conda_envs and create a new environemnt given your operating system
-  ```bash
-  cd conda_envs
-  conda env create -f ooi_linux.yml
-  ```
-
-## Node Definitions OOI Broadband Hydrophones
-
-'/LJ01D': Oregon Shelf Base Seafloor
-
-'/LJ01A': Oregon Slope Base Seafloore
-
-'/PC01A': Slope Base Shallow
-
-'/PC03A': Base Shallow Profiler
-
-'/LJ01C': Offshore Base Seafloor
 
