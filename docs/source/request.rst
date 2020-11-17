@@ -25,3 +25,5 @@ Broadband Nodes
         - '/PC03A'
     - Offshore Base Seafloor
         - '/LJ01C'
+    - Axial Base Seafloor
+        - '/LJ03A'
