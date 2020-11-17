@@ -13,11 +13,8 @@ frequency hydrophones (Fs = 200 Hz).
 from ooipy.hydrophone.basic import HydrophoneData
 from obspy import read, Stream
 from obspy.core import UTCDateTime
-from lxml import html
 from datetime import timedelta
 import numpy as np
-import sys
-import requests
 import multiprocessing as mp
 import concurrent.futures
 import fsspec

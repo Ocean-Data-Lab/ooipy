@@ -61,7 +61,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     kwargs :
         see matplotlib doccumentation,
         :func:`ooipy.tools.ooiplotlib.plot_spectrogram`, and
-        :func:`ooipy.tools.ooiplotlib.plot_psd` for arguments
+        :func:`ooipy.tools.ooiplotlib.plot_psd` for possible arguments
     """
     for arg in args:
         if isinstance(arg, Spectrogram):
@@ -86,6 +86,7 @@ def plot_spectrogram(spec_obj, **kwargs):
     kwargs :
         See matplotlib doccumentation for list of arguments. Additional
         arguments are
+
         * plot_spec : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
@@ -213,6 +214,7 @@ def plot_psd(psd_obj, **kwargs):
     kwargs :
         See matplotlib doccumentation for list of arguments. Additional
         arguments are
+
         * plot_spec : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
@@ -235,7 +237,7 @@ def plot_psd(psd_obj, **kwargs):
         * vmax : int or float
             upper limit of level axis (colormap). Default is 80
         * figsize : (int, int)
-            width and height of figure, Default is (16, 9)
+            width and height of figure. Default is (16, 9)
     """
 
     # check for keys
