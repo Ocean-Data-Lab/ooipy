@@ -22,7 +22,7 @@ import multiprocessing as mp
 import concurrent.futures
 import fsspec
 
-sys.path.append("..")  # TODO: remove this before publishing
+#sys.path.append("..")  # TODO: remove this before publishing
 
 
 def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
