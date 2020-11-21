@@ -210,7 +210,7 @@ class HydrophoneData(Trace):
 
         # number of time steps
         if avg_time is None:
-            nbins = int(len(self.data) / L)
+            nbins = int((len(self.data) - L) / ((1 - overlap) * L)) + 1
         else:
             nbins = int(np.ceil(len(self.data) / (avg_time * fs)))
 
@@ -218,9 +218,11 @@ class HydrophoneData(Trace):
         # (periodogram for each time step), the last data samples are ignored
         # if len(noise[0].data) != k * L
         if avg_time is None:
-            for n in range(nbins - 1):
-                f, Pxx = signal.periodogram(x=self.data[n * L:(n + 1) * L],
-                                            fs=fs, window=win)
+            n_hop = int(L * (1 - overlap))
+            for n in range(nbins):
+                f, Pxx = signal.periodogram(
+                    x=self.data[n * n_hop:n * n_hop + L],
+                    fs=fs, window=win)
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
                         print('Error while computing periodogram for segment',
