@@ -86,16 +86,19 @@ def plot_spectrogram(spec_obj, **kwargs):
         See matplotlib doccumentation for list of arguments. Additional
         arguments are
 
-        * plot_spec : bool
+        * plot : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
-        * save_spec : bool
+        * save : bool
             If True, figure will be saved under **filename**. Default is
             False
         * filename : str
             filename of figure if saved. Default is "spectrogram.png"
         * xlabel_rot : int or float
             rotation angle (deg) of x-labels. Default is 70
+        * xlabel_format : str
+            format of the xlabel if the time array contains datetime
+            objects
         * fmin : int or float
             minimum frequency. Default is 0
         * fmax : int or float
@@ -120,10 +123,10 @@ def plot_spectrogram(spec_obj, **kwargs):
             Default is 1 (no reduction)
     """
     # check for keys
-    if 'plot_spec' not in kwargs:
-        kwargs['plot_spec'] = True
-    if 'save_spec' not in kwargs:
-        kwargs['save_spec'] = False
+    if 'plot' not in kwargs:
+        kwargs['plot'] = True
+    if 'save' not in kwargs:
+        kwargs['save'] = False
     if 'filename' not in kwargs:
         kwargs['filename'] = 'spectrogram.png'
     if 'title' not in kwargs:
@@ -132,6 +135,8 @@ def plot_spectrogram(spec_obj, **kwargs):
         kwargs['xlabel'] = 'time'
     if 'xlabel_rot' not in kwargs:
         kwargs['xlabel_rot'] = 70
+    if 'xlabel_format' not in kwargs:
+        kwargs['xlabel_format'] = '%y-%m-%d %H:%M'
     if 'ylabel' not in kwargs:
         kwargs['ylabel'] = 'frequency'
     if 'fmin' not in kwargs:
@@ -154,7 +159,7 @@ def plot_spectrogram(spec_obj, **kwargs):
         kwargs['res_reduction_freq'] = 1
 
     # set backend for plotting/saving:
-    if not kwargs['plot_spec']:
+    if not kwargs['plot']:
         matplotlib.use('Agg')
     font = {'size': 22}
     matplotlib.rc('font', **font)
@@ -192,12 +197,13 @@ def plot_spectrogram(spec_obj, **kwargs):
     plt.tick_params(axis='y')
 
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%y-%m-%d %H:%M'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(
+            kwargs['xlabel_format']))
 
-    if kwargs['save_spec']:
+    if kwargs['save']:
         plt.savefig(kwargs['filename'], bbox_inches='tight')
 
-    if not kwargs['plot_spec']:
+    if not kwargs['plot']:
         plt.close(fig)
 
 
@@ -214,10 +220,10 @@ def plot_psd(psd_obj, **kwargs):
         See matplotlib doccumentation for list of arguments. Additional
         arguments are
 
-        * plot_spec : bool
+        * plot : bool
             If False, figure will be closed. Can save time if only
             saving but not plotting is desired. Default is True
-        * save_spec : bool
+        * save : bool
             If True, figure will be saved under **filename**. Default is
             False
         * new_fig : bool
@@ -240,10 +246,10 @@ def plot_psd(psd_obj, **kwargs):
     """
 
     # check for keys
-    if 'plot_psd' not in kwargs:
-        kwargs['plot_psd'] = True
-    if 'save_psd' not in kwargs:
-        kwargs['save_psd'] = False
+    if 'plot' not in kwargs:
+        kwargs['plot'] = True
+    if 'save' not in kwargs:
+        kwargs['save'] = False
     if 'new_fig' not in kwargs:
         kwargs['new_fig'] = True
     if 'filename' not in kwargs:
@@ -268,7 +274,7 @@ def plot_psd(psd_obj, **kwargs):
         kwargs['figsize'] = (16, 9)
 
     # set backend for plotting/saving:
-    if not plot_psd:
+    if not kwargs['plot']:
         matplotlib.use('Agg')
     font = {'size': 22}
     matplotlib.rc('font', **font)
@@ -290,8 +296,8 @@ def plot_psd(psd_obj, **kwargs):
     plt.title(kwargs['title'])
     plt.grid(True)
 
-    if kwargs['save_psd']:
+    if kwargs['save']:
         plt.savefig(kwargs['filename'], bbox_inches='tight')
 
-    if not kwargs['plot_psd']:
+    if not kwargs['plot']:
         plt.close(fig)
