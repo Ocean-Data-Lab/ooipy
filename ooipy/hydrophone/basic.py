@@ -39,18 +39,6 @@ class HydrophoneData(Trace):
         segment a separate power spectral density estimate is computed and
         stored in psd_list. psd_list is computed by compute_psd_welch_mp
 
-    Methods
-    -------
-    :meth:`.HydrophoneData.compute_spectrogram`
-
-    :meth:`.HydrophoneData.compute_spectrogram_mp`
-
-    :meth:'.HydrophoneData.compute_psd_welch'
-
-    :meth:'.HydrophoneData.commpute_psd_welch_mp'
-
-    :meth:'.HydrophoneData.freq_dependent_sensitivity_correct'
-
     """
 
     def __init__(self, data=np.array([]), header=None, node=''):
