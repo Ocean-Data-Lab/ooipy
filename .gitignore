@@ -12,3 +12,5 @@ flake8_log.txt
 ooipy/tests/figures
 .idea
 debug.ipynb
+dist/
+ooipy.egg-info/
