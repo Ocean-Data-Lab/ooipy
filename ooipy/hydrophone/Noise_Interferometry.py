@@ -236,101 +236,6 @@ def get_audio(NCF_object):
     return NCF_object
 
 
-def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
-    '''
-    Frequency whiten and filter data from single hydrophone. This function
-    is used by preprocess_audio() for multiprocessing and is not usually
-    called in normal operation. Documentation maintained for debug
-    purposes.
-
-    Parameters
-    ----------
-    h1_data : numpy array
-        audio data from either node for single window length
-    Fs : float
-        sampling frequency in Hz
-    filter_cuttoffs : list
-        corners of bandpass filter
-    whiten : bool
-        indicates whether to whiten the spectrum
-
-    Returns
-    -------
-    h1_data_processes : numpy array
-        h1_data after preprocessing
-
-    '''
-    ts = TimeSeries(h1_data, sample_rate=Fs)
-    if whiten:
-        ts = ts.whiten()
-    ts = ts.bandpass(filter_cutoffs[0], filter_cutoffs[1])
-
-    h1_data_processed = ts.value
-
-    return h1_data_processed
-
-
-def preprocess_audio(NCF_object):
-    '''
-    Perform all signal processing to hydrophone data before correlating.
-    Processing steps include:
-    - seperate acoustic data into short time data segments
-    - normalize each short time acoustic data segment
-    - frequency whiten across entire spectrum
-    (using `GWPy <https://gwpy.github.io/>`_)
-    - filter data to specifed frequency
-    (using `GWPy <https://gwpy.github.io/>`_)
-
-    Parameters
-    ----------
-    NCF_object : NCF
-        NCF data object specifying NCF calculation details
-
-    Returns
-    -------
-    NCF_object : NCF
-        NCF data object specifying NCF calculation details. This
-        function adds the NCF_object attributes
-        NCF_object.node1_processed_data and NCF_object.node2_processed_data
-
-    '''
-    h1_data = NCF_object.node1_data
-    h2_data = NCF_object.node2_data
-    Fs = NCF_object.Fs
-    verbose = NCF_object.verbose
-    whiten = NCF_object.whiten
-    filter_cutoffs = NCF_object.filter_cutoffs
-
-    preprocess_input_list_node1 = []
-    preprocess_input_list_node2 = []
-    for k in range(h1_data.shape[0]):
-        short_time_input_list_node1 = [
-            h1_data[k, :], Fs, filter_cutoffs, whiten]
-        short_time_input_list_node2 = [
-            h2_data[k, :], Fs, filter_cutoffs, whiten]
-
-        preprocess_input_list_node1.append(short_time_input_list_node1)
-        preprocess_input_list_node2.append(short_time_input_list_node2)
-
-    with ThreadPool(processes=mp.cpu_count()) as pool:
-        if verbose:
-            print('   Filtering and Whitening Data for Node 1...')
-        processed_data_list_node1 = pool.starmap(
-            preprocess_audio_single_thread, preprocess_input_list_node1)
-        if verbose:
-            print('   Filtering and Whitening Data for Node 2...')
-        processed_data_list_node2 = pool.starmap(
-            preprocess_audio_single_thread, preprocess_input_list_node2)
-
-    node1_processed_data = np.array(processed_data_list_node1)
-    node2_procesesd_data = np.array(processed_data_list_node2)
-
-    NCF_object.node1_processed_data = node1_processed_data
-    NCF_object.node2_processed_data = node2_procesesd_data
-
-    return NCF_object
-
-
 def sabra_processing(NCF_object, plot=False):
     '''
     preprocess audio using signal processing method from sabra. This function
@@ -1449,3 +1354,100 @@ def filter_bandpass(data, Wlow=15, Whigh=25):
 
     return(data_filt)
 '''
+
+# Archive of Multiprocessing implementation of signal processing
+"""
+def preprocess_audio_single_thread(h1_data, Fs, filter_cutoffs, whiten):
+    '''
+    Frequency whiten and filter data from single hydrophone. This function
+    is used by preprocess_audio() for multiprocessing and is not usually
+    called in normal operation. Documentation maintained for debug
+    purposes.
+
+    Parameters
+    ----------
+    h1_data : numpy array
+        audio data from either node for single window length
+    Fs : float
+        sampling frequency in Hz
+    filter_cuttoffs : list
+        corners of bandpass filter
+    whiten : bool
+        indicates whether to whiten the spectrum
+
+    Returns
+    -------
+    h1_data_processes : numpy array
+        h1_data after preprocessing
+
+    '''
+    ts = TimeSeries(h1_data, sample_rate=Fs)
+    if whiten:
+        ts = ts.whiten()
+    ts = ts.bandpass(filter_cutoffs[0], filter_cutoffs[1])
+
+    h1_data_processed = ts.value
+
+    return h1_data_processed
+
+
+def preprocess_audio(NCF_object):
+    '''
+    Perform all signal processing to hydrophone data before correlating.
+    Processing steps include:
+    - seperate acoustic data into short time data segments
+    - normalize each short time acoustic data segment
+    - frequency whiten across entire spectrum
+    (using `GWPy <https://gwpy.github.io/>`_)
+    - filter data to specifed frequency
+    (using `GWPy <https://gwpy.github.io/>`_)
+
+    Parameters
+    ----------
+    NCF_object : NCF
+        NCF data object specifying NCF calculation details
+
+    Returns
+    -------
+    NCF_object : NCF
+        NCF data object specifying NCF calculation details. This
+        function adds the NCF_object attributes
+        NCF_object.node1_processed_data and NCF_object.node2_processed_data
+
+    '''
+    h1_data = NCF_object.node1_data
+    h2_data = NCF_object.node2_data
+    Fs = NCF_object.Fs
+    verbose = NCF_object.verbose
+    whiten = NCF_object.whiten
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    preprocess_input_list_node1 = []
+    preprocess_input_list_node2 = []
+    for k in range(h1_data.shape[0]):
+        short_time_input_list_node1 = [
+            h1_data[k, :], Fs, filter_cutoffs, whiten]
+        short_time_input_list_node2 = [
+            h2_data[k, :], Fs, filter_cutoffs, whiten]
+
+        preprocess_input_list_node1.append(short_time_input_list_node1)
+        preprocess_input_list_node2.append(short_time_input_list_node2)
+
+    with ThreadPool(processes=mp.cpu_count()) as pool:
+        if verbose:
+            print('   Filtering and Whitening Data for Node 1...')
+        processed_data_list_node1 = pool.starmap(
+            preprocess_audio_single_thread, preprocess_input_list_node1)
+        if verbose:
+            print('   Filtering and Whitening Data for Node 2...')
+        processed_data_list_node2 = pool.starmap(
+            preprocess_audio_single_thread, preprocess_input_list_node2)
+
+    node1_processed_data = np.array(processed_data_list_node1)
+    node2_procesesd_data = np.array(processed_data_list_node2)
+
+    NCF_object.node1_processed_data = node1_processed_data
+    NCF_object.node2_processed_data = node2_procesesd_data
+
+    return NCF_object
+    """
