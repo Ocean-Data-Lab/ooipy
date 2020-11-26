@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ooipy",
-    version="1.0.1",
+    version="1.0.2",
     author="OOIPy",
     author_email="ooipython@gmail.com",
     description="A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/ooipy/ooipy",
     packages=setuptools.find_packages(exclude=("tests")),
     license="MIT",
     classifiers=[
