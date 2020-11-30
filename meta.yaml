@@ -3,8 +3,8 @@
 
 
 package:
-  name: {{ name|lower }}
-  version: {{ version }}
+  name: {{ ooipy }}
+  version: {{ 1.0.2 }}
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/ooipy-{{ version }}.tar.gz
@@ -39,4 +39,5 @@ about:
 
 extra:
   recipe-maintainers:
-    - AddYourGitHubIdHere
+    - John Ragland
+    - Felix Schwock
