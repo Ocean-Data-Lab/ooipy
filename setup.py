@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ooipy",
-    version="1.0.2",
+    version="1.0.3",
     author="OOIPy",
     author_email="ooipython@gmail.com",
     description="A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data",
@@ -20,4 +20,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=['obspy', 'fsspec', 'aiohttp']
 )
