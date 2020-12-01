@@ -6,4 +6,16 @@
 How to Install OOIPY
 ====================
 
-This section is under development and will be updated in the future.
+To fork our project, you can visit our Github Repository.
+
+OOIPY is available on PyPI.
+
+Install Instruction
+-------------------
+OOIPY is designed to run on Pyton 3.8.5. To install OOIPY, run the following command.
+
+.. code-block :: bash
+
+  pip install ooipy
+
+Please see our Getting Started Guide for a tutorial on basic OOIPY usage.
