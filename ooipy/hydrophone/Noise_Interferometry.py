@@ -102,6 +102,10 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         NCF_object = calc_xcorr(NCF_object, loop, count)
     elif sp_method == 'brown':
         NCF_object = brown_processing(NCF_object)
+    elif sp_method == 'bit_normalization':
+        NCF_object = bit_normalization_method(NCF_object, plot=False)
+
+        NCF_object = calc_xcorr(NCF_object, loop, count)
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
@@ -346,6 +350,56 @@ def brown_processing(NCF_object, plot=False):
     return NCF_object
 
 
+def bit_normalization_method(NCF_object, plot=False):
+    '''
+    - filter data to desired frequency band
+    - execute 1 bit normalization of zero mean data
+    - frequency whiten data
+    '''
+    node1 = NCF_object.node1_data
+    node2 = NCF_object.node2_data
+
+    Fs = NCF_object.Fs
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter Data to Specific Range (fiter_cutoffs)
+    print('   Filtering Data from node 1')
+    node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
+    print('   Filtering Data from node 2')
+    node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            node1[0, :], 'Before Filtering', node1_filt[0, :],
+            'After Filtering', Fs, 'bit_norm')
+
+    # Clip Data to amplitude
+    node1_clip = np.sign(node1_filt)
+    node2_clip = np.sign(node2_filt)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_filt[0, :], 'Before Clipping', node1_clip[0, :],
+            'After Clipping', Fs, 'bit_norm')
+
+    # Frequency Whiten Data
+    node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
+    node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
+            'After Whitening', Fs, 'bit_norm')
+
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
+
+    return NCF_object
+
+
 def plot_sp_step(old, old_title, new, new_title, Fs, method):
 
     N = len(old)
@@ -453,7 +507,7 @@ def save_avg_period(NCF_object, count=None):
         with open(filename, 'wb') as f:
             pickle.dump(NCF_object.NCF, f)               # Accumulated xcorr
 
-    except Exception:
+    except FileNotFoundError:
         os.makedirs('ckpts')
         with open(filename, 'wb') as f:
             # pickle.dump(xcorr_short_time, f)
