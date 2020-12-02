@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
-from ooipy.hydrophone.basic import Spectrogram, Psd
+from ooipy.hydrophone.basic import Spectrogram, Psd, HydrophoneData
 from matplotlib.colors import Normalize
 import matplotlib.dates as mdates
 from obspy.core import UTCDateTime
@@ -67,6 +67,9 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
             plot_spectrogram(arg, **kwargs)
         elif isinstance(arg, Psd):
             plot_psd(arg, **kwargs)
+        elif isinstance(arg, HydrophoneData):
+            plot_timeseries(arg, **kwargs)
+
         else:
             plt.gca().plot(arg, scalex=scalex, scaley=scaley,
                            **({"data": data} if data is not None else {}),
@@ -295,6 +298,107 @@ def plot_psd(psd_obj, **kwargs):
     plt.xticks(rotation=kwargs['xlabel_rot'])
     plt.title(kwargs['title'])
     plt.grid(True)
+
+    if kwargs['save']:
+        plt.savefig(kwargs['filename'], bbox_inches='tight')
+
+    if not kwargs['plot']:
+        plt.close(fig)
+
+
+def plot_timeseries(HydData_obj, **kwargs):
+    """
+    Plot a :class:`ooipy.hydrophone.basic.HydrophoneData` object using the
+    matplotlib package.
+
+    Parameters
+    ----------
+    HydData_obj : :class:`ooipy.hydrophone.basic.HydrophoneData`
+        Hydrophone Data to be plotted
+    kwargs :
+        See matplotlib doccumentation for list of arguments. Additional
+        arguments are
+
+        * plot : bool
+            If False, figure will be closed. Can save time if only
+            saving but not plotting is desired. Default is True
+        * save : bool
+            If True, figure will be saved under **filename**. Default is
+            False
+        * filename : str
+            filename of figure if saved. Default is "spectrogram.png"
+        * xlabel_rot : int or float
+            rotation angle (deg) of x-labels. Default is 70
+        * xlabel_format : str
+            format of the xlabel if the time array contains datetime
+            objects
+        * figsize : (int, int)
+            width and height of figure, Default is (16, 9)
+        * res_reduction_time : int
+            reduction factor of time domain resolution. This can
+            facilitate faster plotting of large spectroagm objects.
+            Default is 1 (no reduction)
+    """
+    # check for keys
+    if 'plot' not in kwargs:
+        kwargs['plot'] = True
+    if 'save' not in kwargs:
+        kwargs['save'] = False
+    if 'filename' not in kwargs:
+        kwargs['filename'] = 'timeseries.png'
+    if 'title' not in kwargs:
+        kwargs['title'] = 'Time Series Plot'
+    if 'xlabel' not in kwargs:
+        kwargs['xlabel'] = None
+    if 'xlabel_rot' not in kwargs:
+        kwargs['xlabel_rot'] = 0
+    if 'xlabel_format' not in kwargs:
+        kwargs['xlabel_format'] = '%y-%m-%d %H:%M'
+    if 'ylabel' not in kwargs:
+        kwargs['ylabel'] = 'Amplitude'
+    if 'figsize' not in kwargs:
+        kwargs['figsize'] = (16, 9)
+    if 'res_reduction_time' not in kwargs:
+        kwargs['res_reduction_time'] = 1
+
+    # create array of datetime.datetime instances
+    import pandas as pd
+
+    print(type(HydData_obj.stats.starttime.datetime))
+    start = pd.Timestamp(HydData_obj.stats.starttime.datetime)
+    end = pd.Timestamp(HydData_obj.stats.endtime.datetime)
+    tpd = np.linspace(start.value, end.value, HydData_obj.stats.npts)
+    tpd = pd.to_datetime(tpd)
+
+    time = tpd.to_numpy()
+
+    # set backend for plotting/saving:
+    if not kwargs['plot']:
+        matplotlib.use('Agg')
+    font = {'size': 22}
+    matplotlib.rc('font', **font)
+
+    # reduce resolution in time
+    data_reduce = HydData_obj.data[::kwargs['res_reduction_time']]
+    if len(time) != len(HydData_obj.data):
+        t = np.linspace(0, len(HydData_obj.data) - 1, int(len(HydData_obj.data)
+                        / kwargs['res_reduction_time']))
+    else:
+        t = time[::kwargs['res_reduction_time']]
+
+    # plot HydrophoneData object
+    fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    ax.plot(t, data_reduce)
+    plt.ylabel(kwargs['ylabel'])
+    plt.xlabel(kwargs['xlabel'])
+    plt.xticks(rotation=kwargs['xlabel_rot'])
+    plt.title(kwargs['title'])
+
+    plt.tick_params(axis='y')
+
+    if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(
+            kwargs['xlabel_format']))
 
     if kwargs['save']:
         plt.savefig(kwargs['filename'], bbox_inches='tight')
