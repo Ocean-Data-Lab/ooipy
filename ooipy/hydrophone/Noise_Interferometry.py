@@ -103,7 +103,10 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     elif sp_method == 'brown':
         NCF_object = brown_processing(NCF_object)
     elif sp_method == 'bit_normalization':
-        NCF_object = bit_normalization_method(NCF_object, plot=False)
+        if count == 0:
+            NCF_object = bit_normalization_method(NCF_object, plot=True)
+        else:
+            NCF_object = bit_normalization_method(NCF_object, plot=False)
 
         NCF_object = calc_xcorr(NCF_object, loop, count)
     else:
