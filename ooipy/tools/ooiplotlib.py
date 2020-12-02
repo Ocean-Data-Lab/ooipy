@@ -360,11 +360,12 @@ def plot_timeseries(HydData_obj, **kwargs):
         kwargs['figsize'] = (16, 9)
     if 'res_reduction_time' not in kwargs:
         kwargs['res_reduction_time'] = 1
+    if 'dpi' not in kwargs:
+        kwargs['dpi'] = 100
 
     # create array of datetime.datetime instances
     import pandas as pd
 
-    print(type(HydData_obj.stats.starttime.datetime))
     start = pd.Timestamp(HydData_obj.stats.starttime.datetime)
     end = pd.Timestamp(HydData_obj.stats.endtime.datetime)
     tpd = np.linspace(start.value, end.value, HydData_obj.stats.npts)
@@ -401,7 +402,6 @@ def plot_timeseries(HydData_obj, **kwargs):
             kwargs['xlabel_format']))
 
     if kwargs['save']:
-        plt.savefig(kwargs['filename'], bbox_inches='tight')
-
+        plt.savefig(kwargs['filename'], bbox_inches='tight', dpi=kwargs['dpi'])
     if not kwargs['plot']:
         plt.close(fig)
