@@ -18,6 +18,7 @@ import matplotlib
 import datetime
 import multiprocessing as mp
 import pickle
+from scipy.io import wavfile
 
 
 class HydrophoneData(Trace):
@@ -43,8 +44,7 @@ class HydrophoneData(Trace):
 
     def __init__(self, data=np.array([]), header=None, node=''):
 
-        super(HydrophoneData, self).__init__(data, header)
-
+        super().__init__(data, header)
         self.stats.location = node
 
         self.spectrogram = None
@@ -557,6 +557,15 @@ class HydrophoneData(Trace):
                 self.psd_list = None
 
         return self.psd_list
+
+
+    def wav_write(self, filename):
+        '''
+        this function technically works, but there is incomplete
+        '''
+        print(self.stats.sampling_rate)
+        print(self.data)
+        wavfile.write(filename, int(self.stats.sampling_rate), self.data)
 
 
 def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
