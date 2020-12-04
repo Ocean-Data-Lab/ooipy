@@ -19,6 +19,7 @@ import datetime
 import multiprocessing as mp
 import pickle
 from scipy.io import wavfile
+import warnings
 
 
 class HydrophoneData(Trace):
@@ -558,14 +559,49 @@ class HydrophoneData(Trace):
 
         return self.psd_list
 
+    def wav_write(self, filename, norm=False, new_sample_rate=None):
+        '''
+        method that stores HydrophoneData into .wav file
 
-    def wav_write(self, filename):
+        Parameters
+        ----------
+        filename : str
+            filename to store .wav file as
+        norm : bool
+            specifices whether data should be normalized to 1
+        new_sample_rate : float
+            specifices new sample rate of wav file to be saved. (Resampling is
+            done with scipy.signal.resample()). Default is None which keeps
+            original sample rate of data.
         '''
-        this function technically works, but there is incomplete
-        '''
-        print(self.stats.sampling_rate)
-        print(self.data)
-        wavfile.write(filename, int(self.stats.sampling_rate), self.data)
+        if norm:
+            data = self.data/np.abs(np.max(self.data))
+        else:
+            data = self.data
+
+        if new_sample_rate is None:
+            sampling_rate = self.stats.sampling_rate
+        else:
+            if new_sample_rate > self.stats.sampling_rate:
+                upsamp_fac = new_sample_rate/self.stats.sampling_rate
+                new_npts = self.stats.npts * upsamp_fac
+                data = signal.resample(data, int(new_npts))
+                sampling_rate = new_sample_rate
+            elif new_sample_rate == self.stats.sampling_rate:
+                warnings.warn('New sample rate is same as original data. ' \
+                    'No resampling done.')
+                sampling_rate = self.stats.sampling_rate
+            elif new_sample_rate < self.stats.sampling_rate:
+                warnings.warn('New sample rate is lower than original sample' \
+                    ' rate. Chebychev 1 anti-aliasing filter used')
+                if self.stats.sampling_rate % new_sample_rate != 0:
+                    raise Exception('New Sample Rate is not factor of original sample rate')
+                else:
+                    data = signal.decimate(
+                        data, int(self.stats.sampling_rate / new_sample_rate))
+                    sampling_rate = new_sample_rate
+
+        wavfile.write(filename, int(sampling_rate), data)
 
 
 def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
