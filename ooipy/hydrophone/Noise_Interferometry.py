@@ -109,6 +109,14 @@ def calculate_NCF(NCF_object, loop=False, count=None):
             NCF_object = bit_normalization_method(NCF_object, plot=False)
 
         NCF_object = calc_xcorr(NCF_object, loop, count)
+
+    elif sp_method == 'time_eq':
+        if count == 0:
+            NCF_object = time_EQ(NCF_object, 51, plot=True)
+        else:
+            NCF_object = time_EQ(NCF_object, 51, plot=False)
+
+        NCF_object = calc_xcorr(NCF_object, loop, count)
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
@@ -396,6 +404,81 @@ def bit_normalization_method(NCF_object, plot=False):
         plot_sp_step(
             node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
             'After Whitening', Fs, 'bit_norm')
+
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
+
+    return NCF_object
+
+
+def time_EQ(NCF_object, N, plot=False):
+    '''
+    instead of clipping, time_EQ is used
+    N specifies moving average size (must be odd)
+
+    preprocess audio using signal processing method from sabra. This function
+    is designed to replace preprocess_audio single thread in the signal
+    processing flow.
+
+    Sabra, K. G., Roux, P., and Kuperman, W. A. (2005). “Emergence rate of the
+    time-domain Green’s function from the ambient noise cross-correlation
+    function,” The Journal of the Acoustical Society of America, 118,
+    3524–3531. doi:10.1121/1.2109059
+
+    This includes:
+    - filtering data to desired frequency band
+    - clipping to 3*std of data of short time noise
+    - frequency whitening short time noise
+    '''
+    node1 = NCF_object.node1_data
+    node2 = NCF_object.node2_data
+
+    Fs = NCF_object.Fs
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter Data to Specific Range (fiter_cutoffs)
+    print('   Filtering Data from node 1')
+    node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
+    print('   Filtering Data from node 2')
+    node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            node1[0, :], 'Before Filtering', node1_filt[0, :],
+            'After Filtering', Fs, 'sabra')
+
+    # Implement Time Equalization
+    kernel = 1/N*np.ones((1,N))
+    weight1 = signal.fftconvolve(node1_filt,kernel,'valid',axes=1)
+    weight2 = signal.fftconvolve(node2_filt,kernel,'valid',axes=1)
+
+    weight1start = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight1[:,0]).T
+    weight1end = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight1[:,-1]).T
+    weight2start = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight2[:,0]).T
+    weight2end = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight2[:,-1]).T
+
+    weight1 = np.hstack((weight1start, weight1, weight1end))
+    weight2 = np.hstack((weight2start, weight2, weight2end))
+    
+    node1_clip = node1_filt / np.abs(weight1)
+    node2_clip = node2_filt / np.abs(weight2)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_filt[0, :], 'Before Clipping', node1_clip[0, :],
+            'After Clipping', Fs, 'sabra')
+
+    # Frequency Whiten Data
+    node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
+    node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
+            'After Whitening', Fs, 'sabra')
 
     NCF_object.node1_processed_data = node1_whit
     NCF_object.node2_processed_data = node2_whit

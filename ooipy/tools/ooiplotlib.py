@@ -362,6 +362,8 @@ def plot_timeseries(HydData_obj, **kwargs):
         kwargs['res_reduction_time'] = 1
     if 'dpi' not in kwargs:
         kwargs['dpi'] = 100
+    if 'fontsize' not in kwargs:
+        kwargs['fontsize'] = 22
 
     # create array of datetime.datetime instances
     import pandas as pd
@@ -376,7 +378,7 @@ def plot_timeseries(HydData_obj, **kwargs):
     # set backend for plotting/saving:
     if not kwargs['plot']:
         matplotlib.use('Agg')
-    font = {'size': 22}
+    font = {'size': kwargs['fontsize']}
     matplotlib.rc('font', **font)
 
     # reduce resolution in time
