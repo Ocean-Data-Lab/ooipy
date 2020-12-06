@@ -120,7 +120,7 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     elif sp_method == 'tdoa':
         NCF_object = TDOA_processing(NCF_object)
         NCF_object = calc_xcorr(NCF_object, loop, count)
-    
+
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
@@ -512,18 +512,26 @@ def time_EQ(NCF_object, N, plot=False):
             'After Filtering', Fs, 'sabra')
 
     # Implement Time Equalization
-    kernel = 1/N*np.ones((1,N))
-    weight1 = signal.fftconvolve(node1_filt,kernel,'valid',axes=1)
-    weight2 = signal.fftconvolve(node2_filt,kernel,'valid',axes=1)
+    kernel = 1 / N * np.ones((1, N))
+    weight1 = signal.fftconvolve(node1_filt, kernel, 'valid', axes=1)
+    weight2 = signal.fftconvolve(node2_filt, kernel, 'valid', axes=1)
 
-    weight1start = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight1[:,0]).T
-    weight1end = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight1[:,-1]).T
-    weight2start = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight2[:,0]).T
-    weight2end = (np.ones((int(NCF_object.avg_time * 60 / NCF_object.W), int((N-1)/2))).T*weight2[:,-1]).T
+    weight1start = (
+        np.ones((int(NCF_object.avg_time * 60 / NCF_object.W),
+                int((N - 1) / 2))).T * weight1[:, 0]).T
+    weight1end = (
+        np.ones((int(NCF_object.avg_time * 60 / NCF_object.W),
+                int((N - 1) / 2))).T * weight1[:, -1]).T
+    weight2start = (
+        np.ones((int(NCF_object.avg_time * 60 / NCF_object.W),
+                int((N - 1) / 2))).T * weight2[:, 0]).T
+    weight2end = (
+        np.ones((int(NCF_object.avg_time * 60 / NCF_object.W),
+                int((N - 1) / 2))).T * weight2[:, -1]).T
 
     weight1 = np.hstack((weight1start, weight1, weight1end))
     weight2 = np.hstack((weight2start, weight2, weight2end))
-    
+
     node1_clip = node1_filt / np.abs(weight1)
     node2_clip = node2_filt / np.abs(weight2)
 

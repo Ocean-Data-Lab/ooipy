@@ -575,7 +575,7 @@ class HydrophoneData(Trace):
             original sample rate of data.
         '''
         if norm:
-            data = self.data/np.abs(np.max(self.data))
+            data = self.data / np.abs(np.max(self.data))
         else:
             data = self.data
 
@@ -583,19 +583,21 @@ class HydrophoneData(Trace):
             sampling_rate = self.stats.sampling_rate
         else:
             if new_sample_rate > self.stats.sampling_rate:
-                upsamp_fac = new_sample_rate/self.stats.sampling_rate
+                upsamp_fac = new_sample_rate / self.stats.sampling_rate
                 new_npts = self.stats.npts * upsamp_fac
                 data = signal.resample(data, int(new_npts))
                 sampling_rate = new_sample_rate
             elif new_sample_rate == self.stats.sampling_rate:
-                warnings.warn('New sample rate is same as original data. ' \
-                    'No resampling done.')
+                warnings.warn('New sample rate is same as original data. '
+                              'No resampling done.')
                 sampling_rate = self.stats.sampling_rate
             elif new_sample_rate < self.stats.sampling_rate:
-                warnings.warn('New sample rate is lower than original sample' \
-                    ' rate. Chebychev 1 anti-aliasing filter used')
+                warnings.warn('New sample rate is lower than original sample'
+                              ' rate. Chebychev 1 anti-aliasing filter used')
                 if self.stats.sampling_rate % new_sample_rate != 0:
-                    raise Exception('New Sample Rate is not factor of original sample rate')
+                    raise Exception(
+                        'New Sample Rate is not factor of original sample rate'
+                    )
                 else:
                     data = signal.decimate(
                         data, int(self.stats.sampling_rate / new_sample_rate))
