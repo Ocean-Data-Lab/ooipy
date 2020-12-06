@@ -117,6 +117,10 @@ def calculate_NCF(NCF_object, loop=False, count=None):
             NCF_object = time_EQ(NCF_object, 51, plot=False)
 
         NCF_object = calc_xcorr(NCF_object, loop, count)
+    elif sp_method == 'tdoa':
+        NCF_object = TDOA_processing(NCF_object)
+        NCF_object = calc_xcorr(NCF_object, loop, count)
+    
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
@@ -290,6 +294,65 @@ def sabra_processing(NCF_object, plot=False):
     thresh2 = 3 * np.std(np.ndarray.flatten(node2_filt))
     node1_clip = np.clip(node1_filt, -thresh1, thresh1)
     node2_clip = np.clip(node2_filt, -thresh2, thresh2)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_filt[0, :], 'Before Clipping', node1_clip[0, :],
+            'After Clipping', Fs, 'sabra')
+
+    # Frequency Whiten Data
+    node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
+    node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
+            'After Whitening', Fs, 'sabra')
+
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
+
+    return NCF_object
+
+
+def TDOA_processing(NCF_object, plot=False):
+    '''
+    preprocess audio using signal processing method from sabra (without
+    clipping). This function is designed to replace preprocess_audio single
+    thread in the signal processing flow.
+
+    Sabra, K. G., Roux, P., and Kuperman, W. A. (2005). “Emergence rate of the
+    time-domain Green’s function from the ambient noise cross-correlation
+    function,” The Journal of the Acoustical Society of America, 118,
+    3524–3531. doi:10.1121/1.2109059
+
+    This includes:
+    - filtering data to desired frequency band
+    - frequency whitening short time noise
+    '''
+    node1 = NCF_object.node1_data
+    node2 = NCF_object.node2_data
+
+    Fs = NCF_object.Fs
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter Data to Specific Range (fiter_cutoffs)
+    print('   Filtering Data from node 1')
+    node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
+    print('   Filtering Data from node 2')
+    node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            node1[0, :], 'Before Filtering', node1_filt[0, :],
+            'After Filtering', Fs, 'sabra')
+
+    # Clip Data to amplitude
+    node1_clip = node1_filt
+    node2_clip = node2_filt
 
     if plot:
         # Create before/after plot of filtering
