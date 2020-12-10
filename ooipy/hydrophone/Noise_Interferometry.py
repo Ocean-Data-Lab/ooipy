@@ -121,7 +121,6 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         NCF_object = TDOA_processing(NCF_object)
         NCF_object = calc_xcorr(NCF_object, loop, count)
 
-
     if sp_method == 'sabra_b':
         # create step by step sp figures onces
         if count == 0:
@@ -130,7 +129,6 @@ def calculate_NCF(NCF_object, loop=False, count=None):
             NCF_object = sabra_processing_b(NCF_object, plot=False)
 
         NCF_object = calc_xcorr(NCF_object, loop, count)
-
 
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
@@ -926,7 +924,6 @@ def freq_whiten(data, Fs, filter_cutoffs):
     return data_whiten
 
 
-
 def freq_whiten_b(data, Fs, filter_cutoffs):
     '''
     Whiten time series data. Python package `GWPy <https://gwpy.github.io/>`_
@@ -954,23 +951,21 @@ def freq_whiten_b(data, Fs, filter_cutoffs):
     win = scipy.signal.windows.hann(N)
     win = win[:, np.newaxis]
 
-    data_win = (data.T * win).T 
-
+    data_win = (data.T * win).T
 
     # create unit pulses
-    pulse = signal.unit_impulse(N,idx='mid')
+    pulse = signal.unit_impulse(N, idx='mid')
     for k in range(shape[0]):
         if k == 0:
             pulses = pulse
         else:
-            pulses = np.vstack((pulses,pulse))
+            pulses = np.vstack((pulses, pulse))
     butt_imp_res = filter_bandpass(pulses, Fs, filter_cutoffs)
     butt_imp_mag = np.abs(scipy.fft.fft(butt_imp_res))
-    
+
     dataf = scipy.fft.fft(data_win, axis=1)
 
     data_phase = np.angle(dataf)
-
 
     data_whiten_f = butt_imp_mag * np.exp(data_phase * 1j)
 

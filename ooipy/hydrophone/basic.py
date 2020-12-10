@@ -659,7 +659,7 @@ class Spectrogram:
         The current documentation might not be accurate.
 
         To plot spectrograms please see
-        :meth:`ooipy.hydrophone.basic.plot_spectrogram` 
+        :meth:`ooipy.hydrophone.basic.plot_spectrogram`
 
         Basic visualization of spectrogram based on matplotlib. The function
         offers two options: Plot spectrogram in Python (plot_spec = True) and
@@ -766,12 +766,13 @@ class Spectrogram:
         with open(filename, 'wb') as outfile:
             pickle.dump(dct, outfile)
 
-    def plot(self,**kwargs):
+    def plot(self, **kwargs):
         '''
         redirects to ooipy.ooiplotlib.plot_spectrogram()
-        please see :meth:`ooipy.hydrophone.basic.plot_spectrogram` 
+        please see :meth:`ooipy.hydrophone.basic.plot_spectrogram`
         '''
-        ooipy.tools.ooiplotlib.plot_spectrogram(self,**kwargs)
+        ooipy.tools.ooiplotlib.plot_spectrogram(self, **kwargs)
+
 
 class Psd:
     """
