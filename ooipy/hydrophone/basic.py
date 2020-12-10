@@ -20,6 +20,7 @@ import multiprocessing as mp
 import pickle
 from scipy.io import wavfile
 import warnings
+import ooipy
 
 
 class HydrophoneData(Trace):
@@ -59,6 +60,7 @@ class HydrophoneData(Trace):
         Apply a frequency dependent sensitivity correction to the
         acoustic data based on the information from the calibration
         sheets.
+        TODO Add for all broadband hydrophones
         !!! Currently only implemented for Oregon Offshore Base Seafloor
         and Oregon Shelf Base Seafloor hydrophone. For all other
         hydrophones, an average sensitivity of -169dBV/1uPa is assumed
@@ -639,18 +641,6 @@ class Spectrogram:
         to be one entry in values. That is, if time has  length N and freq
         length M, values is a NxM array.
 
-    TODO:
-    Methods
-    -------
-    visualize(plot_spec=True, save_spec=False, filename='spectrogram.png',
-    title='spectrogram', xlabel='time', xlabel_rot=70, ylabel='frequency',
-    fmin=0, fmax=32, vmin=20, vmax=80, vdelta=1.0, vdelta_cbar=5,
-    figsize=(16,9), dpi=96)
-
-        Visualizes spectrogram using matplotlib.
-
-    save(filename='spectrogram.pickle')
-        Saves spectrogram in .pickle file.
     """
 
     def __init__(self, time, freq, values):
@@ -658,7 +648,6 @@ class Spectrogram:
         self.freq = freq
         self.values = values
 
-    # TODO: move visualization into separate module
     def visualize(self, plot_spec=True, save_spec=False,
                   filename='spectrogram.png', title='spectrogram',
                   xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0,
@@ -666,8 +655,11 @@ class Spectrogram:
                   vdelta_cbar=5, figsize=(16, 9), dpi=96, res_reduction_time=1,
                   res_reduction_freq=1, time_limits=None):
         """
-        !!!!! This function will be moved into a differnt module in the future.
-        The current documentation might not be accurate !!!!!
+        This function will be depreciated into a differnt module in the future.
+        The current documentation might not be accurate.
+
+        To plot spectrograms please see
+        :meth:`ooipy.hydrophone.basic.plot_spectrogram` 
 
         Basic visualization of spectrogram based on matplotlib. The function
         offers two options: Plot spectrogram in Python (plot_spec = True) and
@@ -698,7 +690,9 @@ class Spectrogram:
             specifices xlimits on spectrogram. List contains two
             datetime.datetime objects
         """
-
+        import warnings
+        raise warnings.warn('will be depricated in future. Please see '
+                            'ooipy.tools.ooiplotlib.plot_spectrogram()')
         # set backend for plotting/saving:
         if not plot_spec:
             matplotlib.use('Agg')
@@ -772,6 +766,12 @@ class Spectrogram:
         with open(filename, 'wb') as outfile:
             pickle.dump(dct, outfile)
 
+    def plot(self,**kwargs):
+        '''
+        redirects to ooipy.ooiplotlib.plot_spectrogram()
+        please see :meth:`ooipy.hydrophone.basic.plot_spectrogram` 
+        '''
+        ooipy.tools.ooiplotlib.plot_spectrogram(self,**kwargs)
 
 class Psd:
     """

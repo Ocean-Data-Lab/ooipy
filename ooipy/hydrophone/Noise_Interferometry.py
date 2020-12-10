@@ -121,6 +121,17 @@ def calculate_NCF(NCF_object, loop=False, count=None):
         NCF_object = TDOA_processing(NCF_object)
         NCF_object = calc_xcorr(NCF_object, loop, count)
 
+
+    if sp_method == 'sabra_b':
+        # create step by step sp figures onces
+        if count == 0:
+            NCF_object = sabra_processing_b(NCF_object, plot=True)
+        else:
+            NCF_object = sabra_processing_b(NCF_object, plot=False)
+
+        NCF_object = calc_xcorr(NCF_object, loop, count)
+
+
     else:
         raise Exception(f'Invalid Signal Processing Method of: {sp_method}')
     # End Timing
@@ -304,6 +315,68 @@ def sabra_processing(NCF_object, plot=False):
     # Frequency Whiten Data
     node1_whit = freq_whiten(node1_clip, Fs, filter_cutoffs)
     node2_whit = freq_whiten(node2_clip, Fs, filter_cutoffs)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_clip[0, :], 'Before Whitening', node1_whit[0, :],
+            'After Whitening', Fs, 'sabra')
+
+    NCF_object.node1_processed_data = node1_whit
+    NCF_object.node2_processed_data = node2_whit
+
+    return NCF_object
+
+
+def sabra_processing_b(NCF_object, plot=False):
+    '''
+    preprocess audio using signal processing method from sabra. This function
+    is designed to replace preprocess_audio single thread in the signal
+    processing flow.
+
+    Sabra, K. G., Roux, P., and Kuperman, W. A. (2005). “Emergence rate of the
+    time-domain Green’s function from the ambient noise cross-correlation
+    function,” The Journal of the Acoustical Society of America, 118,
+    3524–3531. doi:10.1121/1.2109059
+
+    This includes:
+    - filtering data to desired frequency band
+    - clipping to 3*std of data of short time noise
+    - frequency whitening short time noise
+    '''
+    node1 = NCF_object.node1_data
+    node2 = NCF_object.node2_data
+
+    Fs = NCF_object.Fs
+    filter_cutoffs = NCF_object.filter_cutoffs
+
+    # Filter Data to Specific Range (fiter_cutoffs)
+    print('   Filtering Data from node 1')
+    node1_filt = filter_bandpass(node1, Fs, filter_cutoffs)
+    print('   Filtering Data from node 2')
+    node2_filt = filter_bandpass(node2, Fs, filter_cutoffs)
+
+    # Create before/after plot of filtering
+    if plot:
+        plot_sp_step(
+            node1[0, :], 'Before Filtering', node1_filt[0, :],
+            'After Filtering', Fs, 'sabra')
+
+    # Clip Data to amplitude
+    thresh1 = 3 * np.std(np.ndarray.flatten(node1_filt))
+    thresh2 = 3 * np.std(np.ndarray.flatten(node2_filt))
+    node1_clip = np.clip(node1_filt, -thresh1, thresh1)
+    node2_clip = np.clip(node2_filt, -thresh2, thresh2)
+
+    if plot:
+        # Create before/after plot of filtering
+        plot_sp_step(
+            node1_filt[0, :], 'Before Clipping', node1_clip[0, :],
+            'After Clipping', Fs, 'sabra')
+
+    # Frequency Whiten Data
+    node1_whit = freq_whiten_b(node1_clip, Fs, filter_cutoffs)
+    node2_whit = freq_whiten_b(node2_clip, Fs, filter_cutoffs)
 
     if plot:
         # Create before/after plot of filtering
@@ -847,6 +920,59 @@ def freq_whiten(data, Fs, filter_cutoffs):
     data_mag[:, N - idx2:N - idx1] = freq_clip_level
 
     data_whiten_f = data_mag * np.exp(data_phase * 1j)
+
+    data_whiten = np.real(scipy.fft.ifft(data_whiten_f, axis=1))
+
+    return data_whiten
+
+
+
+def freq_whiten_b(data, Fs, filter_cutoffs):
+    '''
+    Whiten time series data. Python package `GWPy <https://gwpy.github.io/>`_
+    utilized for this function
+
+    Parameters
+    ----------
+    x : numpy array
+        array containing time series data to be whitened
+    Fs : float
+        sampling frequency of the time series array x
+
+    Returns
+    -------
+    x_new : numpy array
+        array containing frequency whitened time series data
+    '''
+
+    shape = np.shape(data)
+    # data = np.ndarray.flatten(data)
+
+    # assumes data from node1 and node2 have same length
+    N = shape[1]
+
+    win = scipy.signal.windows.hann(N)
+    win = win[:, np.newaxis]
+
+    data_win = (data.T * win).T 
+
+
+    # create unit pulses
+    pulse = signal.unit_impulse(N,idx='mid')
+    for k in range(shape[0]):
+        if k == 0:
+            pulses = pulse
+        else:
+            pulses = np.vstack((pulses,pulse))
+    butt_imp_res = filter_bandpass(pulses, Fs, filter_cutoffs)
+    butt_imp_mag = np.abs(scipy.fft.fft(butt_imp_res))
+    
+    dataf = scipy.fft.fft(data_win, axis=1)
+
+    data_phase = np.angle(dataf)
+
+
+    data_whiten_f = butt_imp_mag * np.exp(data_phase * 1j)
 
     data_whiten = np.real(scipy.fft.ifft(data_whiten_f, axis=1))
 

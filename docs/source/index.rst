@@ -28,10 +28,8 @@ Modules Documentation
 .. toctree::
    :maxdepth: 2
 
-   ctd
    hydrophone
    request
-   surface_buoy
    tools
 
 
