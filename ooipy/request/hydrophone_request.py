@@ -88,12 +88,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
 
     Returns
     -------
-    obspy.core.stream.Stream
-        obspy Stream object containing one Trace and date between
-        start_time and end_time. Returns None if no data are available
-        for specified time frame
-
-
+    HydrophoneData
 
     '''
 

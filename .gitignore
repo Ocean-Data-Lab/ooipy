@@ -14,3 +14,4 @@ ooipy/tests/figures
 debug.ipynb
 dist/
 ooipy.egg-info/
+*.wav
