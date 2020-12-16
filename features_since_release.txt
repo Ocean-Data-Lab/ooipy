@@ -1,0 +1,13 @@
+Finished Features Since Last Release
+- added HydrophoneData.wave_write()
+- HydrophoneData.plot_timeseries()
+- updated ooipy_demo.ipynb
+- added deprecation warning to Spectrogram.visualize()
+- added Spectrogram.plot() (calls tools.ooipypltlib.spectrogram_plot())
+- added deprecation warning to PSD.visualize()
+
+
+Updates in Progress
+- psd.plot()
+- updating node strings
+- sensity correction for all broadband
