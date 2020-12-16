@@ -830,7 +830,9 @@ class Psd:
         figsize (tuple(int)): size of figure
         dpi (int): dots per inch
         """
-
+        import warnings
+        raise warnings.warn('will be depricated in future. Please see '
+                            'ooipy.tools.ooiplotlib.plot_psd()')
         # set backend for plotting/saving:
         if not plot_psd:
             matplotlib.use('Agg')
@@ -902,3 +904,10 @@ class Psd:
 
         with open(filename, 'w+') as outfile:
             json.dump(dct, outfile)
+
+    def plot(self, **kwargs):
+        '''
+        redirects to ooipy.ooiplotlib.plot_psd()
+        please see :meth:`ooipy.hydrophone.basic.plot_psd`
+        '''
+        ooipy.tools.ooiplotlib.plot_psd(self, **kwargs)
