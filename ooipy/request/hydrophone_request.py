@@ -34,7 +34,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     >>> import ooipy
     >>> start_time = datetime.datetime(2017,3,10,0,0,0)
     >>> end_time = datetime.datetime(2017,3,10,0,5,0)
-    >>> node = '/PC01A'
+    >>> node = 'PC01A'
     >>> data = ooipy.request.get_acoustic_data(start_time, end_time, node)
     >>> # To access stats for retrieved data:
     >>> print(data.stats)
@@ -48,7 +48,7 @@ def get_acoustic_data(starttime, endtime, node, fmin=None, fmax=None,
     end_time : datetime.datetime
         time of the last noise sample
     node : str
-        hydrophone
+        hydrophone name or identifier
     fmin : float, optional
         lower cutoff frequency of hydrophone's bandpass filter. Default
         is None which results in no filtering.
@@ -480,35 +480,55 @@ def __get_mseed_urls(day_str, node, verbose):
     day_str : str
         date for which URLs are requested; format: yyyy/mm/dd,
         e.g. 2016/07/15
+    node : str
+        identifier or name of the hydrophone node
+    verbose : bool
+        print exceptions if True 
 
     Returns
     -------
-    [str]
+    ([str], str)
         list of URLs, each URL refers to one data file. If no data is
         available for specified date, None is returned.
     '''
 
-    if node == '/LJ01D':  # LJ01D'  Oregon Shelf Base Seafloor
-        array = '/CE02SHBP'
-        instrument = '/11-HYDBBA106'
-    if node == '/LJ01A':  # LJ01A Oregon Slope Base Seafloore
-        array = '/RS01SLBS'
-        instrument = '/09-HYDBBA102'
-    if node == '/PC01A':  # Oregan Slope Base Shallow
-        array = '/RS01SBPS'
-        instrument = '/08-HYDBBA103'
-    if node == '/PC03A':  # Axial Base Shallow Profiler
-        array = '/RS03AXPS'
-        instrument = '/08-HYDBBA303'
-    if node == '/LJ01C':  # Oregon Offshore Base Seafloor
-        array = '/CE04OSBP'
-        instrument = '/11-HYDBBA105'
-    if node == '/LJ03A':  # Axial Base Seafloor
-        array = '/RS03AXBS'
-        instrument = '/09-HYDBBA302'
+    try:
+        if node == 'LJ01D' or node == 'Oregon_Shelf_Base_Seafloor':
+            array = '/CE02SHBP'
+            instrument = '/11-HYDBBA106'
+            node_id = '/LJ01D'
+        if node == 'LJ01A' or node == 'Oregon_Slope_Base_Seafloor':
+            array = '/RS01SLBS'
+            instrument = '/09-HYDBBA102'
+            node_id = '/LJ01A'
+        if node == 'PC01A' or node == 'Oregon_Slope_Base_Shallow':
+            array = '/RS01SBPS'
+            instrument = '/08-HYDBBA103'
+            node_id = '/PC01A'
+        if node == 'PC03A' or node == 'Axial_Base_Shallow':
+            array = '/RS03AXPS'
+            instrument = '/08-HYDBBA303'
+            node_id = '/PC03A'
+        if node == 'LJ01C' or node == 'Oregon_Offshore_Base_Seafloor':
+            array = '/CE04OSBP'
+            instrument = '/11-HYDBBA105'
+            node_id = '/LJ01C'
+        if node == 'LJ03A' or node == 'Axial_Base_Seafloor':
+            array = '/RS03AXBS'
+            instrument = '/09-HYDBBA302'
+            node_id = '/LJ03A'
 
-    mainurl = 'https://rawdata.oceanobservatories.org/files' + array + node \
-              + instrument + day_str
+        mainurl = 'https://rawdata.oceanobservatories.org/files' + array \
+                + node_id + instrument + day_str
+    except Exception:
+        raise Exception('Invalid Location String ' + node + '. Please use one '
+                        + 'of the following node strings: ' +
+                        "'Oregon_Shelf_Base_Seafloor' ('LJ01D'); ",
+                        "'Oregon_Slope_Base_Seafloor' ('LJ01A'); ",
+                        "'Oregon_Slope_Base_Shallow' ('PC01A'); ",
+                        "'Axial_Base_Shallow' ('PC03A'); ",
+                        "'Oregon_Offshore_Base_Seafloor' ('LJ01C'); ",
+                        "'Axial_Base_Seafloor' ('LJ03A')")
 
     FS = fsspec.filesystem('http')
 
@@ -591,31 +611,31 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None,
 
 def __get_LF_locations_stats(node):
     try:
-        if node == 'Slope_Base':
+        if node == 'Slope_Base' or node == 'HYSB1':
             network = 'OO'
             station = 'HYSB1'
             location = '--'
             channel = 'HDH'
 
-        if node == 'Southern_Hydrate':
+        if node == 'Southern_Hydrate' or node == 'HYS14':
             network = 'OO'
             station = 'HYS14'
             location = '--'
             channel = 'HDH'
 
-        if node == 'Axial_Base':
+        if node == 'Axial_Base' or node == 'AXBA1':
             network = 'OO'
             station = 'AXBA1'
             location = '--'
             channel = 'HDH'
 
-        if node == 'Central_Caldera':
+        if node == 'Central_Caldera' or node == 'AXCC1':
             network = 'OO'
             station = 'AXCC1'
             location = '--'
             channel = 'HDH'
 
-        if node == 'Eastern_Caldera':
+        if node == 'Eastern_Caldera' or node == 'AXEC2':
             network = 'OO'
             station = 'AXEC2'
             location = '--'
@@ -625,6 +645,12 @@ def __get_LF_locations_stats(node):
         network = network
 
     except Exception:
-        raise Exception('Invalid Location String')
+        raise Exception('Invalid Location String ' + node + '. Please use one '
+                        + 'of the following node strings: ' + 
+                        "'Slope_Base' ('HYSB1'); ",
+                        "'Southern_Hydrate' ('HYS14'); ",
+                        "'Axial_Base' ('AXBA1'); ",
+                        "'Central_Caldera' ('AXCC1'); ",
+                        "'Eastern_Caldera' ('AXEC2')")
 
     return network, station, location, channel
