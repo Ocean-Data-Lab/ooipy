@@ -483,7 +483,7 @@ def __get_mseed_urls(day_str, node, verbose):
     node : str
         identifier or name of the hydrophone node
     verbose : bool
-        print exceptions if True 
+        print exceptions if True
 
     Returns
     -------
@@ -519,7 +519,7 @@ def __get_mseed_urls(day_str, node, verbose):
             node_id = '/LJ03A'
 
         mainurl = 'https://rawdata.oceanobservatories.org/files' + array \
-                + node_id + instrument + day_str
+            + node_id + instrument + day_str
     except Exception:
         raise Exception('Invalid Location String ' + node + '. Please use one '
                         + 'of the following node strings: ' +
@@ -646,7 +646,7 @@ def __get_LF_locations_stats(node):
 
     except Exception:
         raise Exception('Invalid Location String ' + node + '. Please use one '
-                        + 'of the following node strings: ' + 
+                        + 'of the following node strings: ' +
                         "'Slope_Base' ('HYSB1'); ",
                         "'Southern_Hydrate' ('HYS14'); ",
                         "'Axial_Base' ('AXBA1'); ",
