@@ -29,7 +29,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     >>> # pull OOI data and compute spectrogram and PSD
     >>> start_time = datetime.datetime(2017,3,10,0,0,0)
     >>> end_time = datetime.datetime(2017,3,10,0,5,0)
-    >>> node = '/PC01A'
+    >>> node = 'PC01A'
     >>> hydrophone_data = hydrophone_request.get_acoustic_data(
             start_time, end_time, node)
     >>> hydrophone_data.compute_spectrogram()

@@ -4,8 +4,8 @@ Functions (NCFs). To calculate NCF follow the below sequence (this is
 also accomplished in the calculate_NCF() function)::
     avg_time = 60  #minutes
     start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
-    node1 = '/LJ01C'
-    node2 = '/PC01A'
+    node1 = 'LJ01C'
+    node2 = 'PC01A'
     filter_cutoffs = [12, 30]
     W = 90
     htype = 'broadband'
@@ -51,8 +51,8 @@ def calculate_NCF(NCF_object, loop=False, count=None):
     the following code::
         avg_time = 60  #minutes
         start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
-        node1 = '/LJ01C'
-        node2 = '/PC01A'
+        node1 = 'LJ01C'
+        node2 = 'PC01A'
         filter_cutoffs = [12, 30]
         W = 90
         htype = 'broadband'
@@ -794,8 +794,8 @@ def calculate_NCF_loop(
         num_periods = 5
         avg_time = 60  #minutes
         start_time = datetime.datetime(2017,3,10,0,0,0) # time of first sample
-        node1 = '/LJ01C'
-        node2 = '/PC01A'
+        node1 = 'LJ01C'
+        node2 = 'PC01A'
         filter_cutoffs = [12, 30]
         W = 90
         htype = 'broadband'
@@ -1120,23 +1120,23 @@ class Hydrophone_Xcorr:
             ____________________________________________
             |Node Name |        Hydrophone Name        |
             |__________|_______________________________|
-            |'/LJ01D'  | Oregon Shelf Base Seafloor    |
+            |'LJ01D'  | Oregon Shelf Base Seafloor    |
             |__________|_______________________________|
-            |'/LJ01A   | Oregon Slope Base Seafloor   |
+            |'LJ01A   | Oregon Slope Base Seafloor   |
             |__________|_______________________________|
-            |'/PC01A'  | Oregon Slope Base Shallow     |
+            |'PC01A'  | Oregon Slope Base Shallow     |
             |__________|_______________________________|
-            |'/PC03A'  | Axial Base Shallow Profiler   |
+            |'PC03A'  | Axial Base Shallow Profiler   |
             |__________|_______________________________|
-            |'/LJ01C'  | Oregon Offshore Base Seafloor |
+            |'LJ01C'  | Oregon Offshore Base Seafloor |
             |__________|_______________________________|
         """
-        hydrophone_locations = {'/LJ01D': [44.63714, -124.30598],
-                                '/LJ01C': [44.36943, -124.95357],
-                                '/PC01A': [44.52897, -125.38967],
-                                '/LJ01A': [44.51512, -125.38992],
-                                '/LJ03A': [45.81668, -129.75435],
-                                '/PC03A': [45.83049, -129.75327]}
+        hydrophone_locations = {'LJ01D': [44.63714, -124.30598],
+                                'LJ01C': [44.36943, -124.95357],
+                                'PC01A': [44.52897, -125.38967],
+                                'LJ01A': [44.51512, -125.38992],
+                                'LJ03A': [45.81668, -129.75435],
+                                'PC03A': [45.83049, -129.75327]}
 
         self.hydrophone_locations = hydrophone_locations
         self.node1 = node1

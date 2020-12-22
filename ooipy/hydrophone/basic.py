@@ -613,17 +613,17 @@ class HydrophoneData(Trace):
             'deployments/main/HYDBBA_deployments.csv'
         hyd_df = pd.read_csv(url)
 
-        if self.stats.location == '/LJ01D':  # LJ01D'Oregon Shelf Base Seafloor
+        if self.stats.location == 'LJ01D':  # LJ01D'Oregon Shelf Base Seafloor
             ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
-        if self.stats.location == '/LJ01A':  # LJ01AOregon Slope Base Seafloor
+        if self.stats.location == 'LJ01A':  # LJ01AOregon Slope Base Seafloor
             ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
-        if self.stats.location == '/PC01A':  # Oregan Slope Base Shallow
+        if self.stats.location == 'PC01A':  # Oregan Slope Base Shallow
             ref = 'RS01SBPS-PC01A-08-HYDBBA103'
-        if self.stats.location == '/PC03A':  # Axial Base Shallow Profiler
+        if self.stats.location == 'PC03A':  # Axial Base Shallow Profiler
             ref = 'RS03AXPS-PC03A-08-HYDBBA303'
-        if self.stats.location == '/LJ01C':  # Oregon Offshore Base Seafloor
+        if self.stats.location == 'LJ01C':  # Oregon Offshore Base Seafloor
             ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
-        if self.stats.location == '/LJ03A':  # Axial Base Seafloor
+        if self.stats.location == 'LJ03A':  # Axial Base Seafloor
             ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
 
         hyd_df['referenceDesignator']

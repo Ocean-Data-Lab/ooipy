@@ -16,14 +16,14 @@ Hydrophone
 Broadband Nodes
 ^^^^^^^^^^^^^^^
     - Oregon Shelf Base Seafloor
-        - '/LJ01D'
+        - 'LJ01D'
     - Oregon Slope Base Seafloore
-        - '/LJ01A'
+        - 'LJ01A'
     - Slope Base Shallow
-        - '/PC01A'
+        - 'PC01A'
     - Axial Base Shallow Profiler
-        - '/PC03A'
+        - 'PC03A'
     - Offshore Base Seafloor
-        - '/LJ01C'
+        - 'LJ01C'
     - Axial Base Seafloor
-        - '/LJ03A'
+        - 'LJ03A'
