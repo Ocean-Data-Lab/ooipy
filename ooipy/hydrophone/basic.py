@@ -21,6 +21,7 @@ import pickle
 from scipy.io import wavfile
 import warnings
 import ooipy
+import pandas as pd
 
 
 class HydrophoneData(Trace):
@@ -606,6 +607,41 @@ class HydrophoneData(Trace):
                     sampling_rate = new_sample_rate
 
         wavfile.write(filename, int(sampling_rate), data)
+
+    def get_hydrophone_number(self):
+        url = 'https://raw.githubusercontent.com/OOI-CabledArray/' \
+            'deployments/main/HYDBBA_deployments.csv'
+        hyd_df = pd.read_csv(url)
+
+        if self.stats.location == '/LJ01D':  # LJ01D'Oregon Shelf Base Seafloor
+            ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
+        if self.stats.location == '/LJ01A':  # LJ01AOregon Slope Base Seafloor
+            ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
+        if self.stats.location == '/PC01A':  # Oregan Slope Base Shallow
+            ref = 'RS01SBPS-PC01A-08-HYDBBA103'
+        if self.stats.location == '/PC03A':  # Axial Base Shallow Profiler
+            ref = 'RS03AXPS-PC03A-08-HYDBBA303'
+        if self.stats.location == '/LJ01C':  # Oregon Offshore Base Seafloor
+            ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
+        if self.stats.location == '/LJ03A':  # Axial Base Seafloor
+            ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
+
+        hyd_df['referenceDesignator']
+
+        df_ref = hyd_df.loc[hyd_df['referenceDesignator'] == ref]
+
+        df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime) &
+                              (df_ref['endTime'] > self.stats.starttime)]
+        df_end = df_ref.loc[(df_ref['startTime'] < self.stats.endtime) &
+                            (df_ref['endTime'] > self.stats.endtime)]
+
+        if df_start.index.to_numpy() == df_end.index.to_numpy():
+            idx = df_start.index.to_numpy()
+            serial_number = df_start['instrumentSN'][int(idx)][2:6]
+        else:
+            raise Exception('Hydrophone Data involves multiple deployments.'
+                            'Feature to be added later')
+        return serial_number
 
 
 def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
