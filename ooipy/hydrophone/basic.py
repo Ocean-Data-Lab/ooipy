@@ -48,7 +48,7 @@ class HydrophoneData(Trace):
     def __init__(self, data=np.array([]), header=None, node=''):
 
         super().__init__(data, header)
-        self.stats.location = node
+        self.stats.location = node_id(node)
 
         self.spectrogram = None
         self.psd = None
@@ -84,7 +84,7 @@ class HydrophoneData(Trace):
         """
 
         f = np.linspace(0, 32000, N)
-        if node == '/LJ01C':  # Oregon Offshore Base Seafloor
+        if node == 'LJ01C':  # Oregon Offshore Base Seafloor
             if time >= datetime.datetime(2014, 8, 15, 0, 12, 0) and \
                     time <= datetime.datetime(2015, 8, 2, 0, 0, 0) or \
                     time >= datetime.datetime(2016, 7, 22, 22, 50, 0) and \
@@ -114,7 +114,7 @@ class HydrophoneData(Trace):
                               169.6, 170.45]
                 sens_interpolated = interp1d(f_calib, sens_calib)
 
-        elif node == '/LJ01D':  # Oregon Shelf Base Seafloor
+        elif node == 'LJ01D':  # Oregon Shelf Base Seafloor
             if time >= datetime.datetime(2018, 6, 30, 2, 30, 0) and \
                     time <= datetime.datetime(2019, 6, 19, 23, 31, 0):  # 1249
                 f_calib = [0, 26, 10000, 20100, 30100, 40200, 50200]
@@ -642,6 +642,96 @@ class HydrophoneData(Trace):
             raise Exception('Hydrophone Data involves multiple deployments.'
                             'Feature to be added later')
         return serial_number
+
+
+def node_id(node):
+    '''
+    mapping of name of hydrophone node to ID
+
+    Parameter
+    ---------
+    node : str
+        name or ID of the hydrophone node
+
+    Returns
+    -------
+    str
+        ID of hydrophone node
+    '''
+    # broadband hydrophones
+    if node == 'Oregon_Shelf_Base_Seafloor' or node == 'LJ01D':
+        return 'LJ01D'
+    if node == 'Oregon_Slope_Base_Seafloor' or node == 'LJ01A':
+        return 'LJ01A'
+    if node == 'Oregon_Slope_Base_Shallow' or node == 'PC01A':
+        return 'PC01A'
+    if node == 'Axial_Base_Shallow' or node == 'PC03A':
+        return 'PC03A'
+    if node == 'Oregon_Offshore_Base_Seafloor' or node == 'LJ01C':
+        return 'LJ01C'
+    if node == 'Axial_Base_Seafloor' or node == 'LJ03A':
+        return 'LJ03A'
+
+    # low frequency hydrophones
+    if node == 'Slope_Base' or node == 'HYSB1':
+        return 'HYSB1'
+    if node == 'Southern_Hydrate' or node == 'HYS14':
+        return 'HYS14'
+    if node == 'Axial_Base' or node == 'AXBA1':
+        return 'AXBA1'
+    if node == 'Central_Caldera' or node == 'AXCC1':
+        return 'AXCC1'
+    if node == 'Eastern_Caldera' or node == 'AXEC2':
+        return 'AXEC2'
+
+    else:
+        print('No node exists for name or ID ' + node_name)
+        return ''
+
+
+def node_name(node):
+    '''
+    mapping of ID of hydrophone node to name
+
+    Parameter
+    ---------
+    node : str
+        ID or name of the hydrophone node
+
+    Returns
+    -------
+    str
+        name of hydrophone node
+    '''
+    # broadband hydrophones
+    if node == 'Oregon_Shelf_Base_Seafloor' or node == 'LJ01D':
+        return 'Oregon_Shelf_Base_Seafloor'
+    if node == 'Oregon_Slope_Base_Seafloor' or node == 'LJ01A':
+        return 'Oregon_Slope_Base_Seafloor'
+    if node == 'Oregon_Slope_Base_Shallow' or node == 'PC01A':
+        return 'Oregon_Slope_Base_Shallow'
+    if node == 'Axial_Base_Shallow' or node == 'PC03A':
+        return 'Axial_Base_Shallow'
+    if node == 'Oregon_Offshore_Base_Seafloor' or node == 'LJ01C':
+        return 'Oregon_Offshore_Base_Seafloor'
+    if node == 'Axial_Base_Seafloor' or node == 'LJ03A':
+        return 'Axial_Base_Seafloor'
+
+    # low frequency hydrophones
+    if node == 'Slope_Base' or node == 'HYSB1':
+        return 'Slope_Base'
+    if node == 'Southern_Hydrate' or node == 'HYS14':
+        return 'Southern_Hydrate'
+    if node == 'Axial_Base' or node == 'AXBA1':
+        return 'Axial_Base'
+    if node == 'Central_Caldera' or node == 'AXCC1':
+        return 'Central_Caldera'
+    if node == 'Eastern_Caldera' or node == 'AXEC2':
+        return 'Eastern_Caldera'
+
+    else:
+        print('No node exists for ID or name ' + node)
+        return ''
 
 
 def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
