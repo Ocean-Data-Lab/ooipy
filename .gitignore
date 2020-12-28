@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache
 *.pyc
 *.pkl
+!calibration_by_assetID.pkl
 build/
 _build/
 flake8_log.txt
