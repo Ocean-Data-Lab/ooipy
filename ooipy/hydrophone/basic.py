@@ -96,13 +96,17 @@ class HydrophoneData(Trace):
         f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
         sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
         sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
+        sens_calib = 0.5*(sens_calib_0 + sens_calib_90)
+        #print(f_calib)
+        #print(sens_calib_0)
+        #print(sens_calib_90)
 
         f = np.linspace(0, 32000, N)
 
         # ignore 90 phase information
-        sens_interpolated = interp1d(f_calib, sens_calib_0)
+        sens_interpolated = interp1d(f_calib, sens_calib)
 
-        plt.plot(sens_interpolated(f))
+        # plt.plot(sens_interpolated(f))
         return sens_interpolated(f)
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
@@ -173,8 +177,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.datetime
-                    tmp = self.freq_dependent_sensitivity_correct(
+                    tmp = -self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -199,7 +202,7 @@ class HydrophoneData(Trace):
                     return None
                 else:
                     calib_time = self.stats.starttime.datetime
-                    tmp = self.freq_dependent_sensitivity_correct(
+                    tmp = -self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -222,8 +225,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.datetime
-                    tmp = self.freq_dependent_sensitivity_correct(
+                    tmp = -self.freq_dependent_sensitivity_correct(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -394,8 +396,7 @@ class HydrophoneData(Trace):
             self.psd = None
             return None
 
-        calib_time = self.stats.starttime.datetime
-        sense_corr = self.freq_dependent_sensitivity_correct(
+        sense_corr = -self.freq_dependent_sensitivity_correct(
             int(nfft / 2 + 1))
         if scale == 'log':
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10)) - 128.9
