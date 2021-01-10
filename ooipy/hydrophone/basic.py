@@ -96,14 +96,10 @@ class HydrophoneData(Trace):
         f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
         sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
         sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
-        sens_calib = 0.5*(sens_calib_0 + sens_calib_90)
-        #print(f_calib)
-        #print(sens_calib_0)
-        #print(sens_calib_90)
+        # Average 0 and 90 degree phase response
+        sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
 
         f = np.linspace(0, 32000, N)
-
-        # ignore 90 phase information
         sens_interpolated = interp1d(f_calib, sens_calib)
 
         # plt.plot(sens_interpolated(f))
@@ -201,7 +197,6 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    calib_time = self.stats.starttime.datetime
                     tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
