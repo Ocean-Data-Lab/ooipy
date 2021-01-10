@@ -22,6 +22,7 @@ from scipy.io import wavfile
 import warnings
 import ooipy
 import pandas as pd
+import os
 
 
 class HydrophoneData(Trace):
@@ -81,29 +82,38 @@ class HydrophoneData(Trace):
         output_array : np.array
             array with correction coefficient for every frequency
         """
-        # Check if node is low frequency and raise exception
-        if self.stats.sampling_rate == 200:
-            raise Exception('Sensitivy Correction only valid for broadband')
+        # Calibration for Low Frequency Hydrophones
+        if round(self.stats.sampling_rate) == 200:
+            
+            lf_cal = {
+                'HYSB1':2311.11, 'HYS14':2499.09, 'AXBA1':2257.3,
+                'AXEC2':2421.0, 'AXCC1':2480.98}
+            f = np.array([0,100])
+            sens_calib = np.array([lf_cal[self.stats.station]]*16)
+            raise Exception ('Low frequency calibration under development')
+            
 
-        # Use deployment CSV to determine asset_ID
-        assetID = self.get_asset_ID()
+        # Calibratino for Broadband Hydrophones
+        else:
+            filename = os.path.dirname(ooipy.__file__) + '/hydrophone/calibration_by_assetID.pkl'
+            # Use deployment CSV to determine asset_ID
+            assetID = self.get_asset_ID()
 
-        # load calibration data as pandas dataframe
-        filename = 'calibration_by_assetID.pkl'
-        with open(filename, 'rb') as f:
-            cal_by_assetID = pickle.load(f)
+            # load calibration data as pandas dataframe
+            with open(filename, 'rb') as f:
+                cal_by_assetID = pickle.load(f)
 
-        f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
-        sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
-        sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
-        # Average 0 and 90 degree phase response
-        sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
+            f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
+            sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
+            sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
+            # Average 0 and 90 degree phase response
+            sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
 
-        f = np.linspace(0, 32000, N)
-        sens_interpolated = interp1d(f_calib, sens_calib)
+            f = np.linspace(0, 32000, N)
+            sens_interpolated = interp1d(f_calib, sens_calib)
 
-        # plt.plot(sens_interpolated(f))
-        return sens_interpolated(f)
+            f_calib = sens_interpolated(f)
+            return f_calib
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
                             overlap=0.5, verbose=True):
@@ -393,6 +403,7 @@ class HydrophoneData(Trace):
 
         sense_corr = -self.frequency_calibration(
             int(nfft / 2 + 1))
+        print(sense_corr)
         if scale == 'log':
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10)) - 128.9
         elif scale == 'lin':
