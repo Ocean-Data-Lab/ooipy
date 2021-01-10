@@ -59,7 +59,7 @@ class HydrophoneData(Trace):
         self.type = None
 
     # TODO: use correct frequency response for all hydrophones
-    def freq_dependent_sensitivity_correct(self, N):
+    def frequency_calibration(self, N):
         # TODO
         """
         Apply a frequency dependent sensitivity correction to the
@@ -177,7 +177,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = -self.freq_dependent_sensitivity_correct(
+                    tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -202,7 +202,7 @@ class HydrophoneData(Trace):
                     return None
                 else:
                     calib_time = self.stats.starttime.datetime
-                    tmp = -self.freq_dependent_sensitivity_correct(
+                    tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -225,7 +225,7 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = -self.freq_dependent_sensitivity_correct(
+                    tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
                     Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
@@ -396,7 +396,7 @@ class HydrophoneData(Trace):
             self.psd = None
             return None
 
-        sense_corr = -self.freq_dependent_sensitivity_correct(
+        sense_corr = -self.frequency_calibration(
             int(nfft / 2 + 1))
         if scale == 'log':
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10)) - 128.9
