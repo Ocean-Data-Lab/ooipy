@@ -86,13 +86,14 @@ class HydrophoneData(Trace):
         if round(self.stats.sampling_rate) == 200:
             lf_cal = {
                 'HYSB1': 2311.11, 'HYS14': 2499.09, 'AXBA1': 2257.3,
-                'AXEC2': 2421.0, 'AXCC1': 480.98}
-            f = np.array([0, 100])
-            sens_calib = np.array([lf_cal[self.stats.station]] * 16)
-            raise Exception('Low frequency calibration under development')
+                'AXEC2': 2421.0, 'AXCC1': 2480.98}
+            f = np.linspace(0, 100, N)
+            f_calib = np.array([0,100])
+            sens_calib_db = 20*np.log10(lf_cal[self.stats.station]*1e-6)
+            sens_calib = np.array([sens_calib_db, sens_calib_db])
 
         # Calibratino for Broadband Hydrophones
-        else:
+        elif round(self.stats.sampling_rate) == 64000:
             filename = os.path.dirname(ooipy.__file__) + \
                 '/hydrophone/calibration_by_assetID.pkl'
             # Use deployment CSV to determine asset_ID
@@ -107,12 +108,18 @@ class HydrophoneData(Trace):
             sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
             # Average 0 and 90 degree phase response
             sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
-
+            sens_calib = sens_calib - 128.9
             f = np.linspace(0, 32000, N)
-            sens_interpolated = interp1d(f_calib, sens_calib)
+        
+        else:
+            raise Exception('Invalid sampling rate')
 
-            f_calib = sens_interpolated(f)
-            return f_calib
+        sens_interpolated = interp1d(f_calib, sens_calib)
+
+        f_calib = sens_interpolated(f)
+        return f_calib
+        
+
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
                             overlap=0.5, verbose=True):
@@ -184,8 +191,12 @@ class HydrophoneData(Trace):
                 else:
                     tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
-
-                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
+                    
+                    # Check if broadband or lowfrequency
+                    if round(self.stats.sampling_rate) == 640000:
+                        Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
+                    elif round(self.stats.sampling_rate) == 200:
+                        Pxx
 
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
@@ -209,7 +220,7 @@ class HydrophoneData(Trace):
                     tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
-                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
+                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
                                 + datetime.timedelta(seconds=n * avg_time))
@@ -232,7 +243,7 @@ class HydrophoneData(Trace):
                     tmp = -self.frequency_calibration(
                         int(L / 2 + 1))
 
-                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10)) - 128.9
+                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
                                 + datetime.timedelta(seconds=(nbins - 1)
@@ -404,10 +415,9 @@ class HydrophoneData(Trace):
             int(nfft / 2 + 1))
         print(sense_corr)
         if scale == 'log':
-            Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10)) - 128.9
+            Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
         elif scale == 'lin':
-            Pxx = Pxx * np.power(10, sense_corr / 10) * \
-                np.power(10, -128.9 / 10)
+            Pxx = Pxx * np.power(10, sense_corr / 10)
         else:
             raise Exception('scale has to be either "lin" or "log".')
 
