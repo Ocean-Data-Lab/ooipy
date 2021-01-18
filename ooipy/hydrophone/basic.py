@@ -108,7 +108,7 @@ class HydrophoneData(Trace):
             sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
             # Average 0 and 90 degree phase response
             sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
-            sens_calib = sens_calib - 128.9
+            sens_calib = sens_calib + 128.9
             f = np.linspace(0, 32000, N)
         
         else:
@@ -189,14 +189,10 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = -self.frequency_calibration(
+                    sense_corr = -self.frequency_calibration(
                         int(L / 2 + 1))
                     
-                    # Check if broadband or lowfrequency
-                    if round(self.stats.sampling_rate) == 640000:
-                        Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
-                    elif round(self.stats.sampling_rate) == 200:
-                        Pxx
+                    Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
 
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
@@ -217,10 +213,10 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = -self.frequency_calibration(
+                    sense_corr = -self.frequency_calibration(
                         int(L / 2 + 1))
 
-                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
+                    Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
                                 + datetime.timedelta(seconds=n * avg_time))
@@ -240,10 +236,10 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    tmp = -self.frequency_calibration(
+                    sense_corr = -self.frequency_calibration(
                         int(L / 2 + 1))
 
-                    Pxx = 10 * np.log10(Pxx * np.power(10, tmp / 10))
+                    Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
                     time.append(self.stats.starttime.datetime
                                 + datetime.timedelta(seconds=(nbins - 1)
