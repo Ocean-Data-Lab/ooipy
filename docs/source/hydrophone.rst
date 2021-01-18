@@ -3,16 +3,9 @@
   :alt: OOIPY Logo
   :align: left
 
-Hydrophone Tools Module
-=======================
-
-Basic Tools
-^^^^^^^^^^^
+Basic Hydrophone Functions
+==========================
 
 .. automodule:: ooipy.hydrophone.basic
     :members:
 
-Noise Interferometry Tools
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: ooipy.hydrophone.Noise_Interferometry
-    :members:

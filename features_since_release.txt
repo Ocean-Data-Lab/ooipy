@@ -5,9 +5,10 @@ Finished Features Since Last Release
 - added deprecation warning to Spectrogram.visualize()
 - added Spectrogram.plot() (calls tools.ooipypltlib.spectrogram_plot())
 - added deprecation warning to PSD.visualize()
-
+- psd.plot()
+- node string format change
+- sensitivy correction for all broadband
 
 Updates in Progress
-- psd.plot()
-- updating node strings
-- sensity correction for all broadband
+- sensitivity correction for low frequency
+- remove Noise Interferometry Module
