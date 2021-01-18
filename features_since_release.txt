@@ -8,7 +8,7 @@ Finished Features Since Last Release
 - psd.plot()
 - node string format change
 - sensitivy correction for all broadband
+- remove Noise Interferometry Module
 
 Updates in Progress
 - sensitivity correction for low frequency
-- remove Noise Interferometry Module

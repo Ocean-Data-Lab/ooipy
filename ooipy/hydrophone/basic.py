@@ -84,18 +84,17 @@ class HydrophoneData(Trace):
         """
         # Calibration for Low Frequency Hydrophones
         if round(self.stats.sampling_rate) == 200:
-            
             lf_cal = {
-                'HYSB1':2311.11, 'HYS14':2499.09, 'AXBA1':2257.3,
-                'AXEC2':2421.0, 'AXCC1':2480.98}
-            f = np.array([0,100])
-            sens_calib = np.array([lf_cal[self.stats.station]]*16)
-            raise Exception ('Low frequency calibration under development')
-            
+                'HYSB1': 2311.11, 'HYS14': 2499.09, 'AXBA1': 2257.3,
+                'AXEC2': 2421.0, 'AXCC1': 480.98}
+            f = np.array([0, 100])
+            sens_calib = np.array([lf_cal[self.stats.station]] * 16)
+            raise Exception('Low frequency calibration under development')
 
         # Calibratino for Broadband Hydrophones
         else:
-            filename = os.path.dirname(ooipy.__file__) + '/hydrophone/calibration_by_assetID.pkl'
+            filename = os.path.dirname(ooipy.__file__) + \
+                '/hydrophone/calibration_by_assetID.pkl'
             # Use deployment CSV to determine asset_ID
             assetID = self.get_asset_ID()
 
