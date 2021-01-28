@@ -412,13 +412,13 @@ def plot_timeseries(HydData_obj, **kwargs):
 
 def plot_ctd_profile(ctd_profile, **kwargs):
     """
-    Plot a :class:`ooipy.hydrophone.basic.Psd` object using the
+    Plot a :class:`ooipy.ctd.basic.CtdProfile` object using the
     matplotlib package.
 
     Parameters
     ----------
-    spec_obj : :class:`ooipy.hydrophone.basic.Psd`
-        Psd object to be plotted
+    ctd_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        CtdProfile object to be plotted
     kwargs :
         See matplotlib doccumentation for list of arguments. Additional
         arguments are
@@ -434,18 +434,23 @@ def plot_ctd_profile(ctd_profile, **kwargs):
             True
         * filename : str
             filename of figure if saved. Default is "spectrogram.png"
-        * xlabel_rot : int or float
-            rotation angle (deg) of x-labels. Default is 70
-        * fmin : int or float
-            minimum frequency. Default is 0
-        * fmax : int or float
-            maximum frequency. Default is 32000
-        * vmin : int or float
-            lower limit of level axis (colormap). Default is 20
-        * vmax : int or float
-            upper limit of level axis (colormap). Default is 80
         * figsize : (int, int)
             width and height of figure. Default is (16, 9)
+        * title : str
+            Title of plot. Default is 'CTD profile'
+        * xlabel : str
+            x-axis label of plot. Default is 'parameter'
+        * ylabel : str
+            y-axis label of plot. Default is 'depth'
+        * show_variance : bool
+            Indicates whether the variance should be plotted or not.
+            Default is True
+        * min_depth : int or float
+            upper limit of vertical axis (depth axis). Default is the
+            maximum of max(min(ctd_profile.depth_mean) - 10, 0)
+        * max_depth : int or float
+            lower limit of vertical axis (depth axis). Default is
+            max(ctd_profile.depth_mean) + 10
     """
 
     # check for keys

@@ -1,14 +1,44 @@
+"""
+Module for CTD data objects
+"""
+
 import numpy as np
 import datetime
 import ooipy.tools.ooiplotlib
 
 class CtdData():
     """
-    Object that stores conductivity, temperature, depth (CTD) data
+    Object that stores conductivity, temperature, depth (CTD) data, and
+    provides functions for calculating sound speed, temperature,
+    pressure, and salinity profiles. When a CtdData object is created
+    and extract_parameters = True (default), then temperature, pressure,
+    salinity, and time are automatically extracted from the raw data. 
 
     Attributes
     ----------
-    
+    raw_data : list of dict
+        list containing sample from CTD. Each sample is a dictionary
+        containing all parameters measured by the CTD.
+    temperature : numpy.ndarray
+        array containing temperature samples in degree celsius.
+    pressure : numpy.ndarray
+        array containing pressure samples in dbar.
+    salinity : numpy.ndarray
+        array containing salinity samples in parts per thousand.
+    depth : numpy.ndarray
+        array containing depth samples in meter.
+    sound_speed : numpy.ndarray
+        array containing sound speed samples in meter/second.
+    time : numpy.ndarray
+        array containing time samples as datetime.datetime objects.
+    sound_speed_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for sound speed profile.
+    temperature_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for temperature profile.
+    salinity_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for salinity profile.
+    pressure_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for pressure profile.
 
     """
 
@@ -196,6 +226,17 @@ class CtdData():
         """
         Compute the profile for sound speed, temperature, pressure, or
         salinity over the vater column.
+
+        Parameters
+        ----------
+        max_depth : int
+            The profile will be computed from 0 meters to max_depth
+            meters in 1-meter increments
+        parameter : str
+            * 'sound_speed'
+            * 'temperature'
+            * 'salinity'
+            * 'pressure'
         """
 
         param_dct = {}
@@ -251,8 +292,23 @@ class CtdData():
     
 class CtdProfile():
     """
-    Simple object that stores a parameter profile over the water column
+    Simple object that stores a parameter profile over the water column.
+    For each 1-meter interval, there is one data point in the profile.
+
+    Attributes
+    ----------
+    parameter_mean : array of float
+        mean of paramter within each 1-meter depth interval
+    parameter_var : array of float
+        variance of paramter within each 1-meter depth interval
+    depth_mean : array of float
+        mean of depth within each 1-meter depth interval
+    depth_var : array of float
+        variance of depth within each 1-meter depth interval
+    n_samp : array of int
+        number of samples within each 1-meter depth interval
     """
+    
 
     def __init__(self, parameter_mean, parameter_var, depth_mean, depth_var, n_samp):
         self.parameter_mean = parameter_mean
