@@ -4,7 +4,7 @@ Module for CTD data objects
 
 import numpy as np
 import datetime
-import ooipy.tools.ooiplotlib
+import ooipy
 
 class CtdData():
     """
