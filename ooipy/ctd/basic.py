@@ -1,6 +1,6 @@
 import numpy as np
 import datetime
-import ooipy.request.ctd_request as ctd_request
+import ooipy.tools.ooiplotlib
 
 class CtdData():
     """
@@ -73,7 +73,7 @@ class CtdData():
             if parameter == 'time':
                 param_arr.append(self.ntp_seconds_to_datetime(item['pk']['time']))
 
-        return param_arr
+        return np.array(param_arr)
 
     def get_parameter(self, parameter):
         """
@@ -204,6 +204,9 @@ class CtdData():
             
         param_arr = self.get_parameter(parameter)
 
+        if self.depth is None:
+            self.depth = self.get_parameter('depth')
+
         for d, p in zip(self.depth, param_arr):
             if str(int(d)) in param_dct:
                 param_dct[str(int(d))]['d'].append(d)
@@ -231,7 +234,7 @@ class CtdData():
         param_var = np.array(param_var)[idx]
         n_samp = np.array(n_samp)[idx]
 
-        param_profile = Profile(param_mean, param_var, depth_mean, depth_var,
+        param_profile = CtdProfile(param_mean, param_var, depth_mean, depth_var,
                                 n_samp)
 
         if parameter == 'temperature':
@@ -246,7 +249,7 @@ class CtdData():
         return param_profile
 
     
-class Profile():
+class CtdProfile():
     """
     Simple object that stores a parameter profile over the water column
     """
@@ -259,5 +262,8 @@ class Profile():
         self.n_samp = n_samp
 
     def plot(self, **kwargs):
-        #TODO
-        pass
+        '''
+        redirects to ooipy.ooiplotlib.plot_ctd_profile()
+        please see :meth:`ooipy.hydrophone.basic.plot_psd`
+        '''
+        ooipy.tools.ooiplotlib.plot_ctd_profile(self, **kwargs)

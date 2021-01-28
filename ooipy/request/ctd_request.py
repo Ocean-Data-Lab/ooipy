@@ -6,7 +6,7 @@ import numpy as np
 import ooipy.request.authentification
 from ooipy.ctd.basic import CtdData
 
-def get_ctd_data(beginDT, endDT, location, limit=10000):
+def get_ctd_data(start_datetime, end_datetime, location, limit=10000):
 
     USERNAME, TOKEN =  ooipy.request.authentification.get_authentification()
     #Sensor Inventory
@@ -29,6 +29,9 @@ def get_ctd_data(beginDT, endDT, location, limit=10000):
                     'CE04OSPD/DP01B/01-CTDPFL105/recovered_wfp/dpc_ctd_instrument_recovered?',
                     'CE04OSBP/LJ01C/06-CTDBPO108/streamed/ctdbp_no_sample?']
 
+    beginDT = start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
+    endDT = end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
+
     for url in url_list:
         data_request_url = DATA_API_BASE_URL + url + \
             'beginDT=' + beginDT + '&endDT=' + endDT + '&limit=' + str(limit)
@@ -49,8 +52,8 @@ def get_ctd_data_daily(datetime_day, location, limit=10000):
     start_end_list = []
         
     for hour in range(24):
-        start = datetime.datetime(year, month, day, hour, 0, 0).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
-        end = datetime.datetime(year, month, day, hour, 59, 59, 999).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
+        start = datetime.datetime(year, month, day, hour, 0, 0)
+        end = datetime.datetime(year, month, day, hour, 59, 59, 999)
         start_end_list.append((start, end))
         
     raw_data_arr = __map_concurrency(get_ctd_data_concurrent, start_end_list,
@@ -61,7 +64,7 @@ def get_ctd_data_daily(datetime_day, location, limit=10000):
         if item is None:
             continue
         else:
-            raw_data_falttened.extend(item)
+            raw_data_falttened.extend(item.raw_data)
 
     return CtdData(raw_data=raw_data_falttened)
 
