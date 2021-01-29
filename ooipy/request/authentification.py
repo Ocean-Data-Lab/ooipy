@@ -1,9 +1,11 @@
 import os.path
 """
-This module provides functions for the automatic authentification at the OOI.
-The authentification is based on a username and a token, which will be generatd
-after registering an account at https://ooinet.oceanobservatories.org/.
+This module provides functions for the automatic authentification at the
+OOI. The authentification is based on a username and a token, which will
+be generatd after registering an account at
+https://ooinet.oceanobservatories.org/.
 """
+
 
 def set_authentification(username, token):
     """
@@ -23,8 +25,9 @@ def set_authentification(username, token):
     filename = 'ooi_auth.txt'
     if not os.path.isfile(filename):
         file = open(filename, 'w+')
-        file.write('username\n' +  username + '\n' +  'token\n' + token)
+        file.write('username\n' + username + '\n' + 'token\n' + token)
         file.close()
+
 
 def get_authentification():
     """

@@ -6,13 +6,14 @@ import numpy as np
 import datetime
 import ooipy
 
+
 class CtdData():
     """
     Object that stores conductivity, temperature, depth (CTD) data, and
     provides functions for calculating sound speed, temperature,
     pressure, and salinity profiles. When a CtdData object is created
     and extract_parameters = True (default), then temperature, pressure,
-    salinity, and time are automatically extracted from the raw data. 
+    salinity, and time are automatically extracted from the raw data.
 
     Attributes
     ----------
@@ -54,7 +55,8 @@ class CtdData():
         self.raw_data = raw_data
 
         if self.raw_data is not None and extract_parameters:
-            self.temperature = self.get_parameter_from_rawdata('temperature')
+            self.temperature = \
+                self.get_parameter_from_rawdata('temperature')
             self.pressure = self.get_parameter_from_rawdata('pressure')
             self.salinity = self.get_parameter_from_rawdata('salinity')
             self.time = self.get_parameter_from_rawdata('time')
@@ -75,7 +77,6 @@ class CtdData():
         self.density_profile = None
         self.conductivity_profile = None
 
-
     def ntp_seconds_to_datetime(self, ntp_seconds):
         """
         Converts timestamp into dattime object.
@@ -83,7 +84,8 @@ class CtdData():
         ntp_epoch = datetime.datetime(1900, 1, 1)
         unix_epoch = datetime.datetime(1970, 1, 1)
         ntp_delta = (unix_epoch - ntp_epoch).total_seconds()
-        return datetime.datetime.utcfromtimestamp(ntp_seconds - ntp_delta).replace(microsecond=0)
+        return datetime.datetime.utcfromtimestamp(
+            ntp_seconds - ntp_delta).replace(microsecond=0)
 
     def get_parameter_from_rawdata(self, parameter):
         """
@@ -105,7 +107,7 @@ class CtdData():
                     param_arr.append(item['seawater_pressure'])
                 else:
                     param_arr.append(item['pressure'])
-                    
+
             if parameter == 'salinity':
                 if 'practical_salinity' in item:
                     param_arr.append(item['practical_salinity'])
@@ -117,7 +119,7 @@ class CtdData():
                     param_arr.append(item['seawater_density'])
                 else:
                     param_arr.append(item['density'])
-                    
+
             if parameter == 'conductivity':
                 if 'ctdbp_no_seawater_conductivity' in item:
                     param_arr.append(item['ctdbp_no_seawater_conductivity'])
@@ -127,7 +129,8 @@ class CtdData():
                     param_arr.append(item['conductivity'])
 
             if parameter == 'time':
-                param_arr.append(self.ntp_seconds_to_datetime(item['pk']['time']))
+                param_arr.append(self.ntp_seconds_to_datetime(
+                    item['pk']['time']))
 
         return np.array(param_arr)
 
@@ -155,21 +158,23 @@ class CtdData():
 
         if self.pressure is None:
             self.pressure = self.get_parameter_from_rawdata('pressure')
-        
+
         press_MPa = 0.01 * self.pressure
 
         # TODO: adapt for each hydrophone
-        lat = 44.52757 #deg
+        lat = 44.52757  # deg
 
         # Calculate gravity constant for given latitude
-        g_phi = 9.780319*(1 + 5.2788E-3*(np.sin(np.deg2rad(lat))**2) + 2.36E-5*(np.sin(np.deg2rad(lat))**4))
+        g_phi = 9.780319 * (1 + 5.2788E-3 * (np.sin(np.deg2rad(lat))**2) +
+                            2.36E-5 * (np.sin(np.deg2rad(lat))**4))
 
         # Calculate Depth for Pressure array
-        self.depth = (9.72659e2*press_MPa - 2.512e-1*press_MPa**2 + 2.279e-4*press_MPa**3 - 1.82e-7*press_MPa**4)/(g_phi + 1.092e-4*press_MPa)
+        self.depth = (9.72659e2 * press_MPa - 2.512e-1 * press_MPa**2 +
+                      2.279e-4 * press_MPa ** 3 - 1.82e-7 * press_MPa**4) / \
+                     (g_phi + 1.092e-4 * press_MPa)
 
         return self.depth
 
-    # code from John
     def calc_sound_speed(self):
         """
         Calculates sound speed from temperature, salinity and pressure
@@ -184,7 +189,7 @@ class CtdData():
             self.temperature = self.get_parameter_from_rawdata('temperature')
         if self.salinity is None:
             self.salinity = self.get_parameter_from_rawdata('salinity')
-        
+
         press_MPa = 0.01 * self.pressure
 
         C00 = 1402.388
@@ -229,25 +234,31 @@ class CtdData():
         A00 = 1.389
         D00 = 1.727E-3
         A01 = -1.262E-2
-        D10 = -7.9836E-6 
+        D10 = -7.9836E-6
 
         T = 3
         S = 1
         P = 700
         T = self.temperature
         S = self.salinity
-        P = press_MPa*10
+        P = press_MPa * 10
 
-        D = D00 + D10*P 
-        B = B00 + B01*T + (B10 + B11*T)*P 
-        A = (A00 + A01*T + A02*T**2 + A03*T**3 + A04*T**4) + (A10 + A11*T + A12*T**2 + A13*T**3 + A14*T**4)*P + (A20 + A21*T + A22*T**2 + A23*T**3)*P**2 + (A30 + A31*T + A32*T**2)*P**3
-        Cw = (C00 + C01*T + C02*T**2 + C03*T**3 + C04*T**4 + C05*T**5) + (C10 + C11*T + C12*T**2 + C13*T**3 + C14*T**4)*P + (C20 +C21*T +C22*T**2 + C23*T**3 + C24*T**4)*P**2 + (C30 + C31*T + C32*T**2)*P**3
+        D = D00 + D10 * P
+        B = B00 + B01 * T + (B10 + B11 * T) * P
+        A = (A00 + A01 * T + A02 * T**2 + A03 * T**3 + A04 * T**4) + \
+            (A10 + A11 * T + A12 * T**2 + A13 * T**3 + A14 * T**4) * P + \
+            (A20 + A21 * T + A22 * T**2 + A23 * T**3) * P**2 + \
+            (A30 + A31 * T + A32 * T**2) * P**3
+        Cw = (C00 + C01 * T + C02 * T**2 +
+              C03 * T**3 + C04 * T**4 + C05 * T**5) + \
+            (C10 + C11 * T + C12 * T**2 + C13 * T**3 + C14 * T**4) * P + \
+            (C20 + C21 * T + C22 * T**2 + C23 * T**3 + C24 * T**4) * P**2 + \
+            (C30 + C31 * T + C32 * T**2) * P**3
 
         # Calculate Speed of Sound
-        self.sound_speed = Cw + A*S + B*S**(3/2) + D*S**2
+        self.sound_speed = Cw + A * S + B * S**(3 / 2) + D * S**2
 
         return self.sound_speed
-
 
     def get_profile(self, max_depth, parameter):
         """
@@ -271,7 +282,7 @@ class CtdData():
         param_dct = {}
         for k in range(max_depth):
             param_dct[str(k)] = {'param': [], 'd': []}
-            
+
         param_arr = self.get_parameter(parameter)
 
         if self.depth is None:
@@ -281,21 +292,21 @@ class CtdData():
             if str(int(d)) in param_dct:
                 param_dct[str(int(d))]['d'].append(d)
                 param_dct[str(int(d))]['param'].append(p)
-        
+
         param_mean = []
         depth_mean = []
         param_var = []
         depth_var = []
-        
+
         n_samp = []
-        
+
         for key in param_dct:
             param_mean.append(np.mean(param_dct[key]['param']))
             depth_mean.append(np.mean(param_dct[key]['d']))
             param_var.append(np.var(param_dct[key]['param']))
             depth_var.append(np.var(param_dct[key]['d']))
             n_samp.append(len(param_dct[key]['d']))
-            
+
         idx = np.argsort(depth_mean)
 
         depth_mean = np.array(depth_mean)[idx]
@@ -304,8 +315,8 @@ class CtdData():
         param_var = np.array(param_var)[idx]
         n_samp = np.array(n_samp)[idx]
 
-        param_profile = CtdProfile(param_mean, param_var, depth_mean, depth_var,
-                                n_samp)
+        param_profile = CtdProfile(param_mean, param_var, depth_mean,
+                                   depth_var, n_samp)
 
         if parameter == 'temperature':
             self.temperature_profile = param_profile
@@ -319,10 +330,10 @@ class CtdData():
             self.density_profile = param_profile
         elif parameter == 'conductivity':
             self.conductivity_profile = param_profile
-   
+
         return param_profile
 
-    
+
 class CtdProfile():
     """
     Simple object that stores a parameter profile over the water column.
@@ -341,9 +352,9 @@ class CtdProfile():
     n_samp : array of int
         number of samples within each 1-meter depth interval
     """
-    
 
-    def __init__(self, parameter_mean, parameter_var, depth_mean, depth_var, n_samp):
+    def __init__(self, parameter_mean, parameter_var, depth_mean, depth_var,
+                 n_samp):
         self.parameter_mean = parameter_mean
         self.parameter_var = parameter_var
         self.depth_mean = depth_mean

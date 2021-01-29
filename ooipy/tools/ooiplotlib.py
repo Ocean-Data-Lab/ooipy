@@ -410,6 +410,7 @@ def plot_timeseries(HydData_obj, **kwargs):
     if not kwargs['plot']:
         plt.close(fig)
 
+
 def plot_ctd_profile(ctd_profile, **kwargs):
     """
     Plot a :class:`ooipy.ctd.basic.CtdProfile` object using the
@@ -502,8 +503,10 @@ def plot_ctd_profile(ctd_profile, **kwargs):
              linestyle=kwargs['linestyle'], marker=kwargs['marker'],
              markersize=kwargs['markersize'], color=kwargs['color'])
     if kwargs['show_variance']:
-        y1 = ctd_profile.parameter_mean - 2 * np.sqrt(ctd_profile.parameter_var)
-        y2 = ctd_profile.parameter_mean + 2 * np.sqrt(ctd_profile.parameter_var)
+        y1 = ctd_profile.parameter_mean - 2 * \
+            np.sqrt(ctd_profile.parameter_var)
+        y2 = ctd_profile.parameter_mean + 2 * \
+            np.sqrt(ctd_profile.parameter_var)
         plt.fill_betweenx(ctd_profile.depth_mean, y1, y2,
                           alpha=kwargs['alpha'], color=kwargs['var_color'])
     plt.ylim([kwargs['max_depth'], kwargs['min_depth']])
