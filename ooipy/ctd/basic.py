@@ -27,6 +27,10 @@ class CtdData():
         array containing salinity samples in parts per thousand.
     depth : numpy.ndarray
         array containing depth samples in meter.
+    density : numpy.ndarray
+        array containing density samples in kg/cubic meter.
+    conductivity : numpy.ndarray
+        array containing conductivity samples in siemens/meter.
     sound_speed : numpy.ndarray
         array containing sound speed samples in meter/second.
     time : numpy.ndarray
@@ -39,6 +43,10 @@ class CtdData():
         object for salinity profile.
     pressure_profile : :class:`ooipy.ctd.basic.CtdProfile`
         object for pressure profile.
+    density_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for density profile.
+    conductivity_profile : :class:`ooipy.ctd.basic.CtdProfile`
+        object for conductivity profile.
 
     """
 
@@ -58,10 +66,14 @@ class CtdData():
 
         self.sound_speed = None
         self.depth = None
+        self.density = None
+        self.conductivity = None
         self.sound_speed_profile = None
         self.temperature_profile = None
         self.salinity_profile = None
         self.pressure_profile = None
+        self.density_profile = None
+        self.conductivity_profile = None
 
 
     def ntp_seconds_to_datetime(self, ntp_seconds):
@@ -100,6 +112,20 @@ class CtdData():
                 else:
                     param_arr.append(item['salinity'])
 
+            if parameter == 'density':
+                if 'seawater_density' in item:
+                    param_arr.append(item['seawater_density'])
+                else:
+                    param_arr.append(item['density'])
+                    
+            if parameter == 'conductivity':
+                if 'ctdbp_no_seawater_conductivity' in item:
+                    param_arr.append(item['ctdbp_no_seawater_conductivity'])
+                elif 'seawater_conductivity' in item:
+                    param_arr.append(item['seawater_conductivity'])
+                else:
+                    param_arr.append(item['conductivity'])
+
             if parameter == 'time':
                 param_arr.append(self.ntp_seconds_to_datetime(item['pk']['time']))
 
@@ -110,7 +136,8 @@ class CtdData():
         Extension of get_parameters_from_rawdata. Also sound speed and
         depth can be requested.
         """
-        if parameter in ['temperature', 'pressure', 'salinity', 'time']:
+        if parameter in ['temperature', 'pressure', 'salinity', 'time',
+                         'density', 'conductivity']:
             param = self.get_parameter_from_rawdata(parameter)
         elif parameter == 'sound_speed':
             param = self.calc_sound_speed()
@@ -237,6 +264,8 @@ class CtdData():
             * 'temperature'
             * 'salinity'
             * 'pressure'
+            * 'density'
+            * 'conductivity'
         """
 
         param_dct = {}
@@ -286,6 +315,10 @@ class CtdData():
             self.pressure_profile = param_profile
         elif parameter == 'sound_speed':
             self.sound_speed_profile = param_profile
+        elif parameter == 'density':
+            self.density_profile = param_profile
+        elif parameter == 'conductivity':
+            self.conductivity_profile = param_profile
    
         return param_profile
 
