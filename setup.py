@@ -37,5 +37,6 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=install_requires,
-    cmdclass=versioneer.get_cmdclass()
+    cmdclass=versioneer.get_cmdclass(),
+    include_package_data=True
 )

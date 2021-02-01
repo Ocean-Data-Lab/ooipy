@@ -1,2 +1,4 @@
 include versioneer.py
 include ooipy/_version.py
+include README.md
+include *.txt
