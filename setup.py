@@ -36,6 +36,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['obspy', 'fsspec', 'aiohttp'],
+    install_requires=install_requires,
     cmdclass=versioneer.get_cmdclass()
 )
