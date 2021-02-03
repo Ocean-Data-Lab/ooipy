@@ -21,7 +21,6 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="ooipy",
-    version=versioneer.get_version(),
     author="OOIPy",
     author_email="ooipython@gmail.com",
     description="A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data",
@@ -37,6 +36,9 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=install_requires,
-    cmdclass=versioneer.get_cmdclass(),
-    include_package_data=True
+    use_scm_version={
+        "write_to": "_version.py",
+        "write_to_template": 'version = "{version}"\n',
+    },
+    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
 )
