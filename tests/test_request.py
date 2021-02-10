@@ -3,7 +3,9 @@ Unit tests for request module
 '''
 
 import ooipy.request.hydrophone_request as hyd_request
+import ooipy.request.ctd_request as ctd_request
 from ooipy.hydrophone.basic import HydrophoneData
+from ooipy.ctd.basic import CtdData
 import datetime
 import numpy as np
 
@@ -78,3 +80,12 @@ def test_hydrophone_node_names():
     for item in node_arr:
         hyd_data = hyd_request.get_acoustic_data_LF(starttime, endtime, node=item)
         assert hyd_data.stats.location in node_id_arr
+
+
+def test_get_ctd_data():
+    start = datetime.datetime(2016, 12, 17, 2, 0, 0)
+    end = datetime.datetime(2016, 12, 17, 3, 0, 0)
+    ctd_data = ctd_request.get_ctd_data(start, end, 'oregon_offshore', limit=120)
+    
+    assert type(ctd_data) == HydrophoneData
+    assert len(ctd_data.raw_data) > 0
