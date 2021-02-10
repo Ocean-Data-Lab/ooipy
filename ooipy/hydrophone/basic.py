@@ -88,8 +88,8 @@ class HydrophoneData(Trace):
                 'HYSB1': 2311.11, 'HYS14': 2499.09, 'AXBA1': 2257.3,
                 'AXEC2': 2421.0, 'AXCC1': 2480.98}
             f = np.linspace(0, 100, N)
-            f_calib = np.array([0,100])
-            sens_calib_db = 20*np.log10(lf_cal[self.stats.station]*1e-6)
+            f_calib = np.array([0, 100])
+            sens_calib_db = 20 * np.log10(lf_cal[self.stats.station] * 1e-6)
             sens_calib = np.array([sens_calib_db, sens_calib_db])
 
         # Calibratino for Broadband Hydrophones
@@ -110,7 +110,7 @@ class HydrophoneData(Trace):
             sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
             sens_calib = sens_calib + 128.9
             f = np.linspace(0, 32000, N)
-        
+
         else:
             raise Exception('Invalid sampling rate')
 
@@ -118,8 +118,6 @@ class HydrophoneData(Trace):
 
         f_calib = sens_interpolated(f)
         return f_calib
-        
-
 
     def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
                             overlap=0.5, verbose=True):
@@ -191,7 +189,7 @@ class HydrophoneData(Trace):
                 else:
                     sense_corr = -self.frequency_calibration(
                         int(L / 2 + 1))
-                    
+
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
 
                     specgram.append(Pxx)
