@@ -6,7 +6,8 @@ import ooipy.request.authentification
 from ooipy.ctd.basic import CtdData
 
 
-def get_ctd_data(start_datetime, end_datetime, location, limit=10000):
+def get_ctd_data(start_datetime, end_datetime, location, limit=10000,
+                 only_profilers=False):
     """
     Requests CTD data between start_detetime and end_datetime for the
     specified location if data is available. For each location, data of
@@ -56,25 +57,30 @@ def get_ctd_data(start_datetime, end_datetime, location, limit=10000):
     # Oregon Shelf
     if location == 'oregon_shelf':
         url_list = \
-            ['CE02SHBP/LJ01D/06-CTDBPN106/streamed/ctdbp_no_sample?',
-             'CE02SHSP/SP001/08-CTDPFJ000/telemetered/' +
+            ['CE02SHSP/SP001/08-CTDPFJ000/telemetered/' +
              'ctdpf_j_cspp_instrument?',
              'CE02SHSP/SP001/08-CTDPFJ000/recovered_cspp/' +
-             'ctdpf_j_cspp_instrument_recovered?',
-             'CE02SHSM/RID27/03-CTDBPC000/telemetered/' +
-             'ctdbp_cdef_dcl_instrument?']
+             'ctdpf_j_cspp_instrument_recovered?']
+        if not only_profilers:
+            url_list.extend(['CE02SHBP/LJ01D/06-CTDBPN106/streamed/' +
+                             'ctdbp_no_sample?',
+                             'CE02SHSM/RID27/03-CTDBPC000/telemetered/' +
+                             'ctdbp_cdef_dcl_instrument?'])
 
     elif location == 'oregon_offshore':
         url_list = \
             ['CE04OSPS/SF01B/2A-CTDPFA107/streamed/ctdpf_sbe43_sample?',
-             'CE04OSPS/PC01B/4A-CTDPFA109/streamed/ctdpf_optode_sample?',
-             'CE04OSSM/RID27/03-CTDBPC000/telemetered/' +
-             'ctdbp_cdef_dcl_instrument?',
              'CE04OSPD/DP01B/01-CTDPFL105/recovered_inst/' +
              'dpc_ctd_instrument_recovered?',
              'CE04OSPD/DP01B/01-CTDPFL105/recovered_wfp/' +
-             'dpc_ctd_instrument_recovered?',
-             'CE04OSBP/LJ01C/06-CTDBPO108/streamed/ctdbp_no_sample?']
+             'dpc_ctd_instrument_recovered?']
+        if not only_profilers:
+            url_list.extend(['CE04OSPS/PC01B/4A-CTDPFA109/streamed/' +
+                             'ctdpf_optode_sample?',
+                             'CE04OSSM/RID27/03-CTDBPC000/telemetered/' +
+                             'ctdbp_cdef_dcl_instrument?',
+                             'CE04OSBP/LJ01C/06-CTDBPO108/streamed/' +
+                             'ctdbp_no_sample?'])
 
     elif location == 'oregon_slope':
         url_list = \
@@ -160,6 +166,9 @@ def get_ctd_data(start_datetime, end_datetime, location, limit=10000):
              'dpc_ctd_instrument_recovered?',
              'RS03AXBS/LJ03A/12-CTDPFB301/streamed/ctdpf_optode_sample?']
 
+    else:
+        raise Exception('Do not know given location.')
+
     beginDT = start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
     endDT = end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
 
@@ -175,7 +184,8 @@ def get_ctd_data(start_datetime, end_datetime, location, limit=10000):
     return CtdData(raw_data=dataraw)
 
 
-def get_ctd_data_daily(datetime_day, location, limit=10000):
+def get_ctd_data_daily(datetime_day, location, limit=10000,
+                       only_profilers=False):
     """
     Requests CTD data for specified day and location. The day is split
     into 24 1-hour periods and for each 1-hour period
@@ -223,7 +233,8 @@ def get_ctd_data_daily(datetime_day, location, limit=10000):
         start_end_list.append((start, end))
 
     raw_data_arr = __map_concurrency(get_ctd_data_concurrent, start_end_list,
-                                     {'location': location, 'limit': limit})
+                                     {'location': location, 'limit': limit,
+                                      'only_profilers': only_profilers})
 
     raw_data_falttened = []
     for item in raw_data_arr:
@@ -255,7 +266,7 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
     return results
 
 
-def get_ctd_data_concurrent(start_end_tuple, location, limit):
+def get_ctd_data_concurrent(start_end_tuple, location, limit, only_profilers):
     """
     Helper function to support multiprocessing for
     :func:`ooipy.ctd_request.get_ctd_data_daily
@@ -263,5 +274,6 @@ def get_ctd_data_concurrent(start_end_tuple, location, limit):
     start = start_end_tuple[0]
     end = start_end_tuple[1]
 
-    rawdata = get_ctd_data(start, end, location=location, limit=limit)
+    rawdata = get_ctd_data(start, end, location=location, limit=limit,
+                           only_profilers=only_profilers)
     return rawdata
