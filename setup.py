@@ -1,11 +1,26 @@
-import setuptools
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+import os
+import setuptools
+import versioneer
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+# Dependencies.
+with open("requirements.txt") as f:
+    requirements = f.readlines()
+install_requires = [t.strip() for t in requirements]
+
+with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
 
 setuptools.setup(
     name="ooipy",
-    version="1.0.3",
     author="OOIPy",
     author_email="ooipython@gmail.com",
     description="A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data",
@@ -20,5 +35,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['obspy', 'fsspec', 'aiohttp']
+    install_requires=install_requires,
+    use_scm_version={
+        "write_to": "_version.py",
+        "write_to_template": 'version = "{version}"\n',
+    },
+    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
 )
