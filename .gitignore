@@ -16,4 +16,5 @@ debug.ipynb
 dist/
 ooipy.egg-info/
 *.wav
-_version.py
+ooi_auth.txt
+
