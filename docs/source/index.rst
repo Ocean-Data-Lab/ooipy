@@ -29,6 +29,7 @@ Modules Documentation
    :maxdepth: 2
 
    hydrophone
+   ctd
    request
    tools
 

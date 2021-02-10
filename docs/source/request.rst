@@ -13,6 +13,11 @@ Hydrophone
 .. automodule:: ooipy.request.hydrophone_request
     :members:
 
+CTD
+^^^
+.. automodule:: ooipy.request.ctd_request
+    :members:
+
 Broadband Nodes
 ^^^^^^^^^^^^^^^
     - Oregon Shelf Base Seafloor
