@@ -371,10 +371,6 @@ class CtdProfile():
     def convert_to_ssp(self):
         '''
         converts to numpy array with correct format for arlpy simulation
-        Parameters
-        ----------
-        max_depth : float
-            max depth needed for arlpy input
 
         Returns
         -------
@@ -384,10 +380,10 @@ class CtdProfile():
         '''
         ssp = np.vstack((self.depth_mean, self.parameter_mean)).T
         # insert 0 depth term
-        ssp = np.insert(ssp, 0, np.array((0, ssp[0,1])), 0)
+        ssp = np.insert(ssp, 0, np.array((0, ssp[0, 1])), 0)
 
         # remove NaN Terms
         first_nan = np.where(np.isnan(ssp))[0][0]
-        ssp = ssp[:first_nan-1,:]
+        ssp = ssp[:first_nan - 1, :]
 
         return ssp
