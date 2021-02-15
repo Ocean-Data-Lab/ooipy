@@ -1,4 +1,6 @@
-Finished Features Since Last Release
+Updates in resealse v1.1.0
+--------------------------
+
 - added HydrophoneData.wave_write()
 - HydrophoneData.plot_timeseries()
 - updated ooipy_demo.ipynb
@@ -6,9 +8,9 @@ Finished Features Since Last Release
 - added Spectrogram.plot() (calls tools.ooipypltlib.spectrogram_plot())
 - added deprecation warning to PSD.visualize()
 - psd.plot()
-- node string format change
-- sensitivy correction for all broadband
-- remove Noise Interferometry Module
+- node string format change for broadband and low frequency hydrophones (removed '/')
+- sensitivy correction for all broadband hydrophones
+- sensitivity correction for low frequency hydrophones
+- added request/ctd_request.py module
+- added ctd/basic.py module for extracting CTD data and computing parameter profiles over the water column
 
-Updates in Progress
-- sensitivity correction for low frequency
