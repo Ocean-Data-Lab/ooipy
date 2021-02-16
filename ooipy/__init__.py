@@ -7,4 +7,4 @@ from ooipy.request.authentification import set_authentification
 from ooipy.tools.ooiplotlib import plot
 import ooipy.tools.workflow
 
-from ooipy._version import version as __version__
+from _ooipy_version import version as __version__
