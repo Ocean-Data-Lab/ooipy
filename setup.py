@@ -39,6 +39,7 @@ setuptools.setup(
     use_scm_version={
         "write_to": "_ooipy_version.py",
         "write_to_template": 'version = "{version}"\n',
+        "local_scheme": "no-local-version"
     },
     setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
 )
