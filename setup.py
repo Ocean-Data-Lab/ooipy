@@ -7,7 +7,6 @@ from __future__ import (
 
 import os
 import setuptools
-import versioneer
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -36,9 +35,11 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=install_requires,
+    py_modules=["_ooipy_version"],
     use_scm_version={
-        "write_to": "_version.py",
+        "write_to": "_ooipy_version.py",
         "write_to_template": 'version = "{version}"\n',
+        "local_scheme": "no-local-version"
     },
     setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
 )
