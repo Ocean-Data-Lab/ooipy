@@ -646,7 +646,7 @@ def node_id(node):
         return 'AXEC2'
 
     else:
-        print('No node exists for name or ID ' + node_name)
+        print('No node exists for name or ID ' + node)
         return ''
 
 
