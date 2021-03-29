@@ -1,7 +1,8 @@
 '''
 This modules handles the downloading of OOI Data. As of current, the supported
 OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
-frequency hydrophones (Fs = 200 Hz).
+frequency hydrophones (Fs = 200 Hz). All supported hydrophone nodes are listed
+in the Hydrophone Nodes section below.
 
 .. sidebar:: Hydrophone Request Jupyter Notebook
 
@@ -9,6 +10,7 @@ frequency hydrophones (Fs = 200 Hz).
         Request Jupyter Notebook <_static/test_request.html>`_.
 
 '''
+
 # Import all dependancies
 from ooipy.hydrophone.basic import HydrophoneData
 from obspy import read, Stream

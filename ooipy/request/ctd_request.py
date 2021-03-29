@@ -57,9 +57,10 @@ def get_ctd_data(start_datetime, end_datetime, location, limit=10000,
 
     Returns
     -------
-    :class:`ooipy.ctd.basic.CtdProfile` object, where the data array is
-    stored in the raw_data attribute. Each data sample consists of a
-    dictionary of parameters measured by the CTD.
+    ctd_data : :class:`ooipy.ctd.basic.CtdProfile`
+        object, where the data array is stored in the raw_data attribute. Each
+        data sample consists of a dictionary of parameters measured by the CTD.
+
     """
 
     USERNAME, TOKEN = ooipy.request.authentification.get_authentification()
@@ -229,8 +230,8 @@ def get_ctd_data(start_datetime, end_datetime, location, limit=10000,
         if 'message' not in dataraw2:
             dataraw.extend(dataraw2)
             processed_ctds.append(ctd_id)
-
-    return CtdData(raw_data=dataraw)
+    ctd_data = CtdData(raw_data=dataraw)
+    return ctd_data
 
 
 def __get_instrument_id(url_str):
