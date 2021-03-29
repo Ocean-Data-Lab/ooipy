@@ -38,6 +38,9 @@ Hydrophone Nodes
 * `Oregon Slope Base Seafloor (Fs = 200 Hz) <https://ooinet.oceanobservatories.org/data_access/?search=RS01SLBS-MJ01A-05-HYDLFA101>`_
     * 'Slope_Base'
     * 'HYSB1'
+
+Hydrophone Request Modules
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 '''
 
 # Import all dependancies
