@@ -5,34 +5,55 @@ on: [push, pull_request]
 jobs:
   unit_test:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+        experimental: [false]
+        include:
+        - python-version: 3.9
+          experimental: true
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+    - name: Cache conda
+      uses: actions/cache@v2
+      env:
+        # Increase this value to reset cache if conda_envs/py${{ matrix.python-version }}.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda_envs/py${{ matrix.python-version }}.yml') }}
     - name: Install conda
       uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: ooi
-        environment-file: conda_envs/ooi_linux.yml
-        auto-update-conda: true
-        python-version: 3.8
-        miniconda-version: "latest"
+        environment-file: conda_envs/py${{ matrix.python-version }}.yml
+        python-version: ${{ matrix.python-version }}
         auto-activate-base: false
-    - shell: bash -l {0}
+        use-only-tar-bz2: true
+    - name: Print conda env
+      shell: bash -l {0}
       run: |
         conda info
         conda list
-    - name: install pytest
+    - name: Install pytest
       shell: bash -l {0}
-      run: conda install --yes pytest
-    - name: install ooipy 
+      run: mamba install --yes pytest
+    - name: Install ooipy 
       shell: bash -l {0}
       run: pip install .
-    - name: run unit tests
+    - name: Run unit tests
       shell: bash -l {0}
       env:
         FORCE_COLOR: 3
       run: pytest -vv tests
-    - name: save unit tests in file
+    - name: Save unit tests in file
       if: ${{ always() }}
       shell: bash -l {0}
       run: py.test tests &> unit_test_log.log

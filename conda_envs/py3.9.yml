@@ -1,0 +1,10 @@
+name: ooi
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - obspy
+  - fsspec
+  - aiohttp
+  - mamba
