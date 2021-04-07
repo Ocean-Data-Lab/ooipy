@@ -55,7 +55,7 @@ jobs:
         FORCE_COLOR: 3
       run: pytest -vv tests |& tee unit_test_log.log
     - name: Upload unit test log
-      if: ${{ success() | failure() }}
+      if: ${{ success() || failure() }}
       uses: actions/upload-artifact@v2
       with:
         name: unit_test_log
