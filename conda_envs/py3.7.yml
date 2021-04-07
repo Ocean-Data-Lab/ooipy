@@ -7,4 +7,5 @@ dependencies:
   - obspy
   - fsspec
   - aiohttp
+  - pandas
   - mamba
