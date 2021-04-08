@@ -11,9 +11,6 @@ jobs:
       matrix:
         python-version: [3.7, 3.8]
         experimental: [false]
-        include:
-        - python-version: 3.9
-          experimental: true
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
