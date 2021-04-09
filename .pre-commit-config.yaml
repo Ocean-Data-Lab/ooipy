@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-yaml
+      - id: pretty-format-json
+        args: ["--autofix", "--indent=2", "--no-sort-keys"]
+
+  - repo: https://github.com/ambv/black
+    rev: 19.10b0
+    hooks:
+      - id: black
+        args: ["--line-length", "100"]
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.3
+    hooks:
+      - id: flake8
+        args:
+          [
+            "--ignore",
+            "E999,N802,N806,W503,W504",
+            "--exclude=setup.py,tests,__init__.py,ooipy/__init__.py,ooipy/request/__init__.py,ooipy/hydrophone/__init__.py,,ooipy/ctd/__init__.py,ooipy/surface_buoy/__init__.py,ooipy/visualize/__init__.py,docs",
+            "--tee",
+            "--output-file=flake8_log.txt",
+          ]
+
+  - repo: https://github.com/asottile/seed-isort-config
+    rev: v2.2.0
+    hooks:
+      - id: seed-isort-config
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.2.0
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/myint/rstcheck
+    rev: master
+    hooks:
+      - id: rstcheck
