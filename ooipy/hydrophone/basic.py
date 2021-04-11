@@ -89,19 +89,18 @@ class HydrophoneData(Trace):
         assetID = self.get_asset_ID()
 
         # load calibration data as pandas dataframe
-        cal_by_assetID = pd.read_csv(filename, header=[0,1])
+        cal_by_assetID = pd.read_csv(filename, header=[0, 1])
 
         f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
         sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
         sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
-        sens_calib = 0.5*(sens_calib_0 + sens_calib_90)
-        
-        f = np.linspace(0, round(self.stats.sampling_rate/2), N) 
+        sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
+        f = np.linspace(0, round(self.stats.sampling_rate / 2), N)
 
         # Convert calibration to correct units
         if round(self.stats.sampling_rate) == 200:
             sens_calib = 20 * np.log10(sens_calib * 1e-6)
-        elif round(self.stats.sampling_rate) == 64000:           
+        elif round(self.stats.sampling_rate) == 64000:
             sens_calib = sens_calib + 128.9
         else:
             raise Exception('Invalid sampling rate')
@@ -578,31 +577,38 @@ class HydrophoneData(Trace):
         # Low frequency hydrophone
         if round(self.stats.sampling_rate) == 200:
             asset_ID = self.stats.location
-        
+
         elif round(self.stats.sampling_rate) == 64000:
             url = 'https://raw.githubusercontent.com/OOI-CabledArray/' \
                 'deployments/main/HYDBBA_deployments.csv'
             hyd_df = pd.read_csv(url)
 
-            if self.stats.location == 'LJ01D':  # LJ01D'Oregon Shelf Base Seafloor
+            # LJ01D'Oregon Shelf Base Seafloor
+            if self.stats.location == 'LJ01D':
                 ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
-            if self.stats.location == 'LJ01A':  # LJ01AOregon Slope Base Seafloor
+            # LJ01AOregon Slope Base Seafloor
+            if self.stats.location == 'LJ01A':
                 ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
-            if self.stats.location == 'PC01A':  # Oregan Slope Base Shallow
+            # Oregan Slope Base Shallow
+            if self.stats.location == 'PC01A':
                 ref = 'RS01SBPS-PC01A-08-HYDBBA103'
-            if self.stats.location == 'PC03A':  # Axial Base Shallow Profiler
+            # Axial Base Shallow Profiler
+            if self.stats.location == 'PC03A':
                 ref = 'RS03AXPS-PC03A-08-HYDBBA303'
-            if self.stats.location == 'LJ01C':  # Oregon Offshore Base Seafloor
+            # Oregon Offshore Base Seafloor
+            if self.stats.location == 'LJ01C':
                 ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
-            if self.stats.location == 'LJ03A':  # Axial Base Seafloor
+            # Axial Base Seafloor
+            if self.stats.location == 'LJ03A':
                 ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
 
             hyd_df['referenceDesignator']
 
             df_ref = hyd_df.loc[hyd_df['referenceDesignator'] == ref]
 
-            df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime) &
-                                (df_ref['endTime'] > self.stats.starttime)]
+            df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime)
+                                  & (df_ref['endTime']
+                                  > self.stats.starttime)]
             df_end = df_ref.loc[(df_ref['startTime'] < self.stats.endtime) &
                                 (df_ref['endTime'] > self.stats.endtime)]
 
@@ -610,10 +616,10 @@ class HydrophoneData(Trace):
                 idx = df_start.index.to_numpy()
                 asset_ID = df_start['assetID'][int(idx)]
             else:
-                raise Exception('Hydrophone Data involves multiple deployments.'
-                                'Feature to be added later')
+                raise Exception('Hydrophone Data involves multiple'
+                                'deployments. Feature to be added later')
         else:
-            raise Exception ('Invalid hydrophone sampling rate')
+            raise Exception('Invalid hydrophone sampling rate')
 
         return asset_ID
 
