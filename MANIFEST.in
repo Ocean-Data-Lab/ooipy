@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
 include *.txt
-include ooipy/hydrophone/calibration_by_assetID.pkl
+include ooipy/hydrophone/calibration_by_assetID.csv
