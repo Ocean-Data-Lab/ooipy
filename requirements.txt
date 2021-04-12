@@ -1,3 +1,4 @@
 obspy
 fsspec
 aiohttp
+pandas

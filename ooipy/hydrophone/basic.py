@@ -82,35 +82,26 @@ class HydrophoneData(Trace):
         output_array : np.array
             array with correction coefficient for every frequency
         """
-        # Calibration for Low Frequency Hydrophones
+        # Load calibation file and get appropriate calibration info
+        filename = os.path.dirname(ooipy.__file__) + \
+            '/hydrophone/calibration_by_assetID.csv'
+        # Use deployment CSV to determine asset_ID
+        assetID = self.get_asset_ID()
+
+        # load calibration data as pandas dataframe
+        cal_by_assetID = pd.read_csv(filename, header=[0, 1])
+
+        f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
+        sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
+        sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
+        sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
+        f = np.linspace(0, round(self.stats.sampling_rate / 2), N)
+
+        # Convert calibration to correct units
         if round(self.stats.sampling_rate) == 200:
-            lf_cal = {
-                'HYSB1': 2311.11, 'HYS14': 2499.09, 'AXBA1': 2257.3,
-                'AXEC2': 2421.0, 'AXCC1': 2480.98}
-            f = np.linspace(0, 100, N)
-            f_calib = np.array([0, 100])
-            sens_calib_db = 20 * np.log10(lf_cal[self.stats.station] * 1e-6)
-            sens_calib = np.array([sens_calib_db, sens_calib_db])
-
-        # Calibratino for Broadband Hydrophones
+            sens_calib = 20 * np.log10(sens_calib * 1e-6)
         elif round(self.stats.sampling_rate) == 64000:
-            filename = os.path.dirname(ooipy.__file__) + \
-                '/hydrophone/calibration_by_assetID.pkl'
-            # Use deployment CSV to determine asset_ID
-            assetID = self.get_asset_ID()
-
-            # load calibration data as pandas dataframe
-            with open(filename, 'rb') as f:
-                cal_by_assetID = pickle.load(f)
-
-            f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
-            sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
-            sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
-            # Average 0 and 90 degree phase response
-            sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
             sens_calib = sens_calib + 128.9
-            f = np.linspace(0, 32000, N)
-
         else:
             raise Exception('Invalid sampling rate')
 
@@ -306,14 +297,16 @@ class HydrophoneData(Trace):
             temp_slice = self.slice(starttime=UTCDateTime(starttime),
                                     endtime=UTCDateTime(endtime))
             tmp_obj = HydrophoneData(data=temp_slice.data,
-                                     header=temp_slice.stats)
+                                     header=temp_slice.stats,
+                                     node=self.stats.location)
             ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
         starttime = self.stats.starttime + datetime.timedelta(
             seconds=(N - 1) * seconds_per_process)
         temp_slice = self.slice(starttime=UTCDateTime(starttime),
                                 endtime=UTCDateTime(self.stats.endtime))
-        tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats)
+        tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats,
+                                 node=self.stats.location)
         ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
         with mp.get_context("spawn").Pool(n_process) as p:
@@ -488,7 +481,8 @@ class HydrophoneData(Trace):
                 temp_slice = self.slice(starttime=UTCDateTime(starttime),
                                         endtime=UTCDateTime(endtime))
                 tmp_obj = HydrophoneData(data=temp_slice.data,
-                                         header=temp_slice.stats)
+                                         header=temp_slice.stats,
+                                         node=self.stats.location)
                 ooi_hyd_data_list.append(
                     (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
@@ -499,7 +493,8 @@ class HydrophoneData(Trace):
             temp_slice = self.slice(starttime=UTCDateTime(starttime),
                                     endtime=UTCDateTime(self.stats.endtime))
             tmp_obj = HydrophoneData(data=temp_slice.data,
-                                     header=temp_slice.stats)
+                                     header=temp_slice.stats,
+                                     node=self.stats.location)
             ooi_hyd_data_list.append(
                 (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # use segmentation specified by split
@@ -509,7 +504,8 @@ class HydrophoneData(Trace):
                 temp_slice = self.slice(starttime=UTCDateTime(row[0]),
                                         endtime=UTCDateTime(row[1]))
                 tmp_obj = HydrophoneData(data=temp_slice.data,
-                                         header=temp_slice.stats)
+                                         header=temp_slice.stats,
+                                         node=self.stats.location)
                 ooi_hyd_data_list.append(
                     (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
@@ -570,38 +566,61 @@ class HydrophoneData(Trace):
         wavfile.write(filename, int(sampling_rate), data)
 
     def get_asset_ID(self):
-        url = 'https://raw.githubusercontent.com/OOI-CabledArray/' \
-            'deployments/main/HYDBBA_deployments.csv'
-        hyd_df = pd.read_csv(url)
+        '''
+        get_asset_ID returns the hydrophone asset ID for a given data sample.
+        This data can be foun `here <https://raw.githubusercontent.com/
+        OOI-CabledArray/deployments/main/HYDBBA_deployments.csv'>`_ for
+        broadband hydrophones. Since Low frequency hydrophones remain
+        constant with location and time, if the hydrophone is low frequency,
+        the node ID is returned
+        '''
+        # Low frequency hydrophone
+        if round(self.stats.sampling_rate) == 200:
+            asset_ID = self.stats.location
 
-        if self.stats.location == 'LJ01D':  # LJ01D'Oregon Shelf Base Seafloor
-            ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
-        if self.stats.location == 'LJ01A':  # LJ01AOregon Slope Base Seafloor
-            ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
-        if self.stats.location == 'PC01A':  # Oregan Slope Base Shallow
-            ref = 'RS01SBPS-PC01A-08-HYDBBA103'
-        if self.stats.location == 'PC03A':  # Axial Base Shallow Profiler
-            ref = 'RS03AXPS-PC03A-08-HYDBBA303'
-        if self.stats.location == 'LJ01C':  # Oregon Offshore Base Seafloor
-            ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
-        if self.stats.location == 'LJ03A':  # Axial Base Seafloor
-            ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
+        elif round(self.stats.sampling_rate) == 64000:
+            url = 'https://raw.githubusercontent.com/OOI-CabledArray/' \
+                'deployments/main/HYDBBA_deployments.csv'
+            hyd_df = pd.read_csv(url)
 
-        hyd_df['referenceDesignator']
+            # LJ01D'Oregon Shelf Base Seafloor
+            if self.stats.location == 'LJ01D':
+                ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
+            # LJ01AOregon Slope Base Seafloor
+            if self.stats.location == 'LJ01A':
+                ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
+            # Oregan Slope Base Shallow
+            if self.stats.location == 'PC01A':
+                ref = 'RS01SBPS-PC01A-08-HYDBBA103'
+            # Axial Base Shallow Profiler
+            if self.stats.location == 'PC03A':
+                ref = 'RS03AXPS-PC03A-08-HYDBBA303'
+            # Oregon Offshore Base Seafloor
+            if self.stats.location == 'LJ01C':
+                ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
+            # Axial Base Seafloor
+            if self.stats.location == 'LJ03A':
+                ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
 
-        df_ref = hyd_df.loc[hyd_df['referenceDesignator'] == ref]
+            hyd_df['referenceDesignator']
 
-        df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime) &
-                              (df_ref['endTime'] > self.stats.starttime)]
-        df_end = df_ref.loc[(df_ref['startTime'] < self.stats.endtime) &
-                            (df_ref['endTime'] > self.stats.endtime)]
+            df_ref = hyd_df.loc[hyd_df['referenceDesignator'] == ref]
 
-        if df_start.index.to_numpy() == df_end.index.to_numpy():
-            idx = df_start.index.to_numpy()
-            asset_ID = df_start['assetID'][int(idx)]
+            df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime)
+                                  & (df_ref['endTime']
+                                  > self.stats.starttime)]
+            df_end = df_ref.loc[(df_ref['startTime'] < self.stats.endtime) &
+                                (df_ref['endTime'] > self.stats.endtime)]
+
+            if df_start.index.to_numpy() == df_end.index.to_numpy():
+                idx = df_start.index.to_numpy()
+                asset_ID = df_start['assetID'][int(idx)]
+            else:
+                raise Exception('Hydrophone Data involves multiple'
+                                'deployments. Feature to be added later')
         else:
-            raise Exception('Hydrophone Data involves multiple deployments.'
-                            'Feature to be added later')
+            raise Exception('Invalid hydrophone sampling rate')
+
         return asset_ID
 
 

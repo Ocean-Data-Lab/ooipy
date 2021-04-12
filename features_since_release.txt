@@ -14,3 +14,7 @@ Updates in resealse v1.1.0
 - added request/ctd_request.py module
 - added ctd/basic.py module for extracting CTD data and computing parameter profiles over the water column
 
+Updates in release v1.1.1
+-------------------------
+
+- bug fixes in multiprocessing functions and hydrophone sensitivity correction
