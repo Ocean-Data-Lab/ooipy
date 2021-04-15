@@ -3,11 +3,13 @@ This modules provides some useful functions for saving spectrograms and
 power spectral density objects.
 """
 
-# Import all dependancies
-import numpy as np
-from ooipy.hydrophone.basic import Spectrogram, Psd
 import json
 import pickle
+
+# Import all dependancies
+import numpy as np
+
+from ooipy.hydrophone.basic import Psd, Spectrogram
 
 
 def save(save_obj, filename, **kwargs):
@@ -35,7 +37,7 @@ def save(save_obj, filename, **kwargs):
     elif isinstance(save_obj, Psd):
         save_psd(save_obj, filename, **kwargs)
     else:
-        raise Exception('Fuction only supports spectrogram and PSD objects.')
+        raise Exception("Fuction only supports spectrogram and PSD objects.")
 
 
 def save_psd(psd_obj, filename, **kwargs):
@@ -64,8 +66,7 @@ def save_psd(psd_obj, filename, **kwargs):
     if not isinstance(f, list):
         f = f.tolist()
 
-    dct = {'psd': values,
-           'values': f}
+    dct = {"psd": values, "values": f}
 
     # store ancillary data in dictionary
     for key, value in kwargs.items():
@@ -76,7 +77,7 @@ def save_psd(psd_obj, filename, **kwargs):
         else:
             dct[key] = value
 
-    with open(filename, 'w+') as outfile:
+    with open(filename, "w+") as outfile:
         json.dump(dct, outfile)
 
 
@@ -96,12 +97,14 @@ def save_spectrogram(spectrogram_obj, filename, **kwargs):
         value will be saved as dictionary entries
     """
 
-    dct = {'time': spectrogram_obj.time,
-           'frequency': spectrogram_obj.freq,
-           'values': spectrogram_obj.values}
+    dct = {
+        "time": spectrogram_obj.time,
+        "frequency": spectrogram_obj.freq,
+        "values": spectrogram_obj.values,
+    }
 
     for key, value in kwargs.items():
         dct[key] = value
 
-    with open(filename, 'wb') as outfile:
+    with open(filename, "wb") as outfile:
         pickle.dump(dct, outfile)

@@ -1,4 +1,5 @@
 import os.path
+
 """
 This module provides functions for the automatic authentification at the
 OOI. The authentification is based on a username and a token, which will
@@ -22,10 +23,10 @@ def set_authentification(username, token):
         with "TEMP-TOKEN-...".
     """
 
-    filename = 'ooi_auth.txt'
+    filename = "ooi_auth.txt"
     if not os.path.isfile(filename):
-        file = open(filename, 'w+')
-        file.write('username\n' + username + '\n' + 'token\n' + token)
+        file = open(filename, "w+")
+        file.write("username\n" + username + "\n" + "token\n" + token)
         file.close()
 
 
@@ -38,11 +39,11 @@ def get_authentification():
     (str, str)
     """
 
-    filename = 'ooi_auth.txt'
+    filename = "ooi_auth.txt"
     if os.path.isfile(filename):
-        file = open(filename, 'r')
+        file = open(filename, "r")
         auth = file.readlines()
-        username = auth[1].split('\n')[0]
-        token = auth[3].split('\n')[0]
+        username = auth[1].split("\n")[0]
+        token = auth[3].split("\n")[0]
         file.close()
         return username, token
