@@ -25,7 +25,6 @@ import os
 import pandas as pd
 
 
-
 class HydrophoneData(Trace):
     """
     Object that stores hydrophone data
