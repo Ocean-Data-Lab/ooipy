@@ -21,8 +21,9 @@ import pickle
 from scipy.io import wavfile
 import warnings
 import ooipy
-import pandas as pd
 import os
+import pandas as pd
+
 
 
 class HydrophoneData(Trace):
