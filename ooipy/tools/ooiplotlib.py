@@ -179,7 +179,9 @@ def plot_spectrogram(spec_obj, **kwargs):
     v = spec_obj.values[:: kwargs["res_reduction_time"], :: kwargs["res_reduction_freq"]]
     if len(spec_obj.time) != len(spec_obj.values):
         t = np.linspace(
-            0, len(spec_obj.values) - 1, int(len(spec_obj.values) / kwargs["res_reduction_time"])
+            0,
+            len(spec_obj.values) - 1,
+            int(len(spec_obj.values) / kwargs["res_reduction_time"]),
         )
     else:
         t = spec_obj.time[:: kwargs["res_reduction_time"]]
@@ -401,7 +403,9 @@ def plot_timeseries(HydData_obj, **kwargs):
     data_reduce = HydData_obj.data[:: kwargs["res_reduction_time"]]
     if len(time) != len(HydData_obj.data):
         t = np.linspace(
-            0, len(HydData_obj.data) - 1, int(len(HydData_obj.data) / kwargs["res_reduction_time"])
+            0,
+            len(HydData_obj.data) - 1,
+            int(len(HydData_obj.data) / kwargs["res_reduction_time"]),
         )
     else:
         t = time[:: kwargs["res_reduction_time"]]
@@ -525,7 +529,11 @@ def plot_ctd_profile(ctd_profile, **kwargs):
         y1 = ctd_profile.parameter_mean - 2 * np.sqrt(ctd_profile.parameter_var)
         y2 = ctd_profile.parameter_mean + 2 * np.sqrt(ctd_profile.parameter_var)
         plt.fill_betweenx(
-            ctd_profile.depth_mean, y1, y2, alpha=kwargs["alpha"], color=kwargs["var_color"]
+            ctd_profile.depth_mean,
+            y1,
+            y2,
+            alpha=kwargs["alpha"],
+            color=kwargs["var_color"],
         )
     plt.ylim([kwargs["max_depth"], kwargs["min_depth"]])
     plt.ylabel(kwargs["ylabel"])

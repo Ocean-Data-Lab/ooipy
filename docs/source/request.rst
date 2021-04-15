@@ -10,7 +10,7 @@ Server.
 
 Hydrophone
 ^^^^^^^^^^
-    
+
 .. automodule:: ooipy.request.hydrophone_request
     :members:
 

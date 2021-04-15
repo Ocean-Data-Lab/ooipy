@@ -497,11 +497,23 @@ def ooipy_read(
 
     if device == "broadband_hydrophone":
         hydrophone_data = get_acoustic_data(
-            starttime, endtime, node, fmin, fmax, verbose=verbose, data_gap_mode=data_gap_mode
+            starttime,
+            endtime,
+            node,
+            fmin,
+            fmax,
+            verbose=verbose,
+            data_gap_mode=data_gap_mode,
         )
     elif device == "low_frequency_hydrophone":
         hydrophone_data = get_acoustic_data_LF(
-            starttime, endtime, node, fmin=fmin, fmax=fmax, verbose=verbose, zero_mean=zero_mean
+            starttime,
+            endtime,
+            node,
+            fmin=fmin,
+            fmax=fmax,
+            verbose=verbose,
+            zero_mean=zero_mean,
         )
     else:
         raise Exception("Invalid Devic String")

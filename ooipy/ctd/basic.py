@@ -138,7 +138,14 @@ class CtdData:
         Extension of get_parameters_from_rawdata. Also sound speed and
         depth can be requested.
         """
-        if parameter in ["temperature", "pressure", "salinity", "time", "density", "conductivity"]:
+        if parameter in [
+            "temperature",
+            "pressure",
+            "salinity",
+            "time",
+            "density",
+            "conductivity",
+        ]:
             param = self.get_parameter_from_rawdata(parameter)
         elif parameter == "sound_speed":
             param = self.calc_sound_speed()
