@@ -3,9 +3,10 @@ from __future__ import (
     division,
     print_function,
     unicode_literals,
-)
+)  # noqa
 
 import os
+
 import setuptools
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -33,13 +34,13 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     install_requires=install_requires,
     py_modules=["_ooipy_version"],
     use_scm_version={
         "write_to": "_ooipy_version.py",
         "write_to_template": 'version = "{version}"\n',
-        "local_scheme": "no-local-version"
+        "local_scheme": "no-local-version",
     },
-    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
+    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"],
 )
