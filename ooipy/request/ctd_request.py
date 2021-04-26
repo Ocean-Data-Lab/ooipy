@@ -78,70 +78,70 @@ def get_ctd_data(
     # Oregon Shelf
     if location == "oregon_shelf":
         url_list = [
-            "CE02SHSP/SP001/08-CTDPFJ000/telemetered/" + "ctdpf_j_cspp_instrument?",
-            "CE02SHSP/SP001/08-CTDPFJ000/recovered_cspp/" + "ctdpf_j_cspp_instrument_recovered?",
+            "CE02SHSP/SP001/08-CTDPFJ000/telemetered/ctdpf_j_cspp_instrument?",
+            "CE02SHSP/SP001/08-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "CE02SHBP/LJ01D/06-CTDBPN106/streamed/" + "ctdbp_no_sample?",
-                    "CE02SHSM/RID27/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE02SHBP/LJ01D/06-CTDBPN106/streamed/ctdbp_no_sample?",
+                    "CE02SHSM/RID27/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                 ]
             )
 
     elif location == "oregon_offshore":
         url_list = [
             "CE04OSPS/SF01B/2A-CTDPFA107/streamed/ctdpf_sbe43_sample?",
-            "CE04OSPD/DP01B/01-CTDPFL105/recovered_inst/" + "dpc_ctd_instrument_recovered?",
-            "CE04OSPD/DP01B/01-CTDPFL105/recovered_wfp/" + "dpc_ctd_instrument_recovered?",
+            "CE04OSPD/DP01B/01-CTDPFL105/recovered_inst/dpc_ctd_instrument_recovered?",
+            "CE04OSPD/DP01B/01-CTDPFL105/recovered_wfp/dpc_ctd_instrument_recovered?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "CE04OSPS/PC01B/4A-CTDPFA109/streamed/" + "ctdpf_optode_sample?",
-                    "CE04OSSM/RID27/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
-                    "CE04OSBP/LJ01C/06-CTDBPO108/streamed/" + "ctdbp_no_sample?",
+                    "CE04OSPS/PC01B/4A-CTDPFA109/streamed/ctdpf_optode_sample?",
+                    "CE04OSSM/RID27/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
+                    "CE04OSBP/LJ01C/06-CTDBPO108/streamed/ctdbp_no_sample?",
                 ]
             )
 
     elif location == "oregon_slope":
         url_list = [
-            "RS01SBPD/DP01A/01-CTDPFL104/recovered_inst/" + "dpc_ctd_instrument_recovered?",
-            "RS01SBPD/DP01A/01-CTDPFL104/recovered_wfp/" + "dpc_ctd_instrument_recovered?",
+            "RS01SBPD/DP01A/01-CTDPFL104/recovered_inst/dpc_ctd_instrument_recovered?",
+            "RS01SBPD/DP01A/01-CTDPFL104/recovered_wfp/dpc_ctd_instrument_recovered?",
             "RS01SBPS/SF01A/2A-CTDPFA102/streamed/ctdpf_sbe43_sample?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "RS01SBPS/PC01A/4A-CTDPFA103/streamed/" + "ctdpf_optode_sample?",
-                    "RS01SLBS/LJ01A/12-CTDPFB101/streamed/" + "ctdpf_optode_sample?",
+                    "RS01SBPS/PC01A/4A-CTDPFA103/streamed/ctdpf_optode_sample?",
+                    "RS01SLBS/LJ01A/12-CTDPFB101/streamed/ctdpf_optode_sample?",
                 ]
             )
 
     elif location == "oregon_inshore":
         url_list = [
-            "CE01ISSP/SP001/09-CTDPFJ000/recovered_cspp/" + "ctdpf_j_cspp_instrument_recovered?",
-            "CE01ISSP/SP001/09-CTDPFJ000/telemetered/" + "ctdpf_j_cspp_instrument?",
+            "CE01ISSP/SP001/09-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?",
+            "CE01ISSP/SP001/09-CTDPFJ000/telemetered/ctdpf_j_cspp_instrument?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "CE01ISSM/SBD17/06-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE01ISSM/SBD17/06-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE01ISSM/SBD17/06-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
                     "CE01ISSM/RID16/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE01ISSM/RID16/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE01ISSM/RID16/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE01ISSM/MFD37/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE01ISSM/MFD37/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE01ISSM/MFD37/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                 ]
             )
 
     elif location == "washington_inshore":
         url_list = [
-            "CE06ISSP/SP001/09-CTDPFJ000/telemetered/" + "ctdpf_j_cspp_instrument?",
-            "CE06ISSP/SP001/09-CTDPFJ000/recovered_cspp/" + "ctdpf_j_cspp_instrument_recovered?",
+            "CE06ISSP/SP001/09-CTDPFJ000/telemetered/ctdpf_j_cspp_instrument?",
+            "CE06ISSP/SP001/09-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?",
         ]
         if not only_profilers:
             url_list.extend(
@@ -150,27 +150,25 @@ def get_ctd_data(
                     + "ctdbp_cdef_dcl_instrument_recovered?",
                     "CE06ISSM/SBD17/06-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE06ISSM/SBD17/06-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE06ISSM/SBD17/06-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE06ISSM/RID16/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE06ISSM/RID16/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
-                    "CE06ISSM/MFD37/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE06ISSM/RID16/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
+                    "CE06ISSM/MFD37/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE06ISSM/MFD37/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
                 ]
             )
 
     elif location == "washington_shelf":
-        url_list = [
-            "CE07SHSP/SP001/08-CTDPFJ000/recovered_cspp/" + "ctdpf_j_cspp_instrument_recovered?"
-        ]
+        url_list = ["CE07SHSP/SP001/08-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?"]
         if not only_profilers:
             url_list.extend(
                 [
-                    "CE07SHSM/RID27/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE07SHSM/RID27/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE07SHSM/RID27/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE07SHSM/MFD37/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE07SHSM/MFD37/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE07SHSM/MFD37/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
                 ]
@@ -178,16 +176,16 @@ def get_ctd_data(
 
     elif location == "washington_offshore":
         url_list = [
-            "CE09OSPM/WFP01/03-CTDPFK000/telemetered/" + "ctdpf_ckl_wfp_instrument?",
-            "CE09OSPM/WFP01/03-CTDPFK000/recovered_wfp/" + "ctdpf_ckl_wfp_instrument_recovered?",
+            "CE09OSPM/WFP01/03-CTDPFK000/telemetered/ctdpf_ckl_wfp_instrument?",
+            "CE09OSPM/WFP01/03-CTDPFK000/recovered_wfp/ctdpf_ckl_wfp_instrument_recovered?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "CE09OSSM/RID27/03-CTDBPC000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE09OSSM/RID27/03-CTDBPC000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE09OSSM/RID27/03-CTDBPC000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
-                    "CE09OSSM/MFD37/03-CTDBPE000/telemetered/" + "ctdbp_cdef_dcl_instrument?",
+                    "CE09OSSM/MFD37/03-CTDBPE000/telemetered/ctdbp_cdef_dcl_instrument?",
                     "CE09OSSM/MFD37/03-CTDBPE000/recovered_inst/"
                     + "ctdbp_cdef_instrument_recovered?",
                 ]
@@ -195,15 +193,15 @@ def get_ctd_data(
 
     elif location == "axial_base":
         url_list = [
-            "RS03AXPD/DP03A/01-CTDPFL304/recovered_inst/" + "dpc_ctd_instrument_recovered?",
-            "RS03AXPD/DP03A/01-CTDPFL304/recovered_wfp/" + "dpc_ctd_instrument_recovered?",
+            "RS03AXPD/DP03A/01-CTDPFL304/recovered_inst/dpc_ctd_instrument_recovered?",
+            "RS03AXPD/DP03A/01-CTDPFL304/recovered_wfp/dpc_ctd_instrument_recovered?",
             "RS03AXPS/SF03A/2A-CTDPFA302/streamed/ctdpf_sbe43_sample?",
         ]
         if not only_profilers:
             url_list.extend(
                 [
-                    "RS03AXPS/PC03A/4A-CTDPFA303/streamed/" + "ctdpf_optode_sample?",
-                    "RS03AXBS/LJ03A/12-CTDPFB301/streamed/" + "ctdpf_optode_sample?",
+                    "RS03AXPS/PC03A/4A-CTDPFA303/streamed/ctdpf_optode_sample?",
+                    "RS03AXBS/LJ03A/12-CTDPFB301/streamed/ctdpf_optode_sample?",
                 ]
             )
 
