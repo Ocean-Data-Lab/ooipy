@@ -26,6 +26,7 @@ repos:
             "E999,N802,N806,W503,W504",
             "--exclude=setup.py,tests,__init__.py,ooipy/__init__.py,ooipy/request/__init__.py,ooipy/hydrophone/__init__.py,,ooipy/ctd/__init__.py,ooipy/surface_buoy/__init__.py,ooipy/visualize/__init__.py,docs",
             "--tee",
+            "--max-line-length=100",
             "--output-file=flake8_log.txt",
           ]
 
