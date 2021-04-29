@@ -132,6 +132,10 @@ def plot_spectrogram(spec_obj, **kwargs):
             reduction factor of frequency domain resolution. This can
             facilitate faster plotting of large spectroagm objects.
             Default is 1 (no reduction)
+        * dpi : int
+            dots per inch, passed to matplotlib figure.savefig()
+        * fontsize : int
+            fontsize of saved plot, passed to matplotlib figure
     """
     # check for keys
     if "plot" not in kwargs:
@@ -168,11 +172,15 @@ def plot_spectrogram(spec_obj, **kwargs):
         kwargs["res_reduction_time"] = 1
     if "res_reduction_freq" not in kwargs:
         kwargs["res_reduction_freq"] = 1
+    if "dpi" not in kwargs:
+        kwargs["dpi"] = 100
+    if "fontsize" not in kwargs:
+        kwargs["fontsize"] = 22
 
     # set backend for plotting/saving:
     if not kwargs["plot"]:
         matplotlib.use("Agg")
-    font = {"size": 22}
+    font = {"size": kwargs["fontsize"]}
     matplotlib.rc("font", **font)
 
     # reduce resolution in time and frequency
@@ -222,7 +230,7 @@ def plot_spectrogram(spec_obj, **kwargs):
         ax.xaxis.set_major_formatter(mdates.DateFormatter(kwargs["xlabel_format"]))
 
     if kwargs["save"]:
-        plt.savefig(kwargs["filename"], bbox_inches="tight")
+        plt.savefig(kwargs["filename"], bbox_inches="tight", dpi=kwargs["dpi"])
 
     if not kwargs["plot"]:
         plt.close(fig)
@@ -264,6 +272,10 @@ def plot_psd(psd_obj, **kwargs):
             upper limit of level axis (colormap). Default is 80
         * figsize : (int, int)
             width and height of figure. Default is (16, 9)
+        * dpi : int
+            dots per inch, passed to matplotlib figure.savefig()
+        * fontsize : int
+            fontsize of saved plot, passed to matplotlib figure
     """
 
     # check for keys
@@ -293,11 +305,15 @@ def plot_psd(psd_obj, **kwargs):
         kwargs["vmax"] = 80.0
     if "figsize" not in kwargs:
         kwargs["figsize"] = (16, 9)
+    if "dpi" not in kwargs:
+        kwargs["dpi"] = 100
+    if "fontsize" not in kwargs:
+        kwargs["fontsize"] = 22
 
     # set backend for plotting/saving:
     if not kwargs["plot"]:
         matplotlib.use("Agg")
-    font = {"size": 22}
+    font = {"size": kwargs["fontsize"]}
     matplotlib.rc("font", **font)
 
     if len(psd_obj.freq) != len(psd_obj.values):
@@ -318,7 +334,7 @@ def plot_psd(psd_obj, **kwargs):
     plt.grid(True)
 
     if kwargs["save"]:
-        plt.savefig(kwargs["filename"], bbox_inches="tight")
+        plt.savefig(kwargs["filename"], bbox_inches="tight", dpi=kwargs["dpi"])
 
     if not kwargs["plot"]:
         plt.close(fig)
@@ -356,6 +372,10 @@ def plot_timeseries(HydData_obj, **kwargs):
             reduction factor of time domain resolution. This can
             facilitate faster plotting of large spectroagm objects.
             Default is 1 (no reduction)
+        * dpi : int
+            dots per inch, passed to matplotlib figure.savefig()
+        * fontsize : int
+            fontsize of saved plot, passed to matplotlib figure
     """
     # check for keys
     if "plot" not in kwargs:
@@ -470,6 +490,10 @@ def plot_ctd_profile(ctd_profile, **kwargs):
         * max_depth : int or float
             lower limit of vertical axis (depth axis). Default is
             max(ctd_profile.depth_mean) + 10
+        * dpi : int
+            dots per inch, passed to matplotlib figure.savefig()
+        * fontsize : int
+            fontsize of saved plot, passed to matplotlib figure
     """
 
     # check for keys
@@ -507,11 +531,15 @@ def plot_ctd_profile(ctd_profile, **kwargs):
         kwargs["min_depth"] = max(ctd_profile.depth_mean[0] - 10, 0)
     if "max_depth" not in kwargs:
         kwargs["max_depth"] = np.nanmax(ctd_profile.depth_mean) + 10
+    if "dpi" not in kwargs:
+        kwargs["dpi"] = 100
+    if "fontsize" not in kwargs:
+        kwargs["fontsize"] = 22
 
     # set backend for plotting/saving:
     if not kwargs["plot"]:
         matplotlib.use("Agg")
-    font = {"size": 22}
+    font = {"size": kwargs["fontsize"]}
     matplotlib.rc("font", **font)
 
     # plot PSD object
@@ -542,7 +570,7 @@ def plot_ctd_profile(ctd_profile, **kwargs):
     plt.grid(True)
 
     if kwargs["save"]:
-        plt.savefig(kwargs["filename"], bbox_inches="tight")
+        plt.savefig(kwargs["filename"], bbox_inches="tight", dpi=kwargs["dpi"])
 
     if not kwargs["plot"]:
         plt.close(fig)
