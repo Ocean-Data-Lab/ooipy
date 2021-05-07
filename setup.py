@@ -28,6 +28,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ooipy/ooipy",
     packages=setuptools.find_packages(exclude=("tests")),
+    include_package_data=True,
+    package_data={"": ["hydrophone/*.csv"]},
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
