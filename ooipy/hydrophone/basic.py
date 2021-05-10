@@ -162,6 +162,9 @@ class HydrophoneData(Trace):
         else:
             nbins = int(np.ceil(len(self.data) / (avg_time * fs)))
 
+        # sensitivity correction
+        sense_corr = -self.frequency_calibration(int(L / 2 + 1))
+
         # compute spectrogram. For avg_time=None
         # (periodogram for each time step), the last data samples are ignored
         # if len(noise[0].data) != k * L
@@ -177,8 +180,6 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
 
                     specgram.append(Pxx)
@@ -204,8 +205,6 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
                     time.append(
@@ -230,8 +229,6 @@ class HydrophoneData(Trace):
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
                     time.append(
