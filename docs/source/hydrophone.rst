@@ -8,4 +8,3 @@ Basic Hydrophone Functions
 
 .. automodule:: ooipy.hydrophone.basic
     :members:
-

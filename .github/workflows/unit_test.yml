@@ -43,7 +43,7 @@ jobs:
     - name: Install pytest
       shell: bash -l {0}
       run: mamba install --yes pytest
-    - name: Install ooipy 
+    - name: Install ooipy
       shell: bash -l {0}
       run: pip install .
     - name: Run unit tests
@@ -57,5 +57,3 @@ jobs:
       with:
         name: unit_test_log
         path: unit_test_log.log
-   
-    

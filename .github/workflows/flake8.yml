@@ -24,4 +24,3 @@ jobs:
         with:
           name: flake8_artifact
           path: flake8_log.txt
-

@@ -5,24 +5,26 @@ The HydrophoneData objects inherits from obspy.Trace. Furthermore,
 methods for computing spectrograms and power spectral densities are
 added.
 """
-import numpy as np
+import datetime
 import json
+import multiprocessing as mp
+import os
+import pickle
+import warnings
+
+import matplotlib
+import matplotlib.colors as colors
+import matplotlib.dates as mdates
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from obspy import Trace
 from obspy.core import UTCDateTime
 from scipy import signal
 from scipy.interpolate import interp1d
-import matplotlib.dates as mdates
-import matplotlib.colors as colors
-import matplotlib
-import datetime
-import multiprocessing as mp
-import pickle
 from scipy.io import wavfile
-import warnings
+
 import ooipy
-import pandas as pd
-import os
 
 
 class HydrophoneData(Trace):
@@ -49,7 +51,7 @@ class HydrophoneData(Trace):
 
     """
 
-    def __init__(self, data=np.array([]), header=None, node=''):
+    def __init__(self, data=np.array([]), header=None, node=""):
 
         super().__init__(data, header)
         self.stats.location = node_id(node)
@@ -83,17 +85,16 @@ class HydrophoneData(Trace):
             array with correction coefficient for every frequency
         """
         # Load calibation file and get appropriate calibration info
-        filename = os.path.dirname(ooipy.__file__) + \
-            '/hydrophone/calibration_by_assetID.csv'
+        filename = os.path.dirname(ooipy.__file__) + "/hydrophone/calibration_by_assetID.csv"
         # Use deployment CSV to determine asset_ID
         assetID = self.get_asset_ID()
 
         # load calibration data as pandas dataframe
         cal_by_assetID = pd.read_csv(filename, header=[0, 1])
 
-        f_calib = cal_by_assetID[assetID]['Freq (kHz)'].to_numpy() * 1000
-        sens_calib_0 = cal_by_assetID[assetID]['0 phase'].to_numpy()
-        sens_calib_90 = cal_by_assetID[assetID]['90 phase'].to_numpy()
+        f_calib = cal_by_assetID[assetID]["Freq (kHz)"].to_numpy() * 1000
+        sens_calib_0 = cal_by_assetID[assetID]["0 phase"].to_numpy()
+        sens_calib_90 = cal_by_assetID[assetID]["90 phase"].to_numpy()
         sens_calib = 0.5 * (sens_calib_0 + sens_calib_90)
         f = np.linspace(0, round(self.stats.sampling_rate / 2), N)
 
@@ -103,15 +104,14 @@ class HydrophoneData(Trace):
         elif round(self.stats.sampling_rate) == 64000:
             sens_calib = sens_calib + 128.9
         else:
-            raise Exception('Invalid sampling rate')
+            raise Exception("Invalid sampling rate")
 
         sens_interpolated = interp1d(f_calib, sens_calib)
 
         f_calib = sens_interpolated(f)
         return f_calib
 
-    def compute_spectrogram(self, win='hann', L=4096, avg_time=None,
-                            overlap=0.5, verbose=True):
+    def compute_spectrogram(self, win="hann", L=4096, avg_time=None, overlap=0.5, verbose=True):
         """
         Compute spectrogram of acoustic signal. For each time step of the
         spectrogram either a modified periodogram (avg_time=None)
@@ -149,7 +149,7 @@ class HydrophoneData(Trace):
 
         if any(self.data) is None:
             if verbose:
-                print('Data object is empty. Spectrogram cannot be computed')
+                print("Data object is empty. Spectrogram cannot be computed")
             self.spectrogram = None
             return None
 
@@ -162,6 +162,9 @@ class HydrophoneData(Trace):
         else:
             nbins = int(np.ceil(len(self.data) / (avg_time * fs)))
 
+        # sensitivity correction
+        sense_corr = -self.frequency_calibration(int(L / 2 + 1))
+
         # compute spectrogram. For avg_time=None
         # (periodogram for each time step), the last data samples are ignored
         # if len(noise[0].data) != k * L
@@ -169,83 +172,88 @@ class HydrophoneData(Trace):
             n_hop = int(L * (1 - overlap))
             for n in range(nbins):
                 f, Pxx = signal.periodogram(
-                    x=self.data[n * n_hop:n * n_hop + L],
-                    fs=fs, window=win)
+                    x=self.data[n * n_hop : n * n_hop + L], fs=fs, window=win  # noqa
+                )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print('Error while computing periodogram for segment',
-                              n)
+                        print("Error while computing periodogram for segment", n)
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(
-                        int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
 
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime
-                                + datetime.timedelta(seconds=n * L / fs))
+                    time.append(
+                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * L / fs)
+                    )
 
         else:
             for n in range(nbins - 1):
                 f, Pxx = signal.welch(
-                    x=self.data[n * int(fs * avg_time):
-                                (n + 1) * int(fs * avg_time)],
-                    fs=fs, window=win, nperseg=L, noverlap=int(L * overlap),
-                    nfft=L, average='median')
+                    x=self.data[n * int(fs * avg_time) : (n + 1) * int(fs * avg_time)],  # noqa
+                    fs=fs,
+                    window=win,
+                    nperseg=L,
+                    noverlap=int(L * overlap),
+                    nfft=L,
+                    average="median",
+                )
 
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print('Error while computing '
-                              'Welch estimate for segment', n)
+                        print("Error while computing " "Welch estimate for segment", n)
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(
-                        int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime
-                                + datetime.timedelta(seconds=n * avg_time))
+                    time.append(
+                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * avg_time)
+                    )
 
             # compute PSD for residual segment
             # if segment has more than L samples
-            if len(self.data[int((nbins - 1) * fs * avg_time):]) >= L:
+            if len(self.data[int((nbins - 1) * fs * avg_time) :]) >= L:  # noqa
                 f, Pxx = signal.welch(
-                    x=self.data[int((nbins - 1) * fs * avg_time):],
-                    fs=fs, window=win, nperseg=L, noverlap=int(L * overlap),
-                    nfft=L, average='median')
+                    x=self.data[int((nbins - 1) * fs * avg_time) :],  # noqa
+                    fs=fs,
+                    window=win,
+                    nperseg=L,
+                    noverlap=int(L * overlap),
+                    nfft=L,
+                    average="median",
+                )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print(
-                            'Error while computing Welch '
-                            'estimate residual segment')
+                        print("Error while computing Welch " "estimate residual segment")
                     self.spectrogram = None
                     return None
                 else:
-                    sense_corr = -self.frequency_calibration(
-                        int(L / 2 + 1))
-
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
-                    time.append(self.stats.starttime.datetime
-                                + datetime.timedelta(seconds=(nbins - 1)
-                                                     * avg_time))
+                    time.append(
+                        self.stats.starttime.datetime
+                        + datetime.timedelta(seconds=(nbins - 1) * avg_time)
+                    )
 
         if len(time) == 0:
             if verbose:
-                print('Spectrogram does not contain any data')
+                print("Spectrogram does not contain any data")
             self.spectrogram = None
             return None
         else:
-            self.spectrogram = Spectrogram(np.array(time), np.array(f),
-                                           np.array(specgram))
+            self.spectrogram = Spectrogram(np.array(time), np.array(f), np.array(specgram))
             return self.spectrogram
 
-    def compute_spectrogram_mp(self, n_process=None, win='hann', L=4096,
-                               avg_time=None, overlap=0.5, verbose=True):
+    def compute_spectrogram_mp(
+        self,
+        n_process=None,
+        win="hann",
+        L=4096,
+        avg_time=None,
+        overlap=0.5,
+        verbose=True,
+    ):
         """
         Same as function compute_spectrogram but using multiprocessing.
         This function is intended to be used when analyzing large data sets.
@@ -290,29 +298,28 @@ class HydrophoneData(Trace):
         ooi_hyd_data_list = []
         seconds_per_process = (self.stats.endtime - self.stats.starttime) / N
         for k in range(N - 1):
-            starttime = self.stats.starttime + datetime.timedelta(
-                seconds=k * seconds_per_process)
+            starttime = self.stats.starttime + datetime.timedelta(seconds=k * seconds_per_process)
             endtime = self.stats.starttime + datetime.timedelta(
-                seconds=(k + 1) * seconds_per_process)
-            temp_slice = self.slice(starttime=UTCDateTime(starttime),
-                                    endtime=UTCDateTime(endtime))
-            tmp_obj = HydrophoneData(data=temp_slice.data,
-                                     header=temp_slice.stats,
-                                     node=self.stats.location)
+                seconds=(k + 1) * seconds_per_process
+            )
+            temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
+            tmp_obj = HydrophoneData(
+                data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
+            )
             ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
-        starttime = self.stats.starttime + datetime.timedelta(
-            seconds=(N - 1) * seconds_per_process)
-        temp_slice = self.slice(starttime=UTCDateTime(starttime),
-                                endtime=UTCDateTime(self.stats.endtime))
-        tmp_obj = HydrophoneData(data=temp_slice.data, header=temp_slice.stats,
-                                 node=self.stats.location)
+        starttime = self.stats.starttime + datetime.timedelta(seconds=(N - 1) * seconds_per_process)
+        temp_slice = self.slice(
+            starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.stats.endtime)
+        )
+        tmp_obj = HydrophoneData(
+            data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
+        )
         ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                specgram_list = p.starmap(_spectrogram_mp_helper,
-                                          ooi_hyd_data_list)
+                specgram_list = p.starmap(_spectrogram_mp_helper, ooi_hyd_data_list)
                 # concatenate all small spectrograms to
                 # obtain final spectrogram
                 specgram = []
@@ -320,19 +327,26 @@ class HydrophoneData(Trace):
                 for i in range(len(specgram_list)):
                     time_specgram.extend(specgram_list[i].time)
                     specgram.extend(specgram_list[i].values)
-                self.spectrogram = Spectrogram(np.array(time_specgram),
-                                               specgram_list[0].freq,
-                                               np.array(specgram))
+                self.spectrogram = Spectrogram(
+                    np.array(time_specgram), specgram_list[0].freq, np.array(specgram)
+                )
                 return self.spectrogram
             except Exception:
                 if verbose:
-                    print('Cannot compute spectrogram')
+                    print("Cannot compute spectrogram")
                 self.spectrogram = None
                 return None
 
-    def compute_psd_welch(self, win='hann', L=4096, overlap=0.5,
-                          avg_method='median', interpolate=None, scale='log',
-                          verbose=True):
+    def compute_psd_welch(
+        self,
+        win="hann",
+        L=4096,
+        overlap=0.5,
+        avg_method="median",
+        interpolate=None,
+        scale="log",
+        verbose=True,
+    ):
         """
         Compute power spectral density estimates of noise data using
         Welch's method.
@@ -373,7 +387,7 @@ class HydrophoneData(Trace):
         # each noise data segment contains usually 1 min of data
         if any(self.data) is None:
             if verbose:
-                print('Data object is empty. PSD cannot be computed')
+                print("Data object is empty. PSD cannot be computed")
             self.psd = None
             return None
         fs = self.stats.sampling_rate
@@ -388,22 +402,27 @@ class HydrophoneData(Trace):
             nfft = L
 
         # compute Welch median for entire data segment
-        f, Pxx = signal.welch(x=self.data, fs=fs, window=win, nperseg=L,
-                              noverlap=int(L * overlap),
-                              nfft=nfft, average=avg_method)
+        f, Pxx = signal.welch(
+            x=self.data,
+            fs=fs,
+            window=win,
+            nperseg=L,
+            noverlap=int(L * overlap),
+            nfft=nfft,
+            average=avg_method,
+        )
 
         if len(Pxx) != int(nfft / 2) + 1:
             if verbose:
-                print('PSD cannot be computed.')
+                print("PSD cannot be computed.")
             self.psd = None
             return None
 
-        sense_corr = -self.frequency_calibration(
-            int(nfft / 2 + 1))
+        sense_corr = -self.frequency_calibration(int(nfft / 2 + 1))
         print(sense_corr)
-        if scale == 'log':
+        if scale == "log":
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
-        elif scale == 'lin':
+        elif scale == "lin":
             Pxx = Pxx * np.power(10, sense_corr / 10)
         else:
             raise Exception('scale has to be either "lin" or "log".')
@@ -411,9 +430,18 @@ class HydrophoneData(Trace):
         self.psd = Psd(f, Pxx)
         return self.psd
 
-    def compute_psd_welch_mp(self, split, n_process=None, win='hann', L=4096,
-                             overlap=0.5, avg_method='median',
-                             interpolate=None, scale='log', verbose=True):
+    def compute_psd_welch_mp(
+        self,
+        split,
+        n_process=None,
+        win="hann",
+        L=4096,
+        overlap=0.5,
+        avg_method="median",
+        interpolate=None,
+        scale="log",
+        verbose=True,
+    ):
         """
         Same as compute_psd_welch but using the multiprocessing library.
 
@@ -467,60 +495,64 @@ class HydrophoneData(Trace):
         ooi_hyd_data_list = []
         # do segmentation from scratch
         if isinstance(split, int) or isinstance(split, float):
-            n_seg = int(
-                np.ceil((self.stats.endtime - self.stats.starttime) / split))
+            n_seg = int(np.ceil((self.stats.endtime - self.stats.starttime) / split))
 
-            seconds_per_process = \
-                (self.stats.endtime - self.stats.starttime) / n_seg
+            seconds_per_process = (self.stats.endtime - self.stats.starttime) / n_seg
 
             for k in range(n_seg - 1):
                 starttime = self.stats.starttime + datetime.timedelta(
-                    seconds=k * seconds_per_process)
+                    seconds=k * seconds_per_process
+                )
                 endtime = self.stats.starttime + datetime.timedelta(
-                    seconds=(k + 1) * seconds_per_process)
-                temp_slice = self.slice(starttime=UTCDateTime(starttime),
-                                        endtime=UTCDateTime(endtime))
-                tmp_obj = HydrophoneData(data=temp_slice.data,
-                                         header=temp_slice.stats,
-                                         node=self.stats.location)
-                ooi_hyd_data_list.append(
-                    (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+                    seconds=(k + 1) * seconds_per_process
+                )
+                temp_slice = self.slice(
+                    starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime)
+                )
+                tmp_obj = HydrophoneData(
+                    data=temp_slice.data,
+                    header=temp_slice.stats,
+                    node=self.stats.location,
+                )
+                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
             # treat last segment separately as its length may differ from other
             # segments
             starttime = self.stats.starttime + datetime.timedelta(
-                seconds=(n_seg - 1) * seconds_per_process)
-            temp_slice = self.slice(starttime=UTCDateTime(starttime),
-                                    endtime=UTCDateTime(self.stats.endtime))
-            tmp_obj = HydrophoneData(data=temp_slice.data,
-                                     header=temp_slice.stats,
-                                     node=self.stats.location)
-            ooi_hyd_data_list.append(
-                (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+                seconds=(n_seg - 1) * seconds_per_process
+            )
+            temp_slice = self.slice(
+                starttime=UTCDateTime(starttime),
+                endtime=UTCDateTime(self.stats.endtime),
+            )
+            tmp_obj = HydrophoneData(
+                data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
+            )
+            ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
         # use segmentation specified by split
         else:
             ooi_hyd_data_list = []
             for row in split:
-                temp_slice = self.slice(starttime=UTCDateTime(row[0]),
-                                        endtime=UTCDateTime(row[1]))
-                tmp_obj = HydrophoneData(data=temp_slice.data,
-                                         header=temp_slice.stats,
-                                         node=self.stats.location)
-                ooi_hyd_data_list.append(
-                    (tmp_obj, win, L, overlap, avg_method, interpolate, scale))
+                temp_slice = self.slice(starttime=UTCDateTime(row[0]), endtime=UTCDateTime(row[1]))
+                tmp_obj = HydrophoneData(
+                    data=temp_slice.data,
+                    header=temp_slice.stats,
+                    node=self.stats.location,
+                )
+                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
                 self.psd_list = p.starmap(_psd_mp_helper, ooi_hyd_data_list)
             except Exception:
                 if verbose:
-                    print('Cannot compute PSd list')
+                    print("Cannot compute PSd list")
                 self.psd_list = None
 
         return self.psd_list
 
     def wav_write(self, filename, norm=False, new_sample_rate=None):
-        '''
+        """
         method that stores HydrophoneData into .wav file
 
         Parameters
@@ -533,7 +565,7 @@ class HydrophoneData(Trace):
             specifices new sample rate of wav file to be saved. (Resampling is
             done with scipy.signal.resample()). Default is None which keeps
             original sample rate of data.
-        '''
+        """
         if norm:
             data = self.data / np.abs(np.max(self.data))
         else:
@@ -548,84 +580,88 @@ class HydrophoneData(Trace):
                 data = signal.resample(data, int(new_npts))
                 sampling_rate = new_sample_rate
             elif new_sample_rate == self.stats.sampling_rate:
-                warnings.warn('New sample rate is same as original data. '
-                              'No resampling done.')
+                warnings.warn("New sample rate is same as original data. " "No resampling done.")
                 sampling_rate = self.stats.sampling_rate
             elif new_sample_rate < self.stats.sampling_rate:
-                warnings.warn('New sample rate is lower than original sample'
-                              ' rate. Chebychev 1 anti-aliasing filter used')
+                warnings.warn(
+                    "New sample rate is lower than original sample"
+                    " rate. Chebychev 1 anti-aliasing filter used"
+                )
                 if self.stats.sampling_rate % new_sample_rate != 0:
-                    raise Exception(
-                        'New Sample Rate is not factor of original sample rate'
-                    )
+                    raise Exception("New Sample Rate is not factor of original sample rate")
                 else:
-                    data = signal.decimate(
-                        data, int(self.stats.sampling_rate / new_sample_rate))
+                    data = signal.decimate(data, int(self.stats.sampling_rate / new_sample_rate))
                     sampling_rate = new_sample_rate
 
         wavfile.write(filename, int(sampling_rate), data)
 
     def get_asset_ID(self):
-        '''
+        """
         get_asset_ID returns the hydrophone asset ID for a given data sample.
         This data can be foun `here <https://raw.githubusercontent.com/
         OOI-CabledArray/deployments/main/HYDBBA_deployments.csv'>`_ for
         broadband hydrophones. Since Low frequency hydrophones remain
         constant with location and time, if the hydrophone is low frequency,
         the node ID is returned
-        '''
+        """
         # Low frequency hydrophone
         if round(self.stats.sampling_rate) == 200:
             asset_ID = self.stats.location
 
         elif round(self.stats.sampling_rate) == 64000:
-            url = 'https://raw.githubusercontent.com/OOI-CabledArray/' \
-                'deployments/main/HYDBBA_deployments.csv'
+            url = (
+                "https://raw.githubusercontent.com/OOI-CabledArray/"
+                "deployments/main/HYDBBA_deployments.csv"
+            )
             hyd_df = pd.read_csv(url)
 
             # LJ01D'Oregon Shelf Base Seafloor
-            if self.stats.location == 'LJ01D':
-                ref = 'CE02SHBP-LJ01D-11-HYDBBA106'
+            if self.stats.location == "LJ01D":
+                ref = "CE02SHBP-LJ01D-11-HYDBBA106"
             # LJ01AOregon Slope Base Seafloor
-            if self.stats.location == 'LJ01A':
-                ref = 'RS01SLBS-LJ01A-09-HYDBBA102'
+            if self.stats.location == "LJ01A":
+                ref = "RS01SLBS-LJ01A-09-HYDBBA102"
             # Oregan Slope Base Shallow
-            if self.stats.location == 'PC01A':
-                ref = 'RS01SBPS-PC01A-08-HYDBBA103'
+            if self.stats.location == "PC01A":
+                ref = "RS01SBPS-PC01A-08-HYDBBA103"
             # Axial Base Shallow Profiler
-            if self.stats.location == 'PC03A':
-                ref = 'RS03AXPS-PC03A-08-HYDBBA303'
+            if self.stats.location == "PC03A":
+                ref = "RS03AXPS-PC03A-08-HYDBBA303"
             # Oregon Offshore Base Seafloor
-            if self.stats.location == 'LJ01C':
-                ref = 'CE04OSBP-LJ01C-11-HYDBBA105'
+            if self.stats.location == "LJ01C":
+                ref = "CE04OSBP-LJ01C-11-HYDBBA105"
             # Axial Base Seafloor
-            if self.stats.location == 'LJ03A':
-                ref = 'RS03AXBS-LJ03A-09-HYDBBA302'
+            if self.stats.location == "LJ03A":
+                ref = "RS03AXBS-LJ03A-09-HYDBBA302"
 
-            hyd_df['referenceDesignator']
+            hyd_df["referenceDesignator"]
 
-            df_ref = hyd_df.loc[hyd_df['referenceDesignator'] == ref]
+            df_ref = hyd_df.loc[hyd_df["referenceDesignator"] == ref]
 
-            df_start = df_ref.loc[(df_ref['startTime'] < self.stats.starttime)
-                                  & (df_ref['endTime']
-                                  > self.stats.starttime)]
-            df_end = df_ref.loc[(df_ref['startTime'] < self.stats.endtime) &
-                                (df_ref['endTime'] > self.stats.endtime)]
+            df_start = df_ref.loc[
+                (df_ref["startTime"] < self.stats.starttime)
+                & (df_ref["endTime"] > self.stats.starttime)
+            ]
+            df_end = df_ref.loc[
+                (df_ref["startTime"] < self.stats.endtime)
+                & (df_ref["endTime"] > self.stats.endtime)
+            ]
 
             if df_start.index.to_numpy() == df_end.index.to_numpy():
                 idx = df_start.index.to_numpy()
-                asset_ID = df_start['assetID'][int(idx)]
+                asset_ID = df_start["assetID"][int(idx)]
             else:
-                raise Exception('Hydrophone Data involves multiple'
-                                'deployments. Feature to be added later')
+                raise Exception(
+                    "Hydrophone Data involves multiple" "deployments. Feature to be added later"
+                )
         else:
-            raise Exception('Invalid hydrophone sampling rate')
+            raise Exception("Invalid hydrophone sampling rate")
 
         return asset_ID
 
 
 def node_id(node):
-    '''
+    """
     mapping of name of hydrophone node to ID
 
     Parameter
@@ -637,40 +673,40 @@ def node_id(node):
     -------
     str
         ID of hydrophone node
-    '''
+    """
     # broadband hydrophones
-    if node == 'Oregon_Shelf_Base_Seafloor' or node == 'LJ01D':
-        return 'LJ01D'
-    if node == 'Oregon_Slope_Base_Seafloor' or node == 'LJ01A':
-        return 'LJ01A'
-    if node == 'Oregon_Slope_Base_Shallow' or node == 'PC01A':
-        return 'PC01A'
-    if node == 'Axial_Base_Shallow' or node == 'PC03A':
-        return 'PC03A'
-    if node == 'Oregon_Offshore_Base_Seafloor' or node == 'LJ01C':
-        return 'LJ01C'
-    if node == 'Axial_Base_Seafloor' or node == 'LJ03A':
-        return 'LJ03A'
+    if node == "Oregon_Shelf_Base_Seafloor" or node == "LJ01D":
+        return "LJ01D"
+    if node == "Oregon_Slope_Base_Seafloor" or node == "LJ01A":
+        return "LJ01A"
+    if node == "Oregon_Slope_Base_Shallow" or node == "PC01A":
+        return "PC01A"
+    if node == "Axial_Base_Shallow" or node == "PC03A":
+        return "PC03A"
+    if node == "Oregon_Offshore_Base_Seafloor" or node == "LJ01C":
+        return "LJ01C"
+    if node == "Axial_Base_Seafloor" or node == "LJ03A":
+        return "LJ03A"
 
     # low frequency hydrophones
-    if node == 'Slope_Base' or node == 'HYSB1':
-        return 'HYSB1'
-    if node == 'Southern_Hydrate' or node == 'HYS14':
-        return 'HYS14'
-    if node == 'Axial_Base' or node == 'AXBA1':
-        return 'AXBA1'
-    if node == 'Central_Caldera' or node == 'AXCC1':
-        return 'AXCC1'
-    if node == 'Eastern_Caldera' or node == 'AXEC2':
-        return 'AXEC2'
+    if node == "Slope_Base" or node == "HYSB1":
+        return "HYSB1"
+    if node == "Southern_Hydrate" or node == "HYS14":
+        return "HYS14"
+    if node == "Axial_Base" or node == "AXBA1":
+        return "AXBA1"
+    if node == "Central_Caldera" or node == "AXCC1":
+        return "AXCC1"
+    if node == "Eastern_Caldera" or node == "AXEC2":
+        return "AXEC2"
 
     else:
-        print('No node exists for name or ID ' + node)
-        return ''
+        print("No node exists for name or ID " + node)
+        return ""
 
 
 def node_name(node):
-    '''
+    """
     mapping of ID of hydrophone node to name
 
     Parameter
@@ -682,36 +718,36 @@ def node_name(node):
     -------
     str
         name of hydrophone node
-    '''
+    """
     # broadband hydrophones
-    if node == 'Oregon_Shelf_Base_Seafloor' or node == 'LJ01D':
-        return 'Oregon_Shelf_Base_Seafloor'
-    if node == 'Oregon_Slope_Base_Seafloor' or node == 'LJ01A':
-        return 'Oregon_Slope_Base_Seafloor'
-    if node == 'Oregon_Slope_Base_Shallow' or node == 'PC01A':
-        return 'Oregon_Slope_Base_Shallow'
-    if node == 'Axial_Base_Shallow' or node == 'PC03A':
-        return 'Axial_Base_Shallow'
-    if node == 'Oregon_Offshore_Base_Seafloor' or node == 'LJ01C':
-        return 'Oregon_Offshore_Base_Seafloor'
-    if node == 'Axial_Base_Seafloor' or node == 'LJ03A':
-        return 'Axial_Base_Seafloor'
+    if node == "Oregon_Shelf_Base_Seafloor" or node == "LJ01D":
+        return "Oregon_Shelf_Base_Seafloor"
+    if node == "Oregon_Slope_Base_Seafloor" or node == "LJ01A":
+        return "Oregon_Slope_Base_Seafloor"
+    if node == "Oregon_Slope_Base_Shallow" or node == "PC01A":
+        return "Oregon_Slope_Base_Shallow"
+    if node == "Axial_Base_Shallow" or node == "PC03A":
+        return "Axial_Base_Shallow"
+    if node == "Oregon_Offshore_Base_Seafloor" or node == "LJ01C":
+        return "Oregon_Offshore_Base_Seafloor"
+    if node == "Axial_Base_Seafloor" or node == "LJ03A":
+        return "Axial_Base_Seafloor"
 
     # low frequency hydrophones
-    if node == 'Slope_Base' or node == 'HYSB1':
-        return 'Slope_Base'
-    if node == 'Southern_Hydrate' or node == 'HYS14':
-        return 'Southern_Hydrate'
-    if node == 'Axial_Base' or node == 'AXBA1':
-        return 'Axial_Base'
-    if node == 'Central_Caldera' or node == 'AXCC1':
-        return 'Central_Caldera'
-    if node == 'Eastern_Caldera' or node == 'AXEC2':
-        return 'Eastern_Caldera'
+    if node == "Slope_Base" or node == "HYSB1":
+        return "Slope_Base"
+    if node == "Southern_Hydrate" or node == "HYS14":
+        return "Southern_Hydrate"
+    if node == "Axial_Base" or node == "AXBA1":
+        return "Axial_Base"
+    if node == "Central_Caldera" or node == "AXCC1":
+        return "Central_Caldera"
+    if node == "Eastern_Caldera" or node == "AXEC2":
+        return "Eastern_Caldera"
 
     else:
-        print('No node exists for ID or name ' + node)
-        return ''
+        print("No node exists for ID or name " + node)
+        return ""
 
 
 def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
@@ -722,13 +758,11 @@ def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
     return ooi_hyd_data_obj.spectrogram
 
 
-def _psd_mp_helper(ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate,
-                   scale):
+def _psd_mp_helper(ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
     """
     Helper function for compute_psd_welch_mp
     """
-    ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method,
-                                       interpolate, scale)
+    ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
     return ooi_hyd_data_obj.psd
 
 
@@ -754,12 +788,27 @@ class Spectrogram:
         self.freq = freq
         self.values = values
 
-    def visualize(self, plot_spec=True, save_spec=False,
-                  filename='spectrogram.png', title='spectrogram',
-                  xlabel='time', xlabel_rot=70, ylabel='frequency', fmin=0,
-                  fmax=32000, vmin=20, vmax=80, vdelta=1.0,
-                  vdelta_cbar=5, figsize=(16, 9), dpi=96, res_reduction_time=1,
-                  res_reduction_freq=1, time_limits=None):
+    def visualize(
+        self,
+        plot_spec=True,
+        save_spec=False,
+        filename="spectrogram.png",
+        title="spectrogram",
+        xlabel="time",
+        xlabel_rot=70,
+        ylabel="frequency",
+        fmin=0,
+        fmax=32000,
+        vmin=20,
+        vmax=80,
+        vdelta=1.0,
+        vdelta_cbar=5,
+        figsize=(16, 9),
+        dpi=96,
+        res_reduction_time=1,
+        res_reduction_freq=1,
+        time_limits=None,
+    ):
         """
         This function will be depreciated into a differnt module in the future.
         The current documentation might not be accurate.
@@ -797,20 +846,21 @@ class Spectrogram:
             datetime.datetime objects
         """
         import warnings
-        raise warnings.warn('will be depricated in future. Please see '
-                            'ooipy.tools.ooiplotlib.plot_spectrogram()')
+
+        raise warnings.warn(
+            "will be depricated in future. Please see " "ooipy.tools.ooiplotlib.plot_spectrogram()"
+        )
         # set backend for plotting/saving:
         if not plot_spec:
-            matplotlib.use('Agg')
+            matplotlib.use("Agg")
 
-        font = {'size': 22}
-        matplotlib.rc('font', **font)
+        font = {"size": 22}
+        matplotlib.rc("font", **font)
 
         v = self.values[::res_reduction_time, ::res_reduction_freq]
 
         if len(self.time) != len(self.values):
-            t = np.linspace(0, len(self.values) - 1,
-                            int(len(self.values) / res_reduction_time))
+            t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_time))
         else:
             t = self.time[::res_reduction_time]
 
@@ -820,16 +870,24 @@ class Spectrogram:
                 t[k] = t[k].datetime
 
         if len(self.freq) != len(self.values[0]):
-            f = np.linspace(0, len(self.values[0]) - 1,
-                            int(len(self.values[0]) / res_reduction_freq))
+            f = np.linspace(
+                0,
+                len(self.values[0]) - 1,
+                int(len(self.values[0]) / res_reduction_freq),
+            )
         else:
             f = self.freq[::res_reduction_freq]
 
         cbarticks = np.arange(vmin, vmax + vdelta, vdelta)
         fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-        im = ax.contourf(t, f, np.transpose(v), cbarticks,
-                         norm=colors.Normalize(vmin=vmin, vmax=vmax),
-                         cmap=plt.cm.jet)
+        im = ax.contourf(
+            t,
+            f,
+            np.transpose(v),
+            cbarticks,
+            norm=colors.Normalize(vmin=vmin, vmax=vmax),
+            cmap=plt.cm.jet,
+        )
         plt.ylabel(ylabel)
         plt.xlabel(xlabel)
         plt.ylim([fmin, fmax])
@@ -837,23 +895,21 @@ class Spectrogram:
             plt.xlim(time_limits)
         plt.xticks(rotation=xlabel_rot)
         plt.title(title)
-        plt.colorbar(im, ax=ax,
-                     ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar))
-        plt.tick_params(axis='y')
+        plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar))
+        plt.tick_params(axis="y")
 
         if type(t[0]) == datetime.datetime:
-            ax.xaxis.set_major_formatter(
-                mdates.DateFormatter('%y-%m-%d %H:%M'))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d %H:%M"))
 
         if save_spec:
-            plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+            plt.savefig(filename, dpi=dpi, bbox_inches="tight")
 
         if plot_spec:
             plt.show()
         else:
             plt.close(fig)
 
-    def save(self, filename='spectrogram.pickle'):
+    def save(self, filename="spectrogram.pickle"):
         """
         !!!!! This function will be moved into a different module in the
         future. The current documentation might not be accurate !!!!!
@@ -864,19 +920,15 @@ class Spectrogram:
         to be ".pickle".
         """
 
-        dct = {
-            't': self.time,
-            'f': self.freq,
-            'spectrogram': self.values
-        }
-        with open(filename, 'wb') as outfile:
+        dct = {"t": self.time, "f": self.freq, "spectrogram": self.values}
+        with open(filename, "wb") as outfile:
             pickle.dump(dct, outfile)
 
     def plot(self, **kwargs):
-        '''
+        """
         redirects to ooipy.ooiplotlib.plot_spectrogram()
         please see :meth:`ooipy.hydrophone.basic.plot_spectrogram`
-        '''
+        """
         ooipy.tools.ooiplotlib.plot_spectrogram(self, **kwargs)
 
 
@@ -906,10 +958,22 @@ class Psd:
         self.freq = freq
         self.values = values
 
-    def visualize(self, plot_psd=True, save_psd=False, filename='psd.png',
-                  title='PSD', xlabel='frequency',
-                  xlabel_rot=0, ylabel='spectral level', fmin=0, fmax=32000,
-                  vmin=20, vmax=80, figsize=(16, 9), dpi=96):
+    def visualize(
+        self,
+        plot_psd=True,
+        save_psd=False,
+        filename="psd.png",
+        title="PSD",
+        xlabel="frequency",
+        xlabel_rot=0,
+        ylabel="spectral level",
+        fmin=0,
+        fmax=32000,
+        vmin=20,
+        vmax=80,
+        figsize=(16, 9),
+        dpi=96,
+    ):
         """
         !!!!! This function will be moved into a different module in the
         future. The current documentation might not be accurate !!!!!
@@ -937,14 +1001,16 @@ class Psd:
         dpi (int): dots per inch
         """
         import warnings
-        raise warnings.warn('will be depricated in future. Please see '
-                            'ooipy.tools.ooiplotlib.plot_psd()')
+
+        raise warnings.warn(
+            "will be depricated in future. Please see " "ooipy.tools.ooiplotlib.plot_psd()"
+        )
         # set backend for plotting/saving:
         if not plot_psd:
-            matplotlib.use('Agg')
+            matplotlib.use("Agg")
 
-        font = {'size': 22}
-        matplotlib.rc('font', **font)
+        font = {"size": 22}
+        matplotlib.rc("font", **font)
 
         if len(self.freq) != len(self.values):
             f = np.linspace(0, len(self.values) - 1, len(self.values))
@@ -962,15 +1028,14 @@ class Psd:
         plt.grid(True)
 
         if save_psd:
-            plt.savefig(filename, dpi=dpi, bbox_inches='tight')
+            plt.savefig(filename, dpi=dpi, bbox_inches="tight")
 
         if plot_psd:
             plt.show()
         else:
             plt.close(fig)
 
-    def save(self, filename='psd.json', ancillary_data=[],
-             ancillary_data_label=[]):
+    def save(self, filename="psd.json", ancillary_data=[], ancillary_data_label=[]):
         """
         !!!!! This function will be moved into a different module in the
         future. The current documentation might not be accurate !!!!!
@@ -996,10 +1061,7 @@ class Psd:
         if type(f) != list:
             f = f.tolist()
 
-        dct = {
-            'psd': values,
-            'f': f
-        }
+        dct = {"psd": values, "f": f}
 
         if len(ancillary_data) != 0:
             for i in range(len(ancillary_data)):
@@ -1008,12 +1070,12 @@ class Psd:
                 else:
                     dct[ancillary_data_label[i]] = ancillary_data[i]
 
-        with open(filename, 'w+') as outfile:
+        with open(filename, "w+") as outfile:
             json.dump(dct, outfile)
 
     def plot(self, **kwargs):
-        '''
+        """
         redirects to ooipy.ooiplotlib.plot_psd()
         please see :meth:`ooipy.hydrophone.basic.plot_psd`
-        '''
+        """
         ooipy.tools.ooiplotlib.plot_psd(self, **kwargs)

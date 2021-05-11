@@ -1,11 +1,7 @@
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
+
 import setuptools
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -27,19 +23,21 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ooipy/ooipy",
     packages=setuptools.find_packages(exclude=("tests")),
+    include_package_data=True,
+    package_data={"": ["hydrophone/*.csv"]},
     license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     install_requires=install_requires,
     py_modules=["_ooipy_version"],
     use_scm_version={
         "write_to": "_ooipy_version.py",
         "write_to_template": 'version = "{version}"\n',
-        "local_scheme": "no-local-version"
+        "local_scheme": "no-local-version",
     },
-    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"]
+    setup_requires=["setuptools>=30.3.0", "wheel", "setuptools_scm"],
 )
