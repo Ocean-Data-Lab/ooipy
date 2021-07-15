@@ -226,7 +226,7 @@ class HydrophoneData(Trace):
                     nperseg=L,
                     noverlap=int(L * overlap),
                     nfft=L,
-                    average="median",
+                    average=average_type,
                 )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
