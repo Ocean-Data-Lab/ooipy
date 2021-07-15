@@ -375,7 +375,7 @@ def get_acoustic_data(
 
 
 def get_acoustic_data_LF(
-    starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False
+    starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False, channel="HDH"
 ):
     """
     Get low frequency acoustic data for specific time frame and sensor
@@ -419,6 +419,11 @@ def get_acoustic_data_LF(
         specifies whether print statements should occur or not
     zero_mean : bool, optional
         specifies whether the mean should be removed. Default to False
+    channel : str
+        Channel of hydrophone to get data from. Currently supported options
+        are 'HDH' - hydrophone, 'HNE' - east seismometer, 'HNN' - north
+        seismometer, 'HNZ' - z seismometer. NOTE calibration is only valid for
+        'HDH' channel. All other channels are for raw data only at this time.
     """
 
     if fmin is None and fmax is None:
@@ -427,7 +432,12 @@ def get_acoustic_data_LF(
         bandpass_range = [fmin, fmax]
 
     url = __build_LF_URL(
-        node, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean
+        node,
+        starttime,
+        endtime,
+        bandpass_range=bandpass_range,
+        zero_mean=zero_mean,
+        channel=channel,
     )
     if verbose:
         print("Downloading mseed file...")
@@ -639,7 +649,9 @@ def __get_mseed_urls(day_str, node, verbose):
     return data_url_list
 
 
-def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=False, correct=False):
+def __build_LF_URL(
+    node, starttime, endtime, bandpass_range=None, zero_mean=False, correct=False, channel=None
+):
     """
     Build URL for Lowfrequency Data given the start time, end time, and
     node
@@ -660,6 +672,8 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=Fals
         specified whether mean should be removed from data
     correct : bool
         specifies whether to do sensitivity correction on hydrophone data
+    channel : str
+        channel string specifier ('HDH', 'HNE', 'HNN', 'HNZ')
 
     Returns
     -------
@@ -667,7 +681,7 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=Fals
         url of specified data segment. Format will be in miniseed.
     """
 
-    network, station, location, channel = __get_LF_locations_stats(node)
+    network, station, location = __get_LF_locations_stats(node)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -714,31 +728,26 @@ def __get_LF_locations_stats(node):
             network = "OO"
             station = "HYSB1"
             location = "--"
-            channel = "HDH"
 
         if node == "Southern_Hydrate" or node == "HYS14":
             network = "OO"
             station = "HYS14"
             location = "--"
-            channel = "HDH"
 
         if node == "Axial_Base" or node == "AXBA1":
             network = "OO"
             station = "AXBA1"
             location = "--"
-            channel = "HDH"
 
         if node == "Central_Caldera" or node == "AXCC1":
             network = "OO"
             station = "AXCC1"
             location = "--"
-            channel = "HDH"
 
         if node == "Eastern_Caldera" or node == "AXEC2":
             network = "OO"
             station = "AXEC2"
             location = "--"
-            channel = "HDH"
 
         # Create error if node is invalid
         network = network
@@ -756,4 +765,4 @@ def __get_LF_locations_stats(node):
             "'Eastern_Caldera' ('AXEC2')",
         )
 
-    return network, station, location, channel
+    return network, station, location
