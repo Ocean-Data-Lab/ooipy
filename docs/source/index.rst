@@ -20,7 +20,7 @@ First Steps
 
     install_instructions
     citation_guide
-    usage_instructions
+    demos
 
 
 Modules Documentation
