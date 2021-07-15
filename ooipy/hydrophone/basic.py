@@ -258,6 +258,7 @@ class HydrophoneData(Trace):
         avg_time=None,
         overlap=0.5,
         verbose=True,
+        average_type="median",
     ):
         """
         Same as function compute_spectrogram but using multiprocessing.
@@ -285,6 +286,9 @@ class HydrophoneData(Trace):
             is used. Parameter is ignored if avg_time is None. (Default is 50%)
         verbose : bool, optional
             If true (defult), exception messages and some comments are printed.
+        average_type : str
+            type of averaging if Welch PSD estimate is used. options are
+            'median' (default) and 'mean'.
 
         Returns
         -------
@@ -311,7 +315,7 @@ class HydrophoneData(Trace):
             tmp_obj = HydrophoneData(
                 data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
             )
-            ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
+            ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
         starttime = self.stats.starttime + datetime.timedelta(seconds=(N - 1) * seconds_per_process)
         temp_slice = self.slice(
@@ -320,7 +324,7 @@ class HydrophoneData(Trace):
         tmp_obj = HydrophoneData(
             data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
         )
-        ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap))
+        ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
@@ -755,11 +759,11 @@ def node_name(node):
         return ""
 
 
-def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap):
+def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap, verbose, average_type):
     """
     Helper function for compute_spectrogram_mp
     """
-    ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap)
+    ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap, verbose, average_type)
     return ooi_hyd_data_obj.spectrogram
 
 
