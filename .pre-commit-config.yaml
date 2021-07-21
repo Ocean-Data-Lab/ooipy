@@ -14,7 +14,6 @@ repos:
     rev: 20.8b1
     hooks:
       - id: black
-        args: ["--line-length", "100"]
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.3
