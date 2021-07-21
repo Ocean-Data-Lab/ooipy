@@ -574,11 +574,9 @@ def __get_mseed_urls(day_str, node, verbose):
 
     try:
         data_url_list = sorted(
-            [
-                f["name"]
-                for f in FS.ls(mainurl)
-                if f["type"] == "file" and f["name"].endswith(".mseed")
-            ]
+            f["name"]
+            for f in FS.ls(mainurl)
+            if f["type"] == "file" and f["name"].endswith(".mseed")
         )
     except Exception as e:
         if verbose:
