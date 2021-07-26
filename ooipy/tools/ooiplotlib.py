@@ -176,6 +176,8 @@ def plot_spectrogram(spec_obj, **kwargs):
         kwargs["dpi"] = 100
     if "fontsize" not in kwargs:
         kwargs["fontsize"] = 22
+    if "extend_type" not in kwargs:
+        kwargs["extend_type"] = "neither"
 
     # set backend for plotting/saving:
     if not kwargs["plot"]:
@@ -205,13 +207,14 @@ def plot_spectrogram(spec_obj, **kwargs):
     # plot spectrogram object
     cbarticks = np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta"])
     fig, ax = plt.subplots(figsize=kwargs["figsize"])
-    im = ax.contourf(
+    ax.contourf(
         t,
         f,
         np.transpose(v),
         cbarticks,
         norm=Normalize(vmin=kwargs["vmin"], vmax=kwargs["vmax"]),
         cmap=plt.cm.jet,
+        extend=kwargs["extend_type"],
         **kwargs
     )
     plt.ylabel(kwargs["ylabel"])
@@ -219,8 +222,12 @@ def plot_spectrogram(spec_obj, **kwargs):
     plt.ylim([kwargs["fmin"], kwargs["fmax"]])
     plt.xticks(rotation=kwargs["xlabel_rot"])
     plt.title(kwargs["title"])
+
+    # Build Colorbar
+    cmap = matplotlib.cm.jet
+    norm = matplotlib.colors.BoundaryNorm(cbarticks, cmap.N, extend=kwargs["extend_type"])
     plt.colorbar(
-        im,
+        matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
         ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
     )
