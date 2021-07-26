@@ -230,8 +230,12 @@ def plot_spectrogram(spec_obj, **kwargs):
         matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
         ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
+        label=r"spectral level (dB rel $1 \mathrm{\frac{μ Pa^2}{Hz}}$)",
     )
     plt.tick_params(axis="y")
+
+    # Make tight layout
+    plt.tight_layout()
 
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
         ax.xaxis.set_major_formatter(mdates.DateFormatter(kwargs["xlabel_format"]))
