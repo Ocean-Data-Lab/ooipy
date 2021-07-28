@@ -63,17 +63,14 @@ class HydrophoneData(Trace):
 
     # TODO: use correct frequency response for all hydrophones
     def frequency_calibration(self, N):
-        # TODO
         """
         Apply a frequency dependent sensitivity correction to the
         acoustic data based on the information from the calibration
         sheets.
-        TODO Add for all broadband hydrophones
-        !!! Currently only implemented for Oregon Offshore Base Seafloor
-        and Oregon Shelf Base Seafloor hydrophone. For all other
-        hydrophones, an average sensitivity of -169dBV/1uPa is assumed
-        !!!
-
+        Hydrophone deployments are found at
+        https://github.com/OOI-CabledArray/deployments
+        Hydrophone calibration sheets are found at
+        https://github.com/OOI-CabledArray/calibrationFiles
         Parameters
         ----------
         N : int
@@ -88,7 +85,7 @@ class HydrophoneData(Trace):
         filename = os.path.dirname(ooipy.__file__) + "/hydrophone/calibration_by_assetID.csv"
         # Use deployment CSV to determine asset_ID
         assetID = self.get_asset_ID()
-
+        print(assetID)
         # load calibration data as pandas dataframe
         cal_by_assetID = pd.read_csv(filename, header=[0, 1])
 
@@ -340,9 +337,10 @@ class HydrophoneData(Trace):
                     np.array(time_specgram), specgram_list[0].freq, np.array(specgram)
                 )
                 return self.spectrogram
-            except Exception:
+            except Exception as e:
                 if verbose:
                     print("Cannot compute spectrogram")
+                    print(e)
                 self.spectrogram = None
                 return None
 
@@ -607,7 +605,7 @@ class HydrophoneData(Trace):
     def get_asset_ID(self):
         """
         get_asset_ID returns the hydrophone asset ID for a given data sample.
-        This data can be foun `here <https://raw.githubusercontent.com/
+        This data can be found `here <https://raw.githubusercontent.com/
         OOI-CabledArray/deployments/main/HYDBBA_deployments.csv'>`_ for
         broadband hydrophones. Since Low frequency hydrophones remain
         constant with location and time, if the hydrophone is low frequency,
@@ -650,7 +648,9 @@ class HydrophoneData(Trace):
             df_start = df_ref.loc[
                 (df_ref["startTime"] < self.stats.starttime)
                 & (df_ref["endTime"] > self.stats.starttime)
+                # | (pd.isna(df_ref["endTime"]))
             ]
+
             df_end = df_ref.loc[
                 (df_ref["startTime"] < self.stats.endtime)
                 & (df_ref["endTime"] > self.stats.endtime)
@@ -659,6 +659,12 @@ class HydrophoneData(Trace):
             if df_start.index.to_numpy() == df_end.index.to_numpy():
                 idx = df_start.index.to_numpy()
                 asset_ID = df_start["assetID"][int(idx)]
+            elif (len(df_start) != 1) | (len(df_end) != 1):
+                """^ covers case where currently deployed hydrophone is the
+                one that is used in the data this conditional might be too
+                broad and could cause future errors
+                """
+                asset_ID = df_ref["assetID"][df_ref.index.to_numpy()[-1]]
             else:
                 raise Exception(
                     "Hydrophone Data involves multiple" "deployments. Feature to be added later"
