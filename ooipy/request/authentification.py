@@ -41,7 +41,7 @@ def get_authentification():
 
     filename = "ooi_auth.txt"
     if os.path.isfile(filename):
-        file = open(filename, "r")
+        file = open(filename)
         auth = file.readlines()
         username = auth[1].split("\n")[0]
         token = auth[3].split("\n")[0]
