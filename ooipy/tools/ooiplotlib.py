@@ -136,6 +136,10 @@ def plot_spectrogram(spec_obj, **kwargs):
             dots per inch, passed to matplotlib figure.savefig()
         * fontsize : int
             fontsize of saved plot, passed to matplotlib figure
+        * extend_type : str
+            {'neither', 'both', 'min', 'max'} If not 'neither', make pointed
+            end(s) for out-of- range values. These are set for a given colormap
+            using the colormap set_under and set_over methods.
     """
     # check for keys
     if "plot" not in kwargs:
