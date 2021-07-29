@@ -648,7 +648,6 @@ class HydrophoneData(Trace):
             df_start = df_ref.loc[
                 (df_ref["startTime"] < self.stats.starttime)
                 & (df_ref["endTime"] > self.stats.starttime)
-                # | (pd.isna(df_ref["endTime"]))
             ]
 
             df_end = df_ref.loc[
@@ -659,10 +658,9 @@ class HydrophoneData(Trace):
             if df_start.index.to_numpy() == df_end.index.to_numpy():
                 idx = df_start.index.to_numpy()
                 asset_ID = df_start["assetID"][int(idx)]
-            elif (len(df_start) != 1) | (len(df_end) != 1):
+            elif (len(df_start) == 0) | (len(df_end) == 0):
                 """^ covers case where currently deployed hydrophone is the
-                one that is used in the data this conditional might be too
-                broad and could cause future errors
+                one that is used in data segment.
                 """
                 asset_ID = df_ref["assetID"][df_ref.index.to_numpy()[-1]]
             else:
