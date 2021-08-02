@@ -26,7 +26,7 @@ jobs:
         CACHE_NUMBER: 0
       with:
         path: ~/conda_pkgs_dir
-        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda_envs/py${{ matrix.python-version }}.yml') }}
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(format('conda_envs/py{0}.yml', matrix.python-version)) }}
     - name: Install conda
       uses: conda-incubator/setup-miniconda@v2
       with:
