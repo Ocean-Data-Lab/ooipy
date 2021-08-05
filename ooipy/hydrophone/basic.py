@@ -85,7 +85,6 @@ class HydrophoneData(Trace):
         filename = os.path.dirname(ooipy.__file__) + "/hydrophone/calibration_by_assetID.csv"
         # Use deployment CSV to determine asset_ID
         assetID = self.get_asset_ID()
-        print(assetID)
         # load calibration data as pandas dataframe
         cal_by_assetID = pd.read_csv(filename, header=[0, 1])
 
