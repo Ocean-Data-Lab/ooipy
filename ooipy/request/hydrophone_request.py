@@ -2,64 +2,8 @@
 This modules handles the downloading of OOI Data. As of current, the supported
 OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
 frequency hydrophones (Fs = 200 Hz). All supported hydrophone nodes are listed
-in the Hydrophone Nodes section below.
-
-.. sidebar:: Hydrophone Request Jupyter Notebook
-
-        For a demo of the hydrophone request module, see the `Hydrophone
-        Request Jupyter Notebook <_static/test_request.html>`_.
-
-Hydrophone Nodes
-^^^^^^^^^^^^^^^^
-* `Oregon Shelf Base Seafloor (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=CE02SHBP-LJ01D-11-HYDBBA106>`_
-    * 'LJ01D'
-* `Oregon Slope Base Seafloor (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS01SLBS-LJ01A-09-HYDBBA102>`_
-    * 'LJ01A'
-* `Slope Base Shallow (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS01SBPS-PC01A-08-HYDBBA103>`_
-    * 'PC01A'
-* `Axial Base Shallow Profiler (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS03AXPS-PC03A-08-HYDBBA303>`_
-    * 'PC03A'
-* `Offshore Base Seafloor (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=CE04OSBP-LJ01C-11-HYDBBA105>`_
-    * 'LJ01C'
-* `Axial Base Seafloor (Fs = 64 kHz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS03AXBS-LJ03A-09-HYDBBA302>`_
-    * 'LJ03A'
-* `Axial Base Seaflor (Fs = 200 Hz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS03AXBS-MJ03A-05-HYDLFA301>`_
-    * 'Axial_Base'
-    * 'AXABA1'
-* `Central Caldera (Fs = 200 Hz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS03CCAL-MJ03F-06-HYDLFA305>`_
-    * 'Central_Caldera'
-    * 'AXCC1'
-* `Eastern Caldera (Fs = 200 Hz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS03ECAL-MJ03E-09-HYDLFA304>`_
-    * 'Eastern_Caldera'
-    * 'AXEC2'
-* `Southern Hydrate (Fs = 200 Hz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS01SUM1-LJ01B-05-HYDLFA104>`_
-    * 'Southern_Hydrate'
-    * 'HYS14'
-* `Oregon Slope Base Seafloor (Fs = 200 Hz)
-<https://ooinet.oceanobservatories.org/data_access/
-?search=RS01SLBS-MJ01A-05-HYDLFA101>`_
-    * 'Slope_Base'
-    * 'HYSB1'
+in the Hydrophone Nodes section below. For a demo on how to use these tools, please
+see ooipy/hydrophone_demo.ipynb on the Github Repository
 
 Hydrophone Request Modules
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -375,7 +319,7 @@ def get_acoustic_data(
 
 
 def get_acoustic_data_LF(
-    starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False
+    starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False, channel="HDH"
 ):
     """
     Get low frequency acoustic data for specific time frame and sensor
@@ -419,6 +363,11 @@ def get_acoustic_data_LF(
         specifies whether print statements should occur or not
     zero_mean : bool, optional
         specifies whether the mean should be removed. Default to False
+    channel : str
+        Channel of hydrophone to get data from. Currently supported options
+        are 'HDH' - hydrophone, 'HNE' - east seismometer, 'HNN' - north
+        seismometer, 'HNZ' - z seismometer. NOTE calibration is only valid for
+        'HDH' channel. All other channels are for raw data only at this time.
     """
 
     if fmin is None and fmax is None:
@@ -427,7 +376,12 @@ def get_acoustic_data_LF(
         bandpass_range = [fmin, fmax]
 
     url = __build_LF_URL(
-        node, starttime, endtime, bandpass_range=bandpass_range, zero_mean=zero_mean
+        node,
+        starttime,
+        endtime,
+        bandpass_range=bandpass_range,
+        zero_mean=zero_mean,
+        channel=channel,
     )
     if verbose:
         print("Downloading mseed file...")
@@ -620,11 +574,9 @@ def __get_mseed_urls(day_str, node, verbose):
 
     try:
         data_url_list = sorted(
-            [
-                f["name"]
-                for f in FS.ls(mainurl)
-                if f["type"] == "file" and f["name"].endswith(".mseed")
-            ]
+            f["name"]
+            for f in FS.ls(mainurl)
+            if f["type"] == "file" and f["name"].endswith(".mseed")
         )
     except Exception as e:
         if verbose:
@@ -639,7 +591,9 @@ def __get_mseed_urls(day_str, node, verbose):
     return data_url_list
 
 
-def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=False, correct=False):
+def __build_LF_URL(
+    node, starttime, endtime, bandpass_range=None, zero_mean=False, correct=False, channel=None
+):
     """
     Build URL for Lowfrequency Data given the start time, end time, and
     node
@@ -660,6 +614,8 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=Fals
         specified whether mean should be removed from data
     correct : bool
         specifies whether to do sensitivity correction on hydrophone data
+    channel : str
+        channel string specifier ('HDH', 'HNE', 'HNN', 'HNZ')
 
     Returns
     -------
@@ -667,7 +623,7 @@ def __build_LF_URL(node, starttime, endtime, bandpass_range=None, zero_mean=Fals
         url of specified data segment. Format will be in miniseed.
     """
 
-    network, station, location, channel = __get_LF_locations_stats(node)
+    network, station, location = __get_LF_locations_stats(node)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -714,31 +670,26 @@ def __get_LF_locations_stats(node):
             network = "OO"
             station = "HYSB1"
             location = "--"
-            channel = "HDH"
 
         if node == "Southern_Hydrate" or node == "HYS14":
             network = "OO"
             station = "HYS14"
             location = "--"
-            channel = "HDH"
 
         if node == "Axial_Base" or node == "AXBA1":
             network = "OO"
             station = "AXBA1"
             location = "--"
-            channel = "HDH"
 
         if node == "Central_Caldera" or node == "AXCC1":
             network = "OO"
             station = "AXCC1"
             location = "--"
-            channel = "HDH"
 
         if node == "Eastern_Caldera" or node == "AXEC2":
             network = "OO"
             station = "AXEC2"
             location = "--"
-            channel = "HDH"
 
         # Create error if node is invalid
         network = network
@@ -756,4 +707,4 @@ def __get_LF_locations_stats(node):
             "'Eastern_Caldera' ('AXEC2')",
         )
 
-    return network, station, location, channel
+    return network, station, location

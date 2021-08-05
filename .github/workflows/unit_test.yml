@@ -9,16 +9,15 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: ['3.6', '3.7', '3.8', '3.9']
         experimental: [false]
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
     - name: Setup Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: x64
     - name: Cache conda
       uses: actions/cache@v2
       env:
@@ -26,7 +25,7 @@ jobs:
         CACHE_NUMBER: 0
       with:
         path: ~/conda_pkgs_dir
-        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda_envs/py${{ matrix.python-version }}.yml') }}
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(format('conda_envs/py{0}.yml', matrix.python-version)) }}
     - name: Install conda
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -50,10 +49,10 @@ jobs:
       shell: bash -l {0}
       env:
         FORCE_COLOR: 3
-      run: pytest -vv tests |& tee unit_test_log.log
+      run: pytest -vv tests |& tee unit_test_log${{ matrix.python-version }}.log
     - name: Upload unit test log
       if: ${{ success() || failure() }}
       uses: actions/upload-artifact@v2
       with:
-        name: unit_test_log
-        path: unit_test_log.log
+        name: unit_test_log${{ matrix.python-version }}
+        path: unit_test_log${{ matrix.python-version }}.log
