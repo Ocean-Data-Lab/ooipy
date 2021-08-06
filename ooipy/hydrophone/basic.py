@@ -425,7 +425,6 @@ class HydrophoneData(Trace):
             return None
 
         sense_corr = -self.frequency_calibration(int(nfft / 2 + 1))
-        print(sense_corr)
         if scale == "log":
             Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
         elif scale == "lin":
