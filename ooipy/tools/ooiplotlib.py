@@ -256,10 +256,6 @@ def plot_spectrogram(spec_obj, **kwargs):
     # Make tight layout
     plt.tight_layout()
 
-    # Change y to log if necesarry
-    if kwargs["logy"]:
-        plt.yscale("log")
-
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
         ax.xaxis.set_major_formatter(mdates.DateFormatter(kwargs["xlabel_format"]))
 
