@@ -140,6 +140,8 @@ def plot_spectrogram(spec_obj, **kwargs):
             {'neither', 'both', 'min', 'max'} If not 'neither', make pointed
             end(s) for out-of- range values. These are set for a given colormap
             using the colormap set_under and set_over methods.
+        * logy : bool
+            If True, the y (frequency) axis is plotted using log scale
     """
     # check for keys
     if "plot" not in kwargs:
@@ -182,6 +184,8 @@ def plot_spectrogram(spec_obj, **kwargs):
         kwargs["fontsize"] = 22
     if "extend_type" not in kwargs:
         kwargs["extend_type"] = "neither"
+    if "logy" not in kwargs:
+        kwargs["logy"] = False
 
     # set backend for plotting/saving:
     if not kwargs["plot"]:
@@ -223,7 +227,17 @@ def plot_spectrogram(spec_obj, **kwargs):
     )
     plt.ylabel(kwargs["ylabel"])
     plt.xlabel(kwargs["xlabel"])
-    plt.ylim([kwargs["fmin"], kwargs["fmax"]])
+
+    # Adjust y limits and yscale
+    if kwargs["logy"]:
+        plt.yscale("log")
+        if kwargs["fmin"] == 0:
+            plt.ylim([1, kwargs["fmax"]])
+        else:
+            plt.ylim([kwargs["fmin"], kwargs["fmax"]])
+    else:
+        plt.ylim([kwargs["fmin"], kwargs["fmax"]])
+
     plt.xticks(rotation=kwargs["xlabel_rot"])
     plt.title(kwargs["title"])
 
@@ -235,6 +249,7 @@ def plot_spectrogram(spec_obj, **kwargs):
         ax=ax,
         ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
         label=r"spectral level (dB rel $1 \mathrm{\frac{μ Pa^2}{Hz}}$)",
+        pad=0.03,
     )
     plt.tick_params(axis="y")
 
