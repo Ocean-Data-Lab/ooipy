@@ -125,6 +125,8 @@ class CtdData:
                     param_arr.append(item["ctdbp_no_seawater_conductivity"])
                 elif "seawater_conductivity" in item:
                     param_arr.append(item["seawater_conductivity"])
+                elif "dpc_ctd_seawater_conductivity" in item:
+                    param_arr.append(item["dpc_ctd_seawater_conductivity"])
                 else:
                     param_arr.append(item["conductivity"])
 
