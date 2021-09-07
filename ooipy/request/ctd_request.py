@@ -15,6 +15,7 @@ def get_ctd_data(
     limit=10000,
     only_profilers=False,
     delivery_method="auto",
+    sensor_type=["deep", "shallow", "fixed"],
 ):
     """
     Requests CTD data between start_detetime and end_datetime for the
@@ -62,6 +63,13 @@ def get_ctd_data(
             via satellite
         * 'recovered': only consideres data that were reteived when the
             instrument was retreived
+    sensor_type : ls
+        list of sensor types that CTD data is downloaded. Should be list of strings
+        where valid entries include:
+        CURRENTLY ONLY (PARTIALLY) IMPLEMENTED FOR AXIAL BASE
+        * 'deep' - profilers for deep water
+        * 'shallow' - profilers for shallow water
+        * 'fixed' - fixed CTD sensors (not profilers)
 
     Returns
     -------
@@ -70,7 +78,7 @@ def get_ctd_data(
         data sample consists of a dictionary of parameters measured by the CTD.
 
     """
-
+    print(sensor_type)
     USERNAME, TOKEN = ooipy.request.authentification.get_authentification()
     # Sensor Inventory
     DATA_API_BASE_URL = "https://ooinet.oceanobservatories.org/api/m2m/12576/sensor/inv/"
@@ -192,18 +200,20 @@ def get_ctd_data(
             )
 
     elif location == "axial_base":
-        url_list = [
-            "RS03AXPD/DP03A/01-CTDPFL304/recovered_inst/dpc_ctd_instrument_recovered?",
-            "RS03AXPD/DP03A/01-CTDPFL304/recovered_wfp/dpc_ctd_instrument_recovered?",
-            "RS03AXPS/SF03A/2A-CTDPFA302/streamed/ctdpf_sbe43_sample?",
-        ]
-        if not only_profilers:
-            url_list.extend(
-                [
-                    "RS03AXPS/PC03A/4A-CTDPFA303/streamed/ctdpf_optode_sample?",
-                    "RS03AXBS/LJ03A/12-CTDPFB301/streamed/ctdpf_optode_sample?",
-                ]
-            )
+        url_list = []
+        if "deep" in sensor_type:
+            url_list += [
+                "RS03AXPD/DP03A/01-CTDPFL304/recovered_inst/dpc_ctd_instrument_recovered?",
+                "RS03AXPD/DP03A/01-CTDPFL304/recovered_wfp/dpc_ctd_instrument_recovered?",
+            ]
+        if "shallow" in sensor_type:
+            url_list += ["RS03AXPS/SF03A/2A-CTDPFA302/streamed/ctdpf_sbe43_sample?"]
+
+        if "fixed" in sensor_type:
+            url_list += [
+                "RS03AXPS/PC03A/4A-CTDPFA303/streamed/ctdpf_optode_sample?",
+                "RS03AXBS/LJ03A/12-CTDPFB301/streamed/ctdpf_optode_sample?",
+            ]
 
     else:
         raise Exception("Do not know given location.")
@@ -266,7 +276,12 @@ def __get_instrument_id(url_str):
 
 
 def get_ctd_data_daily(
-    datetime_day, location, limit=10000, only_profilers=False, delivery_method="auto"
+    datetime_day,
+    location,
+    limit=10000,
+    only_profilers=False,
+    delivery_method="auto",
+    sensor_type=["deep", "shallow", "fixed"],
 ):
     """
     Requests CTD data for specified day and location. The day is split
@@ -286,6 +301,8 @@ def get_ctd_data_daily(
     only_profilers : bool
         See :func:`ooipy.ctd_request.get_ctd_data
     delivery_method : str
+        See :func:`ooipy.ctd_request.get_ctd_data
+    sensor_type : list
         See :func:`ooipy.ctd_request.get_ctd_data
 
     Returns
@@ -314,6 +331,7 @@ def get_ctd_data_daily(
             "limit": limit,
             "only_profilers": only_profilers,
             "delivery_method": delivery_method,
+            "sensor_type": sensor_type,
         },
     )
 
@@ -346,7 +364,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
     return results
 
 
-def __get_ctd_data_concurrent(start_end_tuple, location, limit, only_profilers, delivery_method):
+def __get_ctd_data_concurrent(
+    start_end_tuple, location, limit, only_profilers, delivery_method, sensor_type
+):
     """
     Helper function to support multiprocessing for
     :func:`ooipy.ctd_request.get_ctd_data_daily
@@ -361,5 +381,6 @@ def __get_ctd_data_concurrent(start_end_tuple, location, limit, only_profilers, 
         limit=limit,
         only_profilers=only_profilers,
         delivery_method=delivery_method,
+        sensor_type=sensor_type,
     )
     return rawdata
