@@ -78,7 +78,6 @@ def get_ctd_data(
         data sample consists of a dictionary of parameters measured by the CTD.
 
     """
-    print(sensor_type)
     USERNAME, TOKEN = ooipy.request.authentification.get_authentification()
     # Sensor Inventory
     DATA_API_BASE_URL = "https://ooinet.oceanobservatories.org/api/m2m/12576/sensor/inv/"
