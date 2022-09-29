@@ -15,6 +15,7 @@ from datetime import timedelta
 
 import fsspec
 import numpy as np
+import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
 
@@ -319,7 +320,15 @@ def get_acoustic_data(
 
 
 def get_acoustic_data_LF(
-    starttime, endtime, node, fmin=None, fmax=None, verbose=False, zero_mean=False, channel="HDH"
+    starttime,
+    endtime,
+    node,
+    fmin=None,
+    fmax=None,
+    verbose=False,
+    zero_mean=False,
+    channel="HDH",
+    correct=False,
 ):
     """
     Get low frequency acoustic data for specific time frame and sensor
@@ -331,6 +340,7 @@ def get_acoustic_data_LF(
     `IRIS data portal
     <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
 
+    If there is no data for the specified time window, then None is returned
 
     >>> starttime = datetime.datetime(2017,3,10,7,0,0)
     >>> endtime = datetime.datetime(2017,3,10,7,1,30)
@@ -368,6 +378,15 @@ def get_acoustic_data_LF(
         are 'HDH' - hydrophone, 'HNE' - east seismometer, 'HNN' - north
         seismometer, 'HNZ' - z seismometer. NOTE calibration is only valid for
         'HDH' channel. All other channels are for raw data only at this time.
+    correct : bool
+        whether or not to use IRIS calibration code. NOTE: when this is true,
+        computing PSDs is currently broken as calibration is computed twice
+
+    Returns
+    -------
+    hydrophone_data : :class:`.HydrophoneData`
+        Hyrophone data object. If there is no data in the time window, None
+        is returned
     """
 
     if fmin is None and fmax is None:
@@ -382,21 +401,31 @@ def get_acoustic_data_LF(
         bandpass_range=bandpass_range,
         zero_mean=zero_mean,
         channel=channel,
+        correct=correct,
     )
     if verbose:
         print("Downloading mseed file...")
 
-    # Try downloading data 5 times. If fails every time raise exception
-    for k in range(5):
-        try:
-            data_stream = read(url)
-            break
-        except Exception:
-            if k == 4:
-                print("   Specific Time window timed out.")
-                return None
+    try:
+        data_stream = read(url)
+    except requests.HTTPError:
+        if verbose:
+            print("   error loading data from OOI server.")
+            print("      likely that time window doesn't have data")
+        return None
 
-            # raise Exception ('Problem Requesting Data from OOI Server')
+    # removing this (John 9/29/22) not sure if this will caused unkown errors...
+    # Try downloading data 5 times. If fails every time raise exception
+    # for k in range(5):
+    #    try:
+    #        data_stream = read(url)
+    #        break
+    #    except Exception:
+    #        if k == 4:
+    #            print("   Specific Time window timed out.")
+    #            return None
+
+    # raise Exception ('Problem Requesting Data from OOI Server')
 
     hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
