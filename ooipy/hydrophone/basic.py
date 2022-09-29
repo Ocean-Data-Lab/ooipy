@@ -193,7 +193,7 @@ class HydrophoneData(Trace):
 
                     specgram.append(Pxx)
                     time.append(
-                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * L / fs)
+                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * L / fs / 2)
                     )
 
         else:
