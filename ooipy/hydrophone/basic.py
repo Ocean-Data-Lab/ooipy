@@ -96,7 +96,15 @@ class HydrophoneData(Trace):
 
         # Convert calibration to correct units
         if round(self.stats.sampling_rate) == 200:
-            sens_calib = 20 * np.log10(sens_calib * 1e-6)
+            if self.stats.channel == "HDH":
+                sens_calib = 20 * np.log10(sens_calib * 1e-6)
+            elif (
+                (self.stats.channel == "HNZ")
+                | (self.stats.channel == "HNE")
+                | (self.stats.channel == "HNN")
+            ):
+                sens_calib = 20 * np.log10(sens_calib)
+                # units for seismograms are in dB rel to m/s^2
         elif round(self.stats.sampling_rate) == 64000:
             sens_calib = sens_calib + 128.9
         else:
@@ -607,11 +615,11 @@ class HydrophoneData(Trace):
         OOI-CabledArray/deployments/main/HYDBBA_deployments.csv'>`_ for
         broadband hydrophones. Since Low frequency hydrophones remain
         constant with location and time, if the hydrophone is low frequency,
-        the node ID is returned
+        {location}-{channel} string combination is returned
         """
         # Low frequency hydrophone
         if round(self.stats.sampling_rate) == 200:
-            asset_ID = self.stats.location
+            asset_ID = f"{self.stats.location}-{self.stats.channel}"
 
         elif round(self.stats.sampling_rate) == 64000:
             url = (
