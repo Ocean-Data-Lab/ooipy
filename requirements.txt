@@ -3,3 +3,4 @@ fsspec
 aiohttp
 pandas
 numpy<1.22
+lxml
