@@ -241,6 +241,7 @@ def get_acoustic_data(
                 print("Found large data gap within requested time")
             return None
 
+
     if verbose:
         print("Downloading mseed files...")
 
@@ -521,11 +522,13 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
 
 def __read_mseed(url):
     # fname = os.path.basename(url)
-    try:
-        st = read(url, apply_calib=True)
-    except Exception:
-        print(f"Data Segment {url} Broken")
-        return None
+    
+    # removing try statement that abstracts errors
+    #try:
+    st = read(url, apply_calib=True)
+    #except Exception:
+    #    print(f"Data Segment {url} Broken")
+    #    return None
     if isinstance(st, Stream):
 
         return st

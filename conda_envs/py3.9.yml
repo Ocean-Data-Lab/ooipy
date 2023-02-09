@@ -9,3 +9,4 @@ dependencies:
   - aiohttp
   - pandas
   - mamba
+  - lxml
