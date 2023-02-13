@@ -4,7 +4,7 @@ spectral density estimates. It extends the matplotlib.pyplot.plot
 function.
 """
 
-# Import all dependancies
+# Import all dependencies
 import datetime
 
 import matplotlib
@@ -44,7 +44,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     >>> plt.ylim([0, 20000])
     >>> plt.show()
 
-    >>> # plot PSD and chnage some default plot settings
+    >>> # plot PSD and change some default plot settings
     >>> ooiplt.plot(hydrophone_data.psd)
     >>> plt.title('my PSD')
     >>> plt.show()
@@ -286,7 +286,7 @@ def plot_psd(psd_obj, **kwargs):
             If True, figure will be saved under **filename**. Default is
             False
         * new_fig : bool
-            If True, matplotlib will create a new fugure. Default is
+            If True, matplotlib will create a new figure. Default is
             True
         * filename : str
             filename of figure if saved. Default is "spectrogram.png"
@@ -499,7 +499,7 @@ def plot_ctd_profile(ctd_profile, **kwargs):
             If True, figure will be saved under **filename**. Default is
             False
         * new_fig : bool
-            If True, matplotlib will create a new fugure. Default is
+            If True, matplotlib will create a new figure. Default is
             True
         * filename : str
             filename of figure if saved. Default is "spectrogram.png"
