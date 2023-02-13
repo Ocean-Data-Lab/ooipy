@@ -357,9 +357,9 @@ class CtdProfile:
     Attributes
     ----------
     parameter_mean : array of float
-        mean of paramter within each 1-meter depth interval
+        mean of parameter within each 1-meter depth interval
     parameter_var : array of float
-        variance of paramter within each 1-meter depth interval
+        variance of parameter within each 1-meter depth interval
     depth_mean : array of float
         mean of depth within each 1-meter depth interval
     depth_var : array of float

@@ -19,7 +19,7 @@ import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
 
-# Import all dependancies
+# Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
 
 
@@ -68,7 +68,7 @@ def get_acoustic_data(
         higher cutoff frequency of hydrophones bandpass filter. Default
         is None which results in no filtering.
     print_exceptions : bool, optional
-        whether or not exeptions are printed in the terminal line
+        whether or not exceptions are printed in the terminal line
     max_workers : int, optional
         number of maximum workers for concurrent processing
     append : bool, optional
@@ -240,7 +240,6 @@ def get_acoustic_data(
             if verbose:
                 print("Found large data gap within requested time")
             return None
-
 
     if verbose:
         print("Downloading mseed files...")
@@ -415,7 +414,7 @@ def get_acoustic_data_LF(
             print("      likely that time window doesn't have data")
         return None
 
-    # removing this (John 9/29/22) not sure if this will caused unkown errors...
+    # removing this (John 9/29/22) not sure if this will caused unknown errors...
     # Try downloading data 5 times. If fails every time raise exception
     # for k in range(5):
     #    try:
@@ -500,7 +499,7 @@ def ooipy_read(
             zero_mean=zero_mean,
         )
     else:
-        raise Exception("Invalid Devic String")
+        raise Exception("Invalid Device String")
 
     return hydrophone_data
 
@@ -522,11 +521,11 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
 
 def __read_mseed(url):
     # fname = os.path.basename(url)
-    
+
     # removing try statement that abstracts errors
-    #try:
+    # try:
     st = read(url, apply_calib=True)
-    #except Exception:
+    # except Exception:
     #    print(f"Data Segment {url} Broken")
     #    return None
     if isinstance(st, Stream):

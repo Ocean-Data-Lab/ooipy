@@ -141,7 +141,7 @@ class HydrophoneData(Trace):
             Percentage of overlap between adjacent blocks if Welch's method is
             used. Parameter is ignored if avg_time is None. (Default is 50%)
         verbose : bool, optional
-            If true (defult), exception messages and some comments are printed.
+            If true (default), exception messages and some comments are printed.
         average_type : str
             type of averaging if Welch PSD estimate is used. options are
             'median' (default) and 'mean'.
@@ -289,7 +289,7 @@ class HydrophoneData(Trace):
             Percentage of overlap between adjacent blocks if Welch's method
             is used. Parameter is ignored if avg_time is None. (Default is 50%)
         verbose : bool, optional
-            If true (defult), exception messages and some comments are printed.
+            If true (default), exception messages and some comments are printed.
         average_type : str
             type of averaging if Welch PSD estimate is used. options are
             'median' (default) and 'mean'.
@@ -573,9 +573,9 @@ class HydrophoneData(Trace):
         filename : str
             filename to store .wav file as
         norm : bool
-            specifices whether data should be normalized to 1
+            specifies whether data should be normalized to 1
         new_sample_rate : float
-            specifices new sample rate of wav file to be saved. (Resampling is
+            specifies new sample rate of wav file to be saved. (Resampling is
             done with scipy.signal.resample()). Default is None which keeps
             original sample rate of data.
         """
@@ -829,7 +829,7 @@ class Spectrogram:
         time_limits=None,
     ):
         """
-        This function will be depreciated into a differnt module in the future.
+        This function will be depreciated into a different module in the future.
         The current documentation might not be accurate.
 
         To plot spectrograms please see
@@ -861,13 +861,13 @@ class Spectrogram:
         figsize (tuple(int)): size of figure
         dpi (int): dots per inch
         time_limits : list
-            specifices xlimits on spectrogram. List contains two
+            specifies xlimits on spectrogram. List contains two
             datetime.datetime objects
         """
         import warnings
 
         raise warnings.warn(
-            "will be depricated in future. Please see " "ooipy.tools.ooiplotlib.plot_spectrogram()"
+            "will be deprecated in future. Please see " "ooipy.tools.ooiplotlib.plot_spectrogram()"
         )
         # set backend for plotting/saving:
         if not plot_spec:
@@ -953,7 +953,7 @@ class Spectrogram:
 
 class Psd:
     """
-    A calss used to represent a PSD object
+    A class used to represent a PSD object
 
     Attributes
     ----------
@@ -1022,7 +1022,7 @@ class Psd:
         import warnings
 
         raise warnings.warn(
-            "will be depricated in future. Please see " "ooipy.tools.ooiplotlib.plot_psd()"
+            "will be deprecated in future. Please see " "ooipy.tools.ooiplotlib.plot_psd()"
         )
         # set backend for plotting/saving:
         if not plot_psd:

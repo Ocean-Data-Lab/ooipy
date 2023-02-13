@@ -1,7 +1,7 @@
 <img src='imgs/OOIPY_Logo.png' align="right" width=150>
 
 # OOIPY
-![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master) ![unit test](https://github.com/ooipy/ooipy/workflows/unit%20test/badge.svg) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4276862.svg)](https://doi.org/10.5281/zenodo.4276862) [![Documentation Status](https://readthedocs.org/projects/ooipy/badge/?version=latest)](https://ooipy.readthedocs.io/en/latest/?badge=latest)
+![PEP8](https://github.com/ooipy/ooipy/workflows/PEP8/badge.svg?branch=master) ![unit test](https://github.com/ooipy/ooipy/workflows/unit%20test/badge.svg) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4276862.svg)](https://doi.org/10.5281/zenodo.4276862) [![Documentation Status](https://readthedocs.org/projects/ooipy/badge/?version=latest)](https://ooipy.readthedocs.io/en/latest/?badge=latest) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Ocean-Data-Lab/ooipy/master.svg)](https://results.pre-commit.ci/latest/github/Ocean-Data-Lab/ooipy/master)
 
 
 

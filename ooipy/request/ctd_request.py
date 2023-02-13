@@ -55,13 +55,13 @@ def get_ctd_data(
         please refer to http://oceanobservatories.org/glossary/. Options
         are:
         * 'auto' (default): automatically uses method that has data
-            avaiilable
-        * 'streamed': only consideres data that are streamed to shore
+            available
+        * 'streamed': only considers data that are streamed to shore
             via cable
-        * 'telemetered': only consideres data that are streamed to shore
+        * 'telemetered': only considers data that are streamed to shore
             via satellite
-        * 'recovered': only consideres data that were reteived when the
-            instrument was retreived
+        * 'recovered': only considers data that were reteived when the
+            instrument was retrieved
 
     Returns
     -------
