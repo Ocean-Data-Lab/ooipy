@@ -4,7 +4,7 @@ import multiprocessing as mp
 
 import requests
 
-import ooipy.request.authentication
+import ooipy.request.authentification
 from ooipy.ctd.basic import CtdData
 
 
@@ -71,7 +71,7 @@ def get_ctd_data(
 
     """
 
-    USERNAME, TOKEN = ooipy.request.authentication.get_authentification()
+    USERNAME, TOKEN = ooipy.request.authentification.get_authentification()
     # Sensor Inventory
     DATA_API_BASE_URL = "https://ooinet.oceanobservatories.org/api/m2m/12576/sensor/inv/"
 

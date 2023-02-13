@@ -95,7 +95,7 @@ def test_hydrophone_node_names():
         assert hyd_data.stats.location in node_id_arr
 
 
-# TODO: need to figure out how to do the OOI authentication on the GitHub VM
+# TODO: need to figure out how to do the OOI authentification on the GitHub VM
 # def test_get_ctd_data():
 #    start = datetime.datetime(2016, 12, 17, 2, 0, 0)
 #    end = datetime.datetime(2016, 12, 17, 3, 0, 0)

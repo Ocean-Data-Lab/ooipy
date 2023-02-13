@@ -1,6 +1,6 @@
 """
-This module provides functions for the automatic authentication at the
-OOI. The authentication is based on a username and a token, which will
+This module provides functions for the automatic authentification at the
+OOI. The authentification is based on a username and a token, which will
 be generatd after registering an account at
 https://ooinet.oceanobservatories.org/.
 """
