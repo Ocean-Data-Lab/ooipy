@@ -1,2 +1,16 @@
+[build-system]
+requires = [
+    "setuptools >= 66",
+    "setuptools_scm >= 7.0.0",
+    "wheel >= 0.38.4",
+]
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools_scm]
+fallback_version = "unknown"
+local_scheme = "no-local-version"
+write_to = "_ooipy_version.py"
+write_to_template = 'version = "{version}"\n'
+
 [tool.black]
 line-length = 100
