@@ -12,7 +12,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
         experimental: [false]
     steps:
     - name: Checkout Repo
@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Setup micromamba
-      uses: mamba-org/provision-with-micromamba@v13
+      uses: mamba-org/provision-with-micromamba@v15
       with:
         environment-file: conda_envs/py${{ matrix.python-version }}.yml
         environment-name: ${{ env.CONDA_ENV }}
@@ -37,7 +37,8 @@ jobs:
         conda list
     - name: Install pytest
       shell: bash -l {0}
-      run: mamba install --yes pytest
+      run: |
+        python -m pip install pytest
     - name: Install ooipy
       shell: bash -l {0}
       run: |
