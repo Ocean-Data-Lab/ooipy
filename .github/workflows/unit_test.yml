@@ -2,6 +2,9 @@ name: unit test
 
 on: [push, pull_request]
 
+env:
+  CONDA_ENV: ooi
+
 jobs:
   unit_test:
     name: ${{ matrix.python-version }}-unit-test
@@ -13,27 +16,20 @@ jobs:
         experimental: [false]
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # Fetch all history for all branches and tags.
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Cache conda
-      uses: actions/cache@v2
-      env:
-        # Increase this value to reset cache if conda_envs/py${{ matrix.python-version }}.yml has not changed
-        CACHE_NUMBER: 0
-      with:
-        path: ~/conda_pkgs_dir
-        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(format('conda_envs/py{0}.yml', matrix.python-version)) }}
-    - name: Install conda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: ooi
-        environment-file: conda_envs/py${{ matrix.python-version }}.yml
-        python-version: ${{ matrix.python-version }}
-        auto-activate-base: false
-        use-only-tar-bz2: true
+    - name: Setup micromamba
+        uses: mamba-org/provision-with-micromamba@v13
+        with:
+          environment-file: conda_envs/py${{ matrix.python-version }}.yml
+          environment-name: ${{ env.CONDA_ENV }}
+          cache-env: true
+          cache-env-key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(format('conda_envs/py{0}.yml', matrix.python-version)) }}
     - name: Print conda env
       shell: bash -l {0}
       run: |
@@ -44,7 +40,8 @@ jobs:
       run: mamba install --yes pytest
     - name: Install ooipy
       shell: bash -l {0}
-      run: pip install .
+      run: |
+        python -m pip install -e .
     - name: Run unit tests
       shell: bash -l {0}
       env:
