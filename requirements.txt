@@ -1,6 +1,0 @@
-obspy
-fsspec==2022.11.0
-aiohttp
-pandas
-numpy<1.22
-lxml

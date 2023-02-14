@@ -42,7 +42,7 @@ jobs:
         sed --in-place "s/node-and-date/no-local-version/g" setup.py
     - name: Build source and wheel distributions
       run: |
-        python setup.py sdist bdist_wheel
+        python -m build
         echo ""
         echo "Generated files:"
         ls -lh dist/
