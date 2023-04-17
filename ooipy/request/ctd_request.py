@@ -255,7 +255,6 @@ def get_ctd_data(
             dataraw.extend(dataraw2)
             processed_ctds.append(ctd_id)
 
-#    return dataraw
     ctd_data = CtdData(raw_data=dataraw)
     return ctd_data
 
