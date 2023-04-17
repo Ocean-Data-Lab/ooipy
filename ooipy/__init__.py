@@ -1,4 +1,4 @@
-from _ooipy_version import version as __version__  # noqa
+#from _ooipy_version import version as __version__  # noqa
 
 import ooipy.tools.workflow
 from ooipy.hydrophone.basic import Psd, Spectrogram
