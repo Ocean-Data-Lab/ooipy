@@ -254,6 +254,7 @@ def get_ctd_data(
         if "message" not in dataraw2:
             dataraw.extend(dataraw2)
             processed_ctds.append(ctd_id)
+
     ctd_data = CtdData(raw_data=dataraw)
     return ctd_data
 

@@ -96,6 +96,8 @@ class CtdData:
             if parameter == "temperature":
                 if "seawater_temperature" in item:
                     param_arr.append(item["seawater_temperature"])
+                elif "sea_water_temperature" in item:
+                    param_arr.append(item["sea_water_temperature"])
                 elif "temperature" in item:
                     param_arr.append(item["temperature"])
                 else:
@@ -105,18 +107,24 @@ class CtdData:
                     param_arr.append(item["ctdbp_no_seawater_pressure"])
                 elif "seawater_pressure" in item:
                     param_arr.append(item["seawater_pressure"])
+                elif "sea_water_pressure" in item:
+                    param_arr.append(item["sea_water_pressure"])
                 else:
                     param_arr.append(item["pressure"])
 
             if parameter == "salinity":
                 if "practical_salinity" in item:
                     param_arr.append(item["practical_salinity"])
+                elif "sea_water_practical_salinity" in item:
+                    param_arr.append(item["sea_water_practical_salinity"])
                 else:
                     param_arr.append(item["salinity"])
 
             if parameter == "density":
                 if "seawater_density" in item:
                     param_arr.append(item["seawater_density"])
+                elif "sea_water_density" in item:
+                    param_arr.append(item["sea_water_density"])
                 else:
                     param_arr.append(item["density"])
 
