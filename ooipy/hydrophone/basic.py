@@ -52,7 +52,6 @@ class HydrophoneData(Trace):
     """
 
     def __init__(self, data=np.array([]), header=None, node=""):
-
         super().__init__(data, header)
         self.stats.location = node_id(node)
 
