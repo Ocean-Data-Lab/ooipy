@@ -30,30 +30,30 @@ How to setup OOIPY development environment
 
   git clone https://github.com/Ocean-Data-Lab/ooipy.git
 
-2. Setup a new Conda environment using this command: 
+2. Setup a new Conda environment using this command:
 
 .. code-block :: bash
 
   conda create --name env_name
 
-3. Activate the environment using this command: 
+3. Activate the environment using this command:
 
 .. code-block :: bash
 
   source activate env_name
 
-4. Run the script to setup the development environment and install dependencies using this command: 
+4. Run the script to setup the development environment and install dependencies using this command:
 
 .. code-block :: bash
-  
-  bash ooipy/dev_setup.sh 
-  
+
+  bash ooipy/dev_setup.sh
+
 Conda will ask for permissions while installing each library, answer 'y' to each.
 
-5. When this runs successfully, run the python file to verify if installation is proper, using this command: 
+5. When this runs successfully, run the python file to verify if installation is proper, using this command:
 
 .. code-block :: bash
-  
+
   python ooipy/verify_setup.py
-  
+
 If the path printed out matches your local installation path for the ooipy github repository, your development environment has been properly setup.
