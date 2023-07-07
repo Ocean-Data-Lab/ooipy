@@ -23,22 +23,24 @@ python download_broadband.py --csv path/to/csv --output_path path/to/output
 
 import argparse
 import sys
+
 import pandas as pd
-import ooipy
 from tqdm import tqdm
 
+import ooipy
+
 hyd_type = {
-    'LJ01D' : 'BB',
-    'LJ01A' : 'BB',
-    'PC01A' : 'BB',
-    'PC03A' : 'BB',
-    'LJ01C' : 'BB',
-    'LJ03A' : 'BB',
-    'AXBA1' : 'LF',
-    'AXCC1' : 'LF',
-    'AXEC2' : 'LF',
-    'HYS14' : 'LF',
-    'HYSB1' : 'LF'
+    "LJ01D": "BB",
+    "LJ01A": "BB",
+    "PC01A": "BB",
+    "PC03A": "BB",
+    "LJ01C": "BB",
+    "LJ03A": "BB",
+    "AXBA1": "LF",
+    "AXCC1": "LF",
+    "AXEC2": "LF",
+    "HYS14": "LF",
+    "HYSB1": "LF",
 }
 
 # Create the argument parser
@@ -55,7 +57,9 @@ args = parser.parse_args()
 if args.csv is None:
     raise Exception("You must provide a path to the csv file, --csv <absolute file path>")
 if args.output_path is None:
-    raise Exception("You must provide a path to the output directory, --output_path <absolute file path>")
+    raise Exception(
+        "You must provide a path to the output directory, --output_path <absolute file path>"
+    )
 
 # Access the values of the command-line options
 df = pd.read_csv(args.csv)
@@ -66,6 +70,7 @@ for k, item in df.iterrows():
     total_time += (pd.Timestamp(item.end_time) - pd.Timestamp(item.start_time)).value / 1e9
 
 total_storage = total_time * 64e3 * 8  # 8 Bytes per sample
+
 
 def format_bytes(size):
     power = 2**10  # Power of 2^10
@@ -78,6 +83,7 @@ def format_bytes(size):
 
     formatted_size = "{:.2f} {}".format(size, units[n])
     return formatted_size
+
 
 print(f"total uncompressed download size: ~{format_bytes(total_storage)}")
 proceed = input("Do you want to proceed? (y/n): ")
@@ -95,7 +101,7 @@ for k, item in tqdm(df.iterrows()):
     start_time_d = pd.Timestamp(item.start_time).to_pydatetime()
     end_time_d = pd.Timestamp(item.end_time).to_pydatetime()
 
-    if hyd_type[item.node] == 'LF':
+    if hyd_type[item.node] == "LF":
         hdata = ooipy.get_acoustic_data_LF(start_time_d, end_time_d, item.node)
     else:
         hdata = ooipy.get_acoustic_data(start_time_d, end_time_d, item.node)
@@ -117,4 +123,4 @@ for k, item in tqdm(df.iterrows()):
     # save
     filename = f'{args.output_path}/{hdata_ds.stats.location}_{hdata_ds.stats.starttime.strftime("%Y%m%dT%H%M%S")}_{hdata_ds.stats.endtime.strftime("%Y%m%dT%H%M%S")}'
     print(filename)
-    hdata_ds.save(filename=filename, file_format=item.file_format, wav_kwargs={'norm':True})
+    hdata_ds.save(filename=filename, file_format=item.file_format, wav_kwargs={"norm": True})
