@@ -11,7 +11,7 @@ import multiprocessing as mp
 import os
 import pickle
 import warnings
-
+import xarray as xr
 import matplotlib
 import matplotlib.colors as colors
 import matplotlib.dates as mdates
@@ -22,7 +22,7 @@ from obspy import Trace
 from obspy.core import UTCDateTime
 from scipy import signal
 from scipy.interpolate import interp1d
-from scipy.io import wavfile
+from scipy.io import wavfile, savemat
 
 import ooipy
 
@@ -678,6 +678,62 @@ class HydrophoneData(Trace):
 
         return asset_ID
 
+    def save(self, file_format, filename, wav_kwargs={}):
+        '''
+        save hydrophone data in specified method. Supported methods are:
+        - pickle - saves the HydrophoneData object as a pickle file
+        - netCDF - saves HydrophoneData object as netCDF. Time coordinates are not included
+        - mat - saves HydrophoneData object as a .mat file
+        - wav - calls wav_write method to save HydrophoneData object as a .wav file
+
+        Parameters
+        ----------
+        file_format : str
+            format to save HydrophoneData object as. Supported formats are
+            ['pkl', 'nc', 'mat', 'wav']
+        filepath : str
+            filepath to save HydrophoneData object. file extension should not be included
+        wav_kwargs : dict
+            dictionary of keyword arguments to pass to wav_write method
+            
+        Returns
+        -------
+        None
+        '''
+
+        try:
+            self.data
+        except AttributeError:
+            raise AttributeError("HydrophoneData object does not contain any data")
+        
+        if file_format == 'pkl':
+            # save HydrophoneData object as pickle file
+
+            print(filename+'.pkl')
+            with open(filename+'.pkl', 'wb') as f:
+                pickle.dump(self, f)
+        elif file_format == 'nc':
+            # save HydrophoneData object as netCDF file
+            attrs = dict(self.stats)
+            attrs['starttime'] = self.stats.starttime.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            attrs['endtime'] = self.stats.endtime.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            attrs['mseed'] = str(attrs['mseed'])
+            hdata_x = xr.DataArray(self.data, dims=['time'], attrs=attrs)
+            hdata_x.to_netcdf(filename+'.nc')
+        elif file_format == 'mat':
+            # save HydrophoneData object as .mat file
+            data_dict = dict(self.stats)
+            data_dict['data'] = self.data
+            data_dict['starttime'] = self.stats.starttime.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            data_dict['endtime'] = self.stats.endtime.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            savemat(filename+'.mat', {self.stats.location : data_dict})
+
+        elif file_format == 'wav':
+            # save HydrophoneData object as .wav file
+            self.wav_write(filename+'.wav', **wav_kwargs)
+        else:
+            raise Exception("Invalid file format. Supported formats are: ['pkl', 'nc', 'mat', 'wav']")
+        
 
 def node_id(node):
     """
