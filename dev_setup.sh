@@ -10,6 +10,6 @@ conda install -c conda-forge isort
 conda install numpydoc
 conda install -c conda-forge pre_commit
 conda install -c conda-forge pylint
-conda develop ooipy
 python ooipy/setup.py
+conda develop ooipy
 python ooipy/verify_setup.py
