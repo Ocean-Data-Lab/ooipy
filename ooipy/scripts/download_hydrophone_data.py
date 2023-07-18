@@ -121,6 +121,11 @@ for k, item in tqdm(df.iterrows()):
         hdata_ds = hdata_ds.decimate(downsample_factor)
 
     # save
-    filename = f'{args.output_path}/{hdata_ds.stats.location}_{hdata_ds.stats.starttime.strftime("%Y%m%dT%H%M%S")}_{hdata_ds.stats.endtime.strftime("%Y%m%dT%H%M%S")}'
+    op_path = args.output_path
+    hdat_loc = hdata_ds.stats.location
+    hdat_start_time = hdata_ds.stats.starttime.strftime("%Y%m%dT%H%M%S")
+    hdat_end_time = hdata_ds.stats.endtime.strftime("%Y%m%dT%H%M%S")
+    filename = f'{op_path}/{hdat_loc}_{hdat_start_time}_{hdat_end_time}'
+    
     print(filename)
     hdata_ds.save(filename=filename, file_format=item.file_format, wav_kwargs={"norm": True})
