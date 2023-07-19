@@ -17,6 +17,7 @@ import matplotlib.colors as colors
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+import xarray as xr
 from matplotlib import pyplot as plt
 from obspy import Trace
 from obspy.core import UTCDateTime
@@ -25,7 +26,6 @@ from scipy.interpolate import interp1d
 from scipy.io import wavfile
 
 import ooipy
-import xarray as xr
 
 
 class HydrophoneData(Trace):
@@ -250,14 +250,20 @@ class HydrophoneData(Trace):
                 print("Spectrogram does not contain any data")
             self.spectrogram = None
             return None
-        else:   
-            spec_xr = xr.DataArray(np.array(specgram), dims=['time', 'frequency'], 
-                                  coords={'time':np.array(time), 'frequency':np.array(f)},
-                                  attrs=dict(start_time = self.stats.starttime.datetime,
-                                             end_time = self.stats.endtime.datetime,
-                                             nperseg = L, units= 'dB rel µ Pa^2 / Hz'),
-                                  name='spectrogram')
-            #self.spectrogram = Spectrogram(np.array(time), np.array(f), np.array(specgram))
+        else:
+            spec_xr = xr.DataArray(
+                np.array(specgram),
+                dims=["time", "frequency"],
+                coords={"time": np.array(time), "frequency": np.array(f)},
+                attrs=dict(
+                    start_time=self.stats.starttime.datetime,
+                    end_time=self.stats.endtime.datetime,
+                    nperseg=L,
+                    units="dB rel µ Pa^2 / Hz",
+                ),
+                name="spectrogram",
+            )
+            # self.spectrogram = Spectrogram(np.array(time), np.array(f), np.array(specgram))
             return spec_xr
 
     def compute_spectrogram_mp(
@@ -446,14 +452,20 @@ class HydrophoneData(Trace):
         else:
             raise Exception('scale has to be either "lin" or "log".')
 
-        psd_xr = xr.DataArray(np.array(Pxx), dims=['frequency'], 
-                                  coords={'frequency':np.array(f)},
-                                  attrs=dict(start_time = self.stats.starttime.datetime,
-                                             end_time = self.stats.endtime.datetime,
-                                             nperseg = L, units= 'dB rel µ Pa^2 / Hz'),
-                                  name='psd')
-        #self.psd = Psd(f, Pxx)
-        #return self.psd
+        psd_xr = xr.DataArray(
+            np.array(Pxx),
+            dims=["frequency"],
+            coords={"frequency": np.array(f)},
+            attrs=dict(
+                start_time=self.stats.starttime.datetime,
+                end_time=self.stats.endtime.datetime,
+                nperseg=L,
+                units="dB rel µ Pa^2 / Hz",
+            ),
+            name="psd",
+        )
+        # self.psd = Psd(f, Pxx)
+        # return self.psd
         return psd_xr
 
     def compute_psd_welch_mp(
