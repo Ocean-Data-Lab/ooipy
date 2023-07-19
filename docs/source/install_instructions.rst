@@ -12,7 +12,7 @@ OOIPY is available on PyPI.
 
 Install Instruction
 -------------------
-OOIPY is designed to run on Python 3.8.5. To install OOIPY, run the following command.
+OOIPY is designed to run on Python > 3.7 To install OOIPY, run the following command.
 
 .. code-block :: bash
 
