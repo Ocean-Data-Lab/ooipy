@@ -349,12 +349,18 @@ class HydrophoneData(Trace):
                 for i in range(len(specgram_list)):
                     time_specgram.extend(specgram_list[i].time)
                     specgram.extend(specgram_list[i].values)
-                spec_xr = xr.DataArray(np.array(specgram), dims=['time', 'frequency'], 
-                                  coords={'time':np.array(time), 'frequency':np.array(f)},
-                                  attrs=dict(start_time = self.stats.starttime.datetime,
-                                             end_time = self.stats.endtime.datetime,
-                                             nperseg = L, units= 'dB rel µ Pa^2 / Hz'),
-                                  name='spectrogram')
+                spec_xr = xr.DataArray(
+                    np.array(specgram),
+                    dims=["time", "frequency"],
+                    coords={"time": np.array(time), "frequency": np.array(f)},
+                    attrs=dict(
+                        start_time=self.stats.starttime.datetime,
+                        end_time=self.stats.endtime.datetime,
+                        nperseg=L,
+                        units="dB rel µ Pa^2 / Hz",
+                    ),
+                    name="spectrogram",
+                )
                 return spec_xr
             except Exception as e:
                 if verbose:
@@ -465,7 +471,6 @@ class HydrophoneData(Trace):
             name="psd",
         )
         return psd_xr
-
 
     def wav_write(self, filename, norm=False, new_sample_rate=None):
         """
