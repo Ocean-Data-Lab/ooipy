@@ -1,4 +1,0 @@
-obspy
-fsspec
-aiohttp
-pandas

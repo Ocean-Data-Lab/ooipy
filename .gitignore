@@ -17,3 +17,12 @@ dist/
 ooipy.egg-info/
 *.wav
 ooi_auth.txt
+.eggs
+_ooipy_version.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/

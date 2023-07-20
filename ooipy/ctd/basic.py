@@ -96,6 +96,8 @@ class CtdData:
             if parameter == "temperature":
                 if "seawater_temperature" in item:
                     param_arr.append(item["seawater_temperature"])
+                elif "sea_water_temperature" in item:
+                    param_arr.append(item["sea_water_temperature"])
                 elif "temperature" in item:
                     param_arr.append(item["temperature"])
                 else:
@@ -105,18 +107,24 @@ class CtdData:
                     param_arr.append(item["ctdbp_no_seawater_pressure"])
                 elif "seawater_pressure" in item:
                     param_arr.append(item["seawater_pressure"])
+                elif "sea_water_pressure" in item:
+                    param_arr.append(item["sea_water_pressure"])
                 else:
                     param_arr.append(item["pressure"])
 
             if parameter == "salinity":
                 if "practical_salinity" in item:
                     param_arr.append(item["practical_salinity"])
+                elif "sea_water_practical_salinity" in item:
+                    param_arr.append(item["sea_water_practical_salinity"])
                 else:
                     param_arr.append(item["salinity"])
 
             if parameter == "density":
                 if "seawater_density" in item:
                     param_arr.append(item["seawater_density"])
+                elif "sea_water_density" in item:
+                    param_arr.append(item["sea_water_density"])
                 else:
                     param_arr.append(item["density"])
 
@@ -125,6 +133,8 @@ class CtdData:
                     param_arr.append(item["ctdbp_no_seawater_conductivity"])
                 elif "seawater_conductivity" in item:
                     param_arr.append(item["seawater_conductivity"])
+                elif "dpc_ctd_seawater_conductivity" in item:
+                    param_arr.append(item["dpc_ctd_seawater_conductivity"])
                 else:
                     param_arr.append(item["conductivity"])
 
@@ -179,9 +189,9 @@ class CtdData:
         # Calculate Depth for Pressure array
         self.depth = (
             9.72659e2 * press_MPa
-            - 2.512e-1 * press_MPa ** 2
-            + 2.279e-4 * press_MPa ** 3
-            - 1.82e-7 * press_MPa ** 4
+            - 2.512e-1 * press_MPa**2
+            + 2.279e-4 * press_MPa**3
+            - 1.82e-7 * press_MPa**4
         ) / (g_phi + 1.092e-4 * press_MPa)
 
         return self.depth
@@ -257,20 +267,20 @@ class CtdData:
         D = D00 + D10 * P
         B = B00 + B01 * T + (B10 + B11 * T) * P
         A = (
-            (A00 + A01 * T + A02 * T ** 2 + A03 * T ** 3 + A04 * T ** 4)
-            + (A10 + A11 * T + A12 * T ** 2 + A13 * T ** 3 + A14 * T ** 4) * P
-            + (A20 + A21 * T + A22 * T ** 2 + A23 * T ** 3) * P ** 2
-            + (A30 + A31 * T + A32 * T ** 2) * P ** 3
+            (A00 + A01 * T + A02 * T**2 + A03 * T**3 + A04 * T**4)
+            + (A10 + A11 * T + A12 * T**2 + A13 * T**3 + A14 * T**4) * P
+            + (A20 + A21 * T + A22 * T**2 + A23 * T**3) * P**2
+            + (A30 + A31 * T + A32 * T**2) * P**3
         )
         Cw = (
-            (C00 + C01 * T + C02 * T ** 2 + C03 * T ** 3 + C04 * T ** 4 + C05 * T ** 5)
-            + (C10 + C11 * T + C12 * T ** 2 + C13 * T ** 3 + C14 * T ** 4) * P
-            + (C20 + C21 * T + C22 * T ** 2 + C23 * T ** 3 + C24 * T ** 4) * P ** 2
-            + (C30 + C31 * T + C32 * T ** 2) * P ** 3
+            (C00 + C01 * T + C02 * T**2 + C03 * T**3 + C04 * T**4 + C05 * T**5)
+            + (C10 + C11 * T + C12 * T**2 + C13 * T**3 + C14 * T**4) * P
+            + (C20 + C21 * T + C22 * T**2 + C23 * T**3 + C24 * T**4) * P**2
+            + (C30 + C31 * T + C32 * T**2) * P**3
         )
 
         # Calculate Speed of Sound
-        self.sound_speed = Cw + A * S + B * S ** (3 / 2) + D * S ** 2
+        self.sound_speed = Cw + A * S + B * S ** (3 / 2) + D * S**2
 
         return self.sound_speed
 
@@ -355,9 +365,9 @@ class CtdProfile:
     Attributes
     ----------
     parameter_mean : array of float
-        mean of paramter within each 1-meter depth interval
+        mean of parameter within each 1-meter depth interval
     parameter_var : array of float
-        variance of paramter within each 1-meter depth interval
+        variance of parameter within each 1-meter depth interval
     depth_mean : array of float
         mean of depth within each 1-meter depth interval
     depth_var : array of float

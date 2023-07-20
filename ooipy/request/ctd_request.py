@@ -56,13 +56,13 @@ def get_ctd_data(
         please refer to http://oceanobservatories.org/glossary/. Options
         are:
         * 'auto' (default): automatically uses method that has data
-            avaiilable
+            available
         * 'streamed': only considers data that are streamed to shore
             via cable
         * 'telemetered': only considers data that are streamed to shore
             via satellite
         * 'recovered': only considers data that were reteived when the
-            instrument was retreived
+            instrument was retrieved
     sensor_type : ls
         list of sensor types that CTD data is downloaded. Should be list of strings
         where valid entries include:
@@ -263,6 +263,7 @@ def get_ctd_data(
         if "message" not in dataraw2:
             dataraw.extend(dataraw2)
             processed_ctds.append(ctd_id)
+
     ctd_data = CtdData(raw_data=dataraw)
     return ctd_data
 

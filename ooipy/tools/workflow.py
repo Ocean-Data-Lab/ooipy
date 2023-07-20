@@ -6,7 +6,7 @@ power spectral density objects.
 import json
 import pickle
 
-# Import all dependancies
+# Import all dependencies
 import numpy as np
 
 from ooipy.hydrophone.basic import Psd, Spectrogram
@@ -37,7 +37,7 @@ def save(save_obj, filename, **kwargs):
     elif isinstance(save_obj, Psd):
         save_psd(save_obj, filename, **kwargs)
     else:
-        raise Exception("Fuction only supports spectrogram and PSD objects.")
+        raise Exception("Function only supports spectrogram and PSD objects.")
 
 
 def save_psd(psd_obj, filename, **kwargs):
