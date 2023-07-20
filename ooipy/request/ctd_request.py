@@ -61,8 +61,8 @@ def get_ctd_data(
             via cable
         * 'telemetered': only considers data that are streamed to shore
             via satellite
-        * 'recovered': only consideres data that were reteived when the
-            instrument was retrieved
+        * 'recovered': only considers data that were reteived when the
+            instrument was retreived
     sensor_type : ls
         list of sensor types that CTD data is downloaded. Should be list of strings
         where valid entries include:
