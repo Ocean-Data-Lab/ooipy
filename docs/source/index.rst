@@ -23,8 +23,8 @@ First Steps
     demos
 
 
-Modules Documentation
-^^^^^^^^^^^^^^^^^^^^^
+API Documentation
+^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 2
 
@@ -32,3 +32,4 @@ Modules Documentation
    ctd
    request
    tools
+   scripts
