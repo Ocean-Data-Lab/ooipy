@@ -155,7 +155,6 @@ def get_acoustic_data(
 
     # Create List of mseed urls for valid time range
     for i in range(len(data_url_list)):
-
         # get UTC time of current and next item in URL list
         # extract start time from ith file
         utc_time_url_start = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
@@ -529,7 +528,6 @@ def __read_mseed(url):
     #    print(f"Data Segment {url} Broken")
     #    return None
     if isinstance(st, Stream):
-
         return st
     else:
         print(f"Problem Reading {url}")
