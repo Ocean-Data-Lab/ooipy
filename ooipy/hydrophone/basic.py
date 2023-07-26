@@ -352,7 +352,7 @@ class HydrophoneData(Trace):
                 spec_xr = xr.DataArray(
                     np.array(specgram),
                     dims=["time", "frequency"],
-                    coords={"time": np.array(time), "frequency": np.array(f)},
+                    coords={"time": np.array(time_specgram), "frequency": np.array(specgram_list[0].freq)},
                     attrs=dict(
                         start_time=self.stats.starttime.datetime,
                         end_time=self.stats.endtime.datetime,
