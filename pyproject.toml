@@ -1,10 +1,47 @@
 [build-system]
-requires = [
-    "setuptools >= 66",
-    "setuptools_scm >= 7.0.0",
-    "wheel >= 0.38.4",
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ooipy"
+dynamic = ["version"]
+description = "A python toolbox for acquiring and analyzing Ocean Obvservatories Initiative (OOI) Data"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-build-backend = 'setuptools.build_meta'
+dependencies = [
+    "aiohttp",
+    "fsspec==2022.11.0",
+    "lxml",
+    "numpy",
+    "obspy",
+    "pandas",
+    "tqdm",
+    "xarray",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ocean-Data-Lab/ooipy"
+
+[tool.hatch.version]
+path = "ooipy/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ooipy",
+]
 
 [tool.setuptools_scm]
 fallback_version = "unknown"
