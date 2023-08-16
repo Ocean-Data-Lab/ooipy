@@ -883,7 +883,7 @@ class Spectrogram:
             t = self.time[::res_reduction_time]
 
         # Convert t to np.array of datetime.datetime
-        if type(t[0]) == UTCDateTime:
+        if type(t[0]) is UTCDateTime:
             for k in range(len(t)):
                 t[k] = t[k].datetime
 
@@ -916,7 +916,7 @@ class Spectrogram:
         plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar))
         plt.tick_params(axis="y")
 
-        if type(t[0]) == datetime.datetime:
+        if type(t[0]) is datetime.datetime:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d %H:%M"))
 
         if save_spec:
@@ -1073,17 +1073,17 @@ class Psd:
         else:
             f = self.freq
 
-        if type(self.values) != list:
+        if type(self.values) is not list:
             values = self.values.tolist()
 
-        if type(f) != list:
+        if type(f) is not list:
             f = f.tolist()
 
         dct = {"psd": values, "f": f}
 
         if len(ancillary_data) != 0:
             for i in range(len(ancillary_data)):
-                if type(ancillary_data[i]) != list:
+                if type(ancillary_data[i]) is not list:
                     dct[ancillary_data_label[i]] = ancillary_data[i].tolist()
                 else:
                     dct[ancillary_data_label[i]] = ancillary_data[i]
