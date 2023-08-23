@@ -12,12 +12,13 @@ Hydrophone Request Modules
 import concurrent.futures
 import multiprocessing as mp
 from datetime import timedelta
-from tqdm import tqdm
+
 import fsspec
 import numpy as np
 import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
+from tqdm import tqdm
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -512,7 +513,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(func, i, *args): i for i in iterator}
-        for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(iterator), disable = not verbose):
+        for future in tqdm(
+            concurrent.futures.as_completed(future_to_url), total=len(iterator), disable=not verbose
+        ):
             data = future.result()
             results.append(data)
     return results
