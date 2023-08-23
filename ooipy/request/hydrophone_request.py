@@ -246,6 +246,8 @@ def get_acoustic_data(
     # Code Below from Landung Setiawan
     # removed max workers argument in following statement
     st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
+
+    # combine list of single traces into stream of straces
     st_all = None
     for st in st_list:
         if st:
@@ -265,6 +267,8 @@ def get_acoustic_data(
 
     # Merge all traces together
     # Interpolation
+    if verbose:
+        print("Merging Data...")
     if data_gap_mode == 0:
         st_all.merge(fill_value="interpolate", method=1)
     # Masked Array
