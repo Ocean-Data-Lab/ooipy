@@ -42,11 +42,18 @@ How to setup OOIPY development environment
 
   source activate env_name
 
-4. Develop ooipy using this command in the same directory where the repository has been cloned:
+4. Install ooipy using this command in the same directory where the repository has been cloned:
 
 .. code-block :: bash
 
   pip install -e ooipy
+
+5. Install the development environment package requirements :
+
+.. code-block :: bash
+
+  cd ooipy
+  pip install -r dev-requirements.txt
 
 5. When this runs successfully, open a python prompt to verify if installation is proper, using this command:
 
@@ -56,4 +63,4 @@ How to setup OOIPY development environment
   import ooipy
   print(ooipy.__file__)
 
-If the path printed out matches the init.py from your local installation path for the ooipy github repository, your development environment has been properly setup.
+If the path printed out matches the __init__.py from your local installation path for the ooipy github repository, your development environment has been properly setup.
