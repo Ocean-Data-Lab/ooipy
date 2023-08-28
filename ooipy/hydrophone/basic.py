@@ -146,8 +146,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Spectrogram
-            An Xarray.DataArray object that contains time and frequency bins as
+        spectrogram : xr.DataArray
+            An ``xarray.DataArray`` object that contains time and frequency bins as
             well as corresponding values. If no noise date is available,
             None is returned.
         """
@@ -305,8 +305,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Spectrogram
-            An Xarray.DataArray object that contains time and frequency bins as well
+        spectrogram : xr.DataArray
+            An ``xarray.DataArray`` object that contains time and frequency bins as well
             as corresponding values. If no noise date is available,
             None is returned.
         """
@@ -414,8 +414,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Psd
-            An xarray.DataArray object that contains frequency bins and PSD values. If no
+        psd : xr.DataArray
+           An ``xarray.DataArray`` object that contains frequency bins and PSD values. If no
             noise date is available, None is returned.
         """
         # get noise data segment for each entry in rain_event
@@ -589,7 +589,7 @@ class HydrophoneData(Trace):
 
         return asset_ID
 
-    def save(self, file_format, filename, wav_kwargs={}):
+    def save(self, file_format, filename, wav_kwargs={}) -> None:
         """
         save hydrophone data in specified method. Supported methods are:
         - pickle - saves the HydrophoneData object as a pickle file
