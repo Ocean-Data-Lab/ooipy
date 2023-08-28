@@ -18,6 +18,7 @@ import numpy as np
 import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
+from tqdm import tqdm
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -245,7 +246,9 @@ def get_acoustic_data(
 
     # Code Below from Landung Setiawan
     # removed max workers argument in following statement
-    st_list = __map_concurrency(__read_mseed, valid_data_url_list)
+    st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
+
+    # combine list of single traces into stream of straces
     st_all = None
     for st in st_list:
         if st:
@@ -265,6 +268,8 @@ def get_acoustic_data(
 
     # Merge all traces together
     # Interpolation
+    if verbose:
+        print("Merging Data...")
     if data_gap_mode == 0:
         st_all.merge(fill_value="interpolate", method=1)
     # Masked Array
@@ -503,7 +508,7 @@ def ooipy_read(
     return hydrophone_data
 
 
-def __map_concurrency(func, iterator, args=(), max_workers=-1):
+def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
     # automatically set max_workers to 2x(available cores)
     if max_workers == -1:
         max_workers = 2 * mp.cpu_count()
@@ -512,7 +517,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(func, i, *args): i for i in iterator}
-        for future in concurrent.futures.as_completed(future_to_url):
+        for future in tqdm(
+            concurrent.futures.as_completed(future_to_url), total=len(iterator), disable=not verbose
+        ):
             data = future.result()
             results.append(data)
     return results
