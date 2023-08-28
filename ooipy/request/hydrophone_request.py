@@ -517,8 +517,10 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(func, i, *args): i for i in iterator}
+        # Disable progress bar
+        is_disabled = not verbose
         for future in tqdm(
-            concurrent.futures.as_completed(future_to_url), total=len(iterator), disable=not verbose
+            concurrent.futures.as_completed(future_to_url), total=len(iterator), disable=is_disabled
         ):
             data = future.result()
             results.append(data)
