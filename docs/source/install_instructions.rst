@@ -12,7 +12,7 @@ OOIPY is available on PyPI.
 
 Install Instruction
 -------------------
-OOIPY is designed to run on Python > 3.7 To install OOIPY, run the following command.
+OOIPY is designed to run on Python version 3.9 and above. To install OOIPY, run the following command:
 
 .. code-block :: bash
 
@@ -34,7 +34,7 @@ How to setup OOIPY development environment
 
 .. code-block :: bash
 
-  conda create --name env_name pip
+  conda create --name env_name python=3.10 pip
 
 3. Activate the environment using this command:
 
