@@ -19,6 +19,7 @@ ooipy.egg-info/
 ooi_auth.txt
 .eggs
 _ooipy_version.py
+*.nc
 
 # Environments
 .env

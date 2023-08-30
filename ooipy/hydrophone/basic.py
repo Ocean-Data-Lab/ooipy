@@ -17,12 +17,13 @@ import matplotlib.colors as colors
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
+import xarray as xr
 from matplotlib import pyplot as plt
 from obspy import Trace
 from obspy.core import UTCDateTime
 from scipy import signal
 from scipy.interpolate import interp1d
-from scipy.io import wavfile
+from scipy.io import savemat, wavfile
 
 import ooipy
 
@@ -33,21 +34,19 @@ class HydrophoneData(Trace):
 
     Attributes
     ----------
-    spectrogram : Spectrogram
-        spectrogram of HydrophoneData.data.data.
-        Spectral level, time, and frequency bins can be accessed by
-        spectrogram.values, spectrogram.time, and spectrogram.freq
-    psd : Psd
-        power spectral density estimate of HydrophoneData.data.data.
-        Spectral level and frequency bins can be accessed by
-        psd.values and psd.freq
-    psd_list : list of :class:`.Psd`
-        the data object is divided into N segments and for each
-        segment a separate power spectral density estimate is computed and
-        stored in psd_list. psd_list is computed by compute_psd_welch_mp
     type : str
         Either 'broadband' or 'low_frequency' specifies the type of hydrophone
         that the date is from.
+
+    Methods
+    ---------
+    frequency_calibration
+    compute_spectrogram
+    compute_spectrogram_mp
+    compute_psd_welch
+    wav_write
+    get_asset_ID
+    save
 
     """
 
@@ -147,8 +146,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Spectrogram
-            A Spectrogram object that contains time and frequency bins as
+        spectrogram : xr.DataArray
+            An ``xarray.DataArray`` object that contains time and frequency bins as
             well as corresponding values. If no noise date is available,
             None is returned.
         """
@@ -250,8 +249,19 @@ class HydrophoneData(Trace):
             self.spectrogram = None
             return None
         else:
-            self.spectrogram = Spectrogram(np.array(time), np.array(f), np.array(specgram))
-            return self.spectrogram
+            spec_xr = xr.DataArray(
+                np.array(specgram),
+                dims=["time", "frequency"],
+                coords={"time": np.array(time), "frequency": np.array(f)},
+                attrs=dict(
+                    start_time=self.stats.starttime.datetime,
+                    end_time=self.stats.endtime.datetime,
+                    nperseg=L,
+                    units="dB rel µ Pa^2 / Hz",
+                ),
+                name="spectrogram",
+            )
+            return spec_xr
 
     def compute_spectrogram_mp(
         self,
@@ -295,8 +305,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Spectrogram
-            A Spectrogram object that contains time and frequency bins as well
+        spectrogram : xr.DataArray
+            An ``xarray.DataArray`` object that contains time and frequency bins as well
             as corresponding values. If no noise date is available,
             None is returned.
         """
@@ -339,10 +349,22 @@ class HydrophoneData(Trace):
                 for i in range(len(specgram_list)):
                     time_specgram.extend(specgram_list[i].time)
                     specgram.extend(specgram_list[i].values)
-                self.spectrogram = Spectrogram(
-                    np.array(time_specgram), specgram_list[0].freq, np.array(specgram)
+                spec_xr = xr.DataArray(
+                    np.array(specgram),
+                    dims=["time", "frequency"],
+                    coords={
+                        "time": np.array(time_specgram),
+                        "frequency": np.array(specgram_list[0].freq),
+                    },
+                    attrs=dict(
+                        start_time=self.stats.starttime.datetime,
+                        end_time=self.stats.endtime.datetime,
+                        nperseg=L,
+                        units="dB rel µ Pa^2 / Hz",
+                    ),
+                    name="spectrogram",
                 )
-                return self.spectrogram
+                return spec_xr
             except Exception as e:
                 if verbose:
                     print("Cannot compute spectrogram")
@@ -392,8 +414,8 @@ class HydrophoneData(Trace):
 
         Returns
         -------
-        Psd
-            A Psd object that contains frequency bins and PSD values. If no
+        psd : xr.DataArray
+           An ``xarray.DataArray`` object that contains frequency bins and PSD values. If no
             noise date is available, None is returned.
         """
         # get noise data segment for each entry in rain_event
@@ -439,129 +461,19 @@ class HydrophoneData(Trace):
         else:
             raise Exception('scale has to be either "lin" or "log".')
 
-        self.psd = Psd(f, Pxx)
-        return self.psd
-
-    def compute_psd_welch_mp(
-        self,
-        split,
-        n_process=None,
-        win="hann",
-        L=4096,
-        overlap=0.5,
-        avg_method="median",
-        interpolate=None,
-        scale="log",
-        verbose=True,
-    ):
-        """
-        Same as compute_psd_welch but using the multiprocessing library.
-
-        Parameters
-        ----------
-        split : int, float, or array of datetime.datetime
-            Time period for each PSD estimate. The time between start_time and
-            end_time is split into parts of length
-            split seconds (if float). The last segment can be shorter than
-            split seconds. Alternatively split can
-            be set as an list, where each entry is a start-end time tuple.
-        n_process : int, optional
-            Number of processes in the pool. None (default) means that
-            n_process is equal to the number
-            of CPU cores.
-        win : str, optional
-            Window function used to taper the data. See scipy.signal.get_window
-            for a list of possible window functions (Default is Hann-window.)
-        L : int, optional
-            Length of each data block for computing the FFT (Default is 4096).
-        overlap : float, optional
-            Percentage of overlap between adjacent blocks if Welch's method is
-            used. Parameter is ignored if avg_time is None. (Default is 50%)
-        avg_method : str, optional
-            Method for averaging the periodograms when using Welch's method.
-            Either 'mean' or 'median' (default) can be used
-        interpolate : float, optional
-            Resolution in frequency domain in Hz. If None (default), the
-            resolution will be sampling frequency fs divided by L. If
-            interpolate is smaller than fs/L, the PSD will be interpolated
-            using zero-padding
-        scale : str, optional
-            If 'log' (default) PSD in logarithmic scale (dB re 1µPa^2/H) is
-            returned. If 'lin', PSD in linear scale (1µPa^2/H) is returned
-        verbose : bool, optional
-            If true (default), exception messages and some comments are
-            printed.
-
-        Returns
-        -------
-        list of Psd
-            A list of Psd objects where each entry represents the PSD of the
-            respective noise segment. If no noise data is available, None is
-            returned.
-        """
-
-        # create array with N start and end time values
-        if n_process is None:
-            n_process = mp.cpu_count()
-
-        ooi_hyd_data_list = []
-        # do segmentation from scratch
-        if isinstance(split, int) or isinstance(split, float):
-            n_seg = int(np.ceil((self.stats.endtime - self.stats.starttime) / split))
-
-            seconds_per_process = (self.stats.endtime - self.stats.starttime) / n_seg
-
-            for k in range(n_seg - 1):
-                starttime = self.stats.starttime + datetime.timedelta(
-                    seconds=k * seconds_per_process
-                )
-                endtime = self.stats.starttime + datetime.timedelta(
-                    seconds=(k + 1) * seconds_per_process
-                )
-                temp_slice = self.slice(
-                    starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime)
-                )
-                tmp_obj = HydrophoneData(
-                    data=temp_slice.data,
-                    header=temp_slice.stats,
-                    node=self.stats.location,
-                )
-                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
-
-            # treat last segment separately as its length may differ from other
-            # segments
-            starttime = self.stats.starttime + datetime.timedelta(
-                seconds=(n_seg - 1) * seconds_per_process
-            )
-            temp_slice = self.slice(
-                starttime=UTCDateTime(starttime),
-                endtime=UTCDateTime(self.stats.endtime),
-            )
-            tmp_obj = HydrophoneData(
-                data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
-            )
-            ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
-        # use segmentation specified by split
-        else:
-            ooi_hyd_data_list = []
-            for row in split:
-                temp_slice = self.slice(starttime=UTCDateTime(row[0]), endtime=UTCDateTime(row[1]))
-                tmp_obj = HydrophoneData(
-                    data=temp_slice.data,
-                    header=temp_slice.stats,
-                    node=self.stats.location,
-                )
-                ooi_hyd_data_list.append((tmp_obj, win, L, overlap, avg_method, interpolate, scale))
-
-        with mp.get_context("spawn").Pool(n_process) as p:
-            try:
-                self.psd_list = p.starmap(_psd_mp_helper, ooi_hyd_data_list)
-            except Exception:
-                if verbose:
-                    print("Cannot compute PSd list")
-                self.psd_list = None
-
-        return self.psd_list
+        psd_xr = xr.DataArray(
+            np.array(Pxx),
+            dims=["frequency"],
+            coords={"frequency": np.array(f)},
+            attrs=dict(
+                start_time=self.stats.starttime.datetime,
+                end_time=self.stats.endtime.datetime,
+                nperseg=L,
+                units="dB rel µ Pa^2 / Hz",
+            ),
+            name="psd",
+        )
+        return psd_xr
 
     def wav_write(self, filename, norm=False, new_sample_rate=None):
         """
@@ -676,6 +588,64 @@ class HydrophoneData(Trace):
             raise Exception("Invalid hydrophone sampling rate")
 
         return asset_ID
+
+    def save(self, file_format, filename, wav_kwargs={}) -> None:
+        """
+        save hydrophone data in specified method. Supported methods are:
+        - pickle - saves the HydrophoneData object as a pickle file
+        - netCDF - saves HydrophoneData object as netCDF. Time coordinates are not included
+        - mat - saves HydrophoneData object as a .mat file
+        - wav - calls wav_write method to save HydrophoneData object as a .wav file
+
+        Parameters
+        ----------
+        file_format : str
+            format to save HydrophoneData object as. Supported formats are
+            ['pkl', 'nc', 'mat', 'wav']
+        filepath : str
+            filepath to save HydrophoneData object. file extension should not be included
+        wav_kwargs : dict
+            dictionary of keyword arguments to pass to wav_write method
+
+        Returns
+        -------
+        None
+        """
+
+        try:
+            self.data
+        except AttributeError:
+            raise AttributeError("HydrophoneData object does not contain any data")
+
+        if file_format == "pkl":
+            # save HydrophoneData object as pickle file
+
+            print(filename + ".pkl")
+            with open(filename + ".pkl", "wb") as f:
+                pickle.dump(self, f)
+        elif file_format == "nc":
+            # save HydrophoneData object as netCDF file
+            attrs = dict(self.stats)
+            attrs["starttime"] = self.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            attrs["endtime"] = self.stats.endtime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            attrs["mseed"] = str(attrs["mseed"])
+            hdata_x = xr.DataArray(self.data, dims=["time"], attrs=attrs)
+            hdata_x.to_netcdf(filename + ".nc")
+        elif file_format == "mat":
+            # save HydrophoneData object as .mat file
+            data_dict = dict(self.stats)
+            data_dict["data"] = self.data
+            data_dict["starttime"] = self.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            data_dict["endtime"] = self.stats.endtime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            savemat(filename + ".mat", {self.stats.location: data_dict})
+
+        elif file_format == "wav":
+            # save HydrophoneData object as .wav file
+            self.wav_write(filename + ".wav", **wav_kwargs)
+        else:
+            raise Exception(
+                "Invalid file format. Supported formats are: ['pkl', 'nc', 'mat', 'wav']"
+            )
 
 
 def node_id(node):
