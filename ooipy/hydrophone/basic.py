@@ -688,6 +688,24 @@ def node_id(node):
     if node == "Eastern_Caldera" or node == "AXEC2":
         return "AXEC2"
 
+    # 200 Hz Seismometers
+    if node == "AXAS1":
+        return "AXAS1"
+    if node == "AXAS2":
+        return "AXAS2"
+    if node == "AXEC1":
+        return "AXEC1"
+    if node == "AXEC3":
+        return "AXEC3"
+    if node == "AXID1":
+        return "AXID1"
+    if node == "HYS11":
+        return "HYS11"
+    if node == "HYS12":
+        return "HYS12"
+    if node == "HYS13":
+        return "HYS13"
+    
     else:
         print("No node exists for name or ID " + node)
         return ""
