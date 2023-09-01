@@ -661,7 +661,7 @@ def __build_LF_URL(
         url of specified data segment. Format will be in miniseed.
     """
 
-    network, station, location = __get_LF_locations_stats(node)
+    network, station, location = __get_LF_locations_stats(node, channel)
 
     starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
     endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
@@ -702,47 +702,71 @@ def __build_LF_URL(
     return url
 
 
-def __get_LF_locations_stats(node):
-    try:
-        if node == "Slope_Base" or node == "HYSB1":
-            network = "OO"
-            station = "HYSB1"
-            location = "--"
+def __get_LF_locations_stats(node, channel):
+    network = "OO"
+    location = "--"
+    
+    # only 200 Hz channels are supported
+    if node == "Slope_Base" or node == "HYSB1":
+        station = "HYSB1"
+        if channel not in ['HHN', 'HHE','HHZ', 'HNN', 'HNE','HNZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "Southern_Hydrate" or node == "HYS14":
+        station = "HYS14"
+        if channel not in ['HHN', 'HHE','HHZ', 'HNN', 'HNE','HNZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "Axial_Base" or node == "AXBA1":
+        station = "AXBA1"
+        if channel not in ['HHN', 'HHE','HHZ', 'HNN', 'HNE','HNZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "Central_Caldera" or node == "AXCC1":
+        station = "AXCC1"
+        if channel not in ['HHN', 'HHE','HHZ', 'HNN', 'HNE','HNZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "Eastern_Caldera" or node == "AXEC2":
+        station = "AXEC2"
+        if channel not in ['HHN', 'HHE','HHZ', 'HNN', 'HNE','HNZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXAS1":
+        station = "AXAS1"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXAS2":
+        station = "AXAS2"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXCC2":
+        station = "AXCC2"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXEC1":
+        station = "AXEC1"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXEC3":
+        station = "AXEC3"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "AXID1":
+        station = "AXID1"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "HYS11":
+        station = "HYS11"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "HYS12":
+        station = "HYS12"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+    elif node == "HYS13":
+        station == "HYS13"
+        if channel not in ['EHN','EHE','EHZ']:
+            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
 
-        if node == "Southern_Hydrate" or node == "HYS14":
-            network = "OO"
-            station = "HYS14"
-            location = "--"
-
-        if node == "Axial_Base" or node == "AXBA1":
-            network = "OO"
-            station = "AXBA1"
-            location = "--"
-
-        if node == "Central_Caldera" or node == "AXCC1":
-            network = "OO"
-            station = "AXCC1"
-            location = "--"
-
-        if node == "Eastern_Caldera" or node == "AXEC2":
-            network = "OO"
-            station = "AXEC2"
-            location = "--"
-
-        # Create error if node is invalid
-        network = network
-
-    except Exception:
+    else:
         raise Exception(
-            "Invalid Location String "
-            + node
-            + ". Please use one "
-            + "of the following node strings: "
-            + "'Slope_Base' ('HYSB1'); ",
-            "'Southern_Hydrate' ('HYS14'); ",
-            "'Axial_Base' ('AXBA1'); ",
-            "'Central_Caldera' ('AXCC1'); ",
-            "'Eastern_Caldera' ('AXEC2')",
+            f"Invalid Location String {node}. see https://ds.iris.edu/mda/OO/ for LF OOI nodes"
         )
 
     return network, station, location
