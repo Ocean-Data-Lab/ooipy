@@ -780,7 +780,7 @@ def __get_LF_locations_stats(node, channel):
                 f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "HYS13":
-        station == "HYS13"
+        station = "HYS13"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
                 f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
