@@ -705,7 +705,7 @@ def node_id(node):
         return "HYS12"
     if node == "HYS13":
         return "HYS13"
-    
+
     else:
         print("No node exists for name or ID " + node)
         return ""

@@ -745,8 +745,10 @@ def __get_LF_locations_stats(node, channel):
             )
     elif node == "AXAS2":
         station = "AXAS2"
-        if channel not in ['EHN','EHE','EHZ']:
-            raise Exception(f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI")
+        if channel not in ["EHN", "EHE", "EHZ"]:
+            raise Exception(
+                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+            )
     elif node == "AXEC1":
         station = "AXEC1"
         if channel not in ["EHN", "EHE", "EHZ"]:
