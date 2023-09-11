@@ -88,7 +88,8 @@ def get_acoustic_data(
         function returns None. For some days the mseed files contain
         only a few seconds or milli seconds of data and merging a huge
         amount of files can dramatically slow down the program. if None
-        (default), the number of mseed files will not be limited.
+        (default), the number of mseed files will not be limited. This also
+        limits the number of traces in a single file.
     large_gap_limit: float, optional
         Defines the length in second of large gaps in the data.
         Sometimes, large data gaps are present on particular days. This
@@ -201,7 +202,8 @@ def get_acoustic_data(
                 if append:
                     valid_data_url_list.append(data_url_list[i])
                 break
-
+    
+    # Check if number of mseed files exceed limit
     if isinstance(mseed_file_limit, int):
         if len(valid_data_url_list) > mseed_file_limit:
             if verbose:
@@ -244,10 +246,18 @@ def get_acoustic_data(
     if verbose:
         print("Downloading mseed files...")
 
-    # Code Below from Landung Setiawan
     # removed max workers argument in following statement
     st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
 
+    # check if number of traces in st_list exceeds limit
+    if mseed_file_limit is not None:
+        for st in st_list:
+            if len(st) > mseed_file_limit:
+                if verbose:
+                    print(f"Number of traces in mseed file, {st}\n\
+                          exceed mseed_file_limit: {mseed_file_limit}.")
+                return None
+            
     # combine list of single traces into stream of straces
     st_all = None
     for st in st_list:
