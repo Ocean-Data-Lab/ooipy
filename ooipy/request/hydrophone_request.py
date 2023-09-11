@@ -711,79 +711,92 @@ def __get_LF_locations_stats(node, channel):
         station = "HYSB1"
         if channel not in ["HDH", "HHN", "HHE", "HHZ", "HNN", "HNE", "HNZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "Southern_Hydrate" or node == "HYS14":
         station = "HYS14"
         if channel not in ["HDH", "HHN", "HHE", "HHZ", "HNN", "HNE", "HNZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "Axial_Base" or node == "AXBA1":
         station = "AXBA1"
         if channel not in ["HDH", "HHN", "HHE", "HHZ", "HNN", "HNE", "HNZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "Central_Caldera" or node == "AXCC1":
         station = "AXCC1"
         if channel not in ["HDH", "HHN", "HHE", "HHZ", "HNN", "HNE", "HNZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "Eastern_Caldera" or node == "AXEC2":
         station = "AXEC2"
         if channel not in ["HDH", "HHN", "HHE", "HHZ", "HNN", "HNE", "HNZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "AXAS1":
         station = "AXAS1"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "AXAS2":
         station = "AXAS2"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "AXEC1":
         station = "AXEC1"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "AXEC3":
         station = "AXEC3"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "AXID1":
         station = "AXID1"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "HYS11":
         station = "HYS11"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "HYS12":
         station = "HYS12"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
     elif node == "HYS13":
         station = "HYS13"
         if channel not in ["EHN", "EHE", "EHZ"]:
             raise Exception(
-                f"Invalid Channel String {channel} for node {node}.\n see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
+                f"Invalid Channel String {channel} for node {node}.\n\
+                    see https://ds.iris.edu/mda/OO/ for available channels and nodes for OOI"
             )
 
     else:
