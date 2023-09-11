@@ -202,7 +202,7 @@ def get_acoustic_data(
                 if append:
                     valid_data_url_list.append(data_url_list[i])
                 break
-    
+
     # Check if number of mseed files exceed limit
     if isinstance(mseed_file_limit, int):
         if len(valid_data_url_list) > mseed_file_limit:
@@ -254,10 +254,12 @@ def get_acoustic_data(
         for st in st_list:
             if len(st) > mseed_file_limit:
                 if verbose:
-                    print(f"Number of traces in mseed file, {st}\n\
-                          exceed mseed_file_limit: {mseed_file_limit}.")
+                    print(
+                        f"Number of traces in mseed file, {st}\n\
+                          exceed mseed_file_limit: {mseed_file_limit}."
+                    )
                 return None
-            
+
     # combine list of single traces into stream of straces
     st_all = None
     for st in st_list:
