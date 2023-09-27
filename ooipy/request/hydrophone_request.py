@@ -108,8 +108,8 @@ def get_acoustic_data(
         traces. These traces are essentially not possible to merge with
         obspy.merge. If True, then experimental method to merge traces without
         consideration of gaps will be attempted. This will only be done if there
-        is full data coverage over 5 min file length and could result in unpredictable
-        outcomes.
+        is full data coverage over 5 min file length, but could still result in
+        unalligned data.
 
     Returns
     -------
@@ -263,13 +263,20 @@ def get_acoustic_data(
     # combine traces from single files into one trace if gapless merge is set to true
     if gapless_merge:  
         for k, st in enumerate(st_list):
-            # check if npts is consistent with no gaps in data
+            # check if multiple traces in stream
+            if len(st) == 1:
+                continue
+
+            # count total number of points in stream
             npts_total = 0
             for tr in st:
-                npts_total += tr .stats.npts
+                npts_total += tr.stats.npts
             
-            # if valid, merge traces w/o consideration to gaps
-            if npts_total/sampling_rate == 300: # must be 5 minutes of samples
+            # if valid npts, merge traces w/o consideration to gaps
+            if npts_total/sampling_rate in [300, 299.999, 300.001]: # must be 5 minutes of samples
+            # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
+            #   idea why, but am catching this here. Unknown what downstream effects this could have
+
                 # merge with no gap consideration (for fragmented hydrophone data)
                 if verbose: print(f'gapless merge for {valid_data_url_list[k]}')
                 data = []
@@ -283,14 +290,18 @@ def get_acoustic_data(
                 stats['npts'] = len(data_cat)
 
                 st_list[k] = Stream(traces = Trace(data_cat, header=stats))
+            else:
+                if verbose:
+                    print(f"Data segment {valid_data_url_list[k]}, with npts {npts_total}, is not compatible with gapless merge")
+                _ = st_list.pop(k)
 
     # check if number of traces in st_list exceeds limit
     if (mseed_file_limit is not None):
-        for st in st_list:
+        for k, st in enumerate(st_list):
             if len(st) > mseed_file_limit:
                 if verbose:
                     print(
-                        f"Number of traces in mseed file, {st}\n\
+                        f"Number of traces in mseed file, {valid_data_url_list[k]}\n\
                           exceed mseed_file_limit: {mseed_file_limit}."
                     )
                 return None
