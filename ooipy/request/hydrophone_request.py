@@ -271,11 +271,15 @@ def get_acoustic_data(
             npts_total = 0
             for tr in st:
                 npts_total += tr.stats.npts
-            
+
             # if valid npts, merge traces w/o consideration to gaps
-            if npts_total/sampling_rate in [300, 299.999, 300.001]: # must be 5 minutes of samples
-            # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
-            #   idea why, but am catching this here. Unknown what downstream effects this could have
+            if npts_total / sampling_rate in [
+                300,
+                299.999,
+                300.001,
+            ]:  # must be 5 minutes of samples
+                # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
+                #   idea why, but am catching this here. Unknown what downstream effects this could have
 
                 # merge with no gap consideration (for fragmented hydrophone data)
                 if verbose:
@@ -290,14 +294,16 @@ def get_acoustic_data(
                 stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
                 stats["npts"] = len(data_cat)
 
-                st_list[k] = Stream(traces = Trace(data_cat, header=stats))
+                st_list[k] = Stream(traces=Trace(data_cat, header=stats))
             else:
                 if verbose:
-                    print(f"Data segment {valid_data_url_list[k]}, with npts {npts_total}, is not compatible with gapless merge")
+                    print(
+                        f"Data segment {valid_data_url_list[k]}, with npts {npts_total}, is not compatible with gapless merge"
+                    )
                 _ = st_list.pop(k)
 
     # check if number of traces in st_list exceeds limit
-    if (mseed_file_limit is not None):
+    if mseed_file_limit is not None:
         for k, st in enumerate(st_list):
             if len(st) > mseed_file_limit:
                 if verbose:
