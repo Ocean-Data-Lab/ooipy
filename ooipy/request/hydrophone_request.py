@@ -36,7 +36,7 @@ def get_acoustic_data(
     data_gap_mode=0,
     mseed_file_limit=None,
     large_gap_limit=1800.0,
-    gapless_merge=False
+    gapless_merge=False,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -103,7 +103,7 @@ def get_acoustic_data(
     gapless_merge: bool, optional
         OOI BB hydrophones have had problems with data fragmentation, where
         individual files are only fractions of seconds long. Before June 2023,
-        these were saved as seperate mseed files. after 2023 (and in some cases,
+        these were saved as separate mseed files. after 2023 (and in some cases,
         but not all retroactively), 5 minute mseed files contain many fragmented
         traces. These traces are essentially not possible to merge with
         obspy.merge. If True, then experimental method to merge traces without
@@ -259,9 +259,9 @@ def get_acoustic_data(
 
     # removed max workers argument in following statement
     st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
-    
+
     # combine traces from single files into one trace if gapless merge is set to true
-    if gapless_merge:  
+    if gapless_merge:
         for k, st in enumerate(st_list):
             # check if multiple traces in stream
             if len(st) == 1:
@@ -278,16 +278,17 @@ def get_acoustic_data(
             #   idea why, but am catching this here. Unknown what downstream effects this could have
 
                 # merge with no gap consideration (for fragmented hydrophone data)
-                if verbose: print(f'gapless merge for {valid_data_url_list[k]}')
+                if verbose:
+                    print(f"gapless merge for {valid_data_url_list[k]}")
                 data = []
                 for tr in st:
                     data.append(tr.data)
                 data_cat = np.concatenate(data)
 
                 stats = dict(st[0].stats)
-                stats['starttime'] = UTCDateTime(valid_data_url_list[k][-33:-6])
-                stats['endtime'] = UTCDateTime(stats['starttime'] + timedelta(minutes=5))
-                stats['npts'] = len(data_cat)
+                stats["starttime"] = UTCDateTime(valid_data_url_list[k][-33:-6])
+                stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
+                stats["npts"] = len(data_cat)
 
                 st_list[k] = Stream(traces = Trace(data_cat, header=stats))
             else:
@@ -305,9 +306,6 @@ def get_acoustic_data(
                           exceed mseed_file_limit: {mseed_file_limit}."
                     )
                 return None
-
-
-
 
     # combine list of single traces into stream of straces
     st_all = None
