@@ -62,6 +62,16 @@ def test_get_acoustic_data():
 
     assert data is None
 
+def test_get_acoustic_data_LF():
+    start_time = datetime.datetime(2017, 3, 10, 0, 0, 0)
+    end_time = datetime.datetime(2017, 3, 10, 0, 5, 0)
+    node = "AXBA1"
+
+    hdata = hyd_request.get_acoustic_data_LF(start_time, end_time, node)
+
+    assert type(hdata) is HydrophoneData
+    assert type(hdata.data) is np.ndarray
+
 
 def test_hydrophone_node_names():
     node_arr = [
