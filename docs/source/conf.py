@@ -13,10 +13,7 @@
 import os
 import sys
 import datetime
-import ooipy
-
 sys.path.insert(0, sys.path.insert(0, os.path.dirname(os.path.abspath(".."))))
-
 
 # -- Project information -----------------------------------------------------
 
@@ -25,7 +22,7 @@ copyright = f"{datetime.date.today().year}, Felix Schwock, John Ragland"
 author = "Felix Schwock, John Ragland"
 
 # The full version, including alpha/beta/rc tags
-release = ooipy.__version__
+release = "1.2.1dev0"
 
 # -- General configuration ---------------------------------------------------
 
