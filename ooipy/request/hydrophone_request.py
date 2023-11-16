@@ -11,14 +11,14 @@ Hydrophone Request Modules
 
 import concurrent.futures
 import multiprocessing as mp
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 import fsspec
 import numpy as np
+import obspy
 import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
-import obspy
 from tqdm import tqdm
 
 # Import all dependencies
@@ -29,9 +29,9 @@ def get_acoustic_data(
     starttime: datetime,
     endtime: datetime,
     node: str,
-    fmin: float =None,
-    fmax: float =None,
-    max_workers: int=-1,
+    fmin: float = None,
+    fmax: float = None,
+    max_workers: int = -1,
     append=True,
     verbose=False,
     data_gap_mode=0,
@@ -250,7 +250,9 @@ def get_acoustic_data(
 
     # Code Below from Landung Setiawan
     # removed max workers argument in following statement
-    st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose, max_workers=max_workers)
+    st_list = __map_concurrency(
+        __read_mseed, valid_data_url_list, verbose=verbose, max_workers=max_workers
+    )
 
     # combine list of single traces into stream of straces
     st_all = None
@@ -271,22 +273,22 @@ def get_acoustic_data(
         return None
 
     st_all = st_all.sort()
-    
+
     # Merging Data
     if verbose:
         print("Merging Data...")
-    if len(st_all)*3 < max_workers:
+    if len(st_all) * 3 < max_workers:
         # don't use multiprocessing if there are less than 3 traces per worker
         st_all = st_all.merge()
     else:
         # break data into num_worker segments
         num_segments = max_workers
         segment_size = len(st_all) // num_segments
-        segments = [st_all[i:i+segment_size] for i in range(0, len(st_all), segment_size)]
+        segments = [st_all[i : i + segment_size] for i in range(0, len(st_all), segment_size)]
 
         with mp.Pool(max_workers) as p:
             segments_merged = p.map(__merge_singlecore, segments)
-        
+
         # merge merged segments
         for k, tr in enumerate(segments_merged):
             if k == 0:
@@ -556,18 +558,18 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
     return results
 
 
-def __merge_singlecore(ls : list, merge_method: int = 0):
-    '''
+def __merge_singlecore(ls: list, merge_method: int = 0):
+    """
     merge a list of obspy traces into a single trace
-    
+
     Parameters
     ----------
     stream : list
         list of obspy traces
     merge_method : int
         see `obspy.Stream.merge() <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.merge.html>`__ passed to obspy.merge
-    '''
-    
+    """
+
     stream = obspy.Stream(ls)
     stream_merge = stream.merge(method=merge_method)
     stream_merge.id = ls[0].id
