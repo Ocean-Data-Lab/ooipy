@@ -12,6 +12,8 @@
 #
 import os
 import sys
+from _ooipy_version import version as __version__
+import datetime
 
 sys.path.insert(0, sys.path.insert(0, os.path.dirname(os.path.abspath(".."))))
 
@@ -19,11 +21,11 @@ sys.path.insert(0, sys.path.insert(0, os.path.dirname(os.path.abspath(".."))))
 # -- Project information -----------------------------------------------------
 
 project = "OOIPY"
-copyright = "2020, Felix Schwock, John Ragland"
+copyright = f"{datetime.date.today.year}, Felix Schwock, John Ragland"
 author = "Felix Schwock, John Ragland"
 
 # The full version, including alpha/beta/rc tags
-release = "1.0.4"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
