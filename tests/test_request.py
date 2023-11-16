@@ -62,6 +62,7 @@ def test_get_acoustic_data():
 
     assert data is None
 
+
 def test_get_acoustic_data_LF():
     start_time = datetime.datetime(2017, 3, 10, 0, 0, 0)
     end_time = datetime.datetime(2017, 3, 10, 0, 5, 0)
