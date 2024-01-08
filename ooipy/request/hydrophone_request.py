@@ -276,10 +276,9 @@ def get_acoustic_data(
 
     # Merging Data - this section distributes obspy.merge to available cores
     if verbose:
-        print("Merging Data...")
+        print(f"Merging {len(st_all)} Traces...")
         
-    print('number of traces:', len(st_all))
-    if len(st_all) * 3 < max_workers:
+    if len(st_all) < max_workers*3:
         # don't use multiprocessing if there are less than 3 traces per worker
         st_all = st_all.merge()
     else:
@@ -288,16 +287,11 @@ def get_acoustic_data(
         segment_size = len(st_all) // num_segments
         segments = [st_all[i : i + segment_size] for i in range(0, len(st_all), segment_size)]
 
-        if verbose: print('merging segments...')
         with mp.Pool(max_workers) as p:
             segments_merged = p.map(__merge_singlecore, segments)
 
-        print('number of new segments', len(segments_merged))
-        if verbose: print('merging merged segments...')
-
         # final pass with just 4 cores
         if len(segments_merged) > 12:
-            print('merging with 4 cores')
             with mp.Pool(4) as p:
                 segments_merged = p.map(__merge_singlecore, segments_merged)
 
@@ -308,32 +302,7 @@ def get_acoustic_data(
             else:
                 stream_merge += tr
         st_all = stream_merge.merge()
-
-    # Merge all traces together
-
-    """
-    if data_gap_mode == 0:
-        st_all.merge(fill_value="interpolate", method=1)
-    # Masked Array
-    elif data_gap_mode == 1:
-        st_all.merge(method=1)
-    # Masked Array, Zero-Mean, Zero Fill
-    elif data_gap_mode == 2:
-        st_all.merge(method=1)
-        st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
-
-        try:
-            st_all[0].data.fill_value = 0
-            st_all[0].data = np.ma.filled(st_all[0].data)
-        except Exception:
-            if verbose:
-                print("data has no minor gaps")
-
-    else:
-        if verbose:
-            print("Invalid Data Gap Mode")
-        return None
-    """
+    
     # Slice data to desired window
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
