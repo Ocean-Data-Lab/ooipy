@@ -277,8 +277,8 @@ def get_acoustic_data(
     # Merging Data - this section distributes obspy.merge to available cores
     if verbose:
         print(f"Merging {len(st_all)} Traces...")
-        
-    if len(st_all) < max_workers*3:
+
+    if len(st_all) < max_workers * 3:
         # don't use multiprocessing if there are less than 3 traces per worker
         st_all = st_all.merge()
     else:
@@ -302,7 +302,7 @@ def get_acoustic_data(
             else:
                 stream_merge += tr
         st_all = stream_merge.merge()
-    
+
     # Slice data to desired window
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
