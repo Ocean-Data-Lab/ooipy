@@ -11,10 +11,11 @@ Hydrophone Request Modules
 
 import concurrent.futures
 import multiprocessing as mp
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import fsspec
 import numpy as np
+import obspy
 import requests
 from obspy import Stream, read
 from obspy.core import UTCDateTime
@@ -25,12 +26,12 @@ from ooipy.hydrophone.basic import HydrophoneData
 
 
 def get_acoustic_data(
-    starttime,
-    endtime,
-    node,
-    fmin=None,
-    fmax=None,
-    max_workers=-1,
+    starttime: datetime,
+    endtime: datetime,
+    node: str,
+    fmin: float = None,
+    fmax: float = None,
+    max_workers: int = -1,
     append=True,
     verbose=False,
     data_gap_mode=0,
@@ -71,10 +72,10 @@ def get_acoustic_data(
     print_exceptions : bool, optional
         whether or not exceptions are printed in the terminal line
     max_workers : int, optional
-        number of maximum workers for concurrent processing
+        number of maximum workers for concurrent processing. Default is -1 (uses number of available cores)
     append : bool, optional
         specifies if extra mseed files should be appended at beginning
-        and end in case of boundary gaps in data
+        and end in case of boundary gaps in data. Default is True
     verbose : bool, optional
         specifies whether print statements should occur or not
     data_gap_mode : int, optional
@@ -84,7 +85,7 @@ def get_acoustic_data(
         '2': subtract mean of data and fill gap with zeros; mask array
         is returned
     mseed_file_limit: int, optional
-        If the number of mseed files to be merged exceed this value, the
+        If the number of mseed traces to be merged exceed this value, the
         function returns None. For some days the mseed files contain
         only a few seconds or milli seconds of data and merging a huge
         amount of files can dramatically slow down the program. if None
@@ -104,6 +105,9 @@ def get_acoustic_data(
     HydrophoneData
 
     """
+    # set number of workers
+    if max_workers == -1:
+        max_workers = mp.cpu_count()
 
     # data_gap = False
     sampling_rate = 64000.0
@@ -246,7 +250,9 @@ def get_acoustic_data(
 
     # Code Below from Landung Setiawan
     # removed max workers argument in following statement
-    st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
+    st_list = __map_concurrency(
+        __read_mseed, valid_data_url_list, verbose=verbose, max_workers=max_workers
+    )
 
     # combine list of single traces into stream of straces
     st_all = None
@@ -266,31 +272,37 @@ def get_acoustic_data(
             print("No data available for selected time")
         return None
 
-    # Merge all traces together
-    # Interpolation
+    st_all = st_all.sort()
+
+    # Merging Data - this section distributes obspy.merge to available cores
     if verbose:
-        print("Merging Data...")
-    if data_gap_mode == 0:
-        st_all.merge(fill_value="interpolate", method=1)
-    # Masked Array
-    elif data_gap_mode == 1:
-        st_all.merge(method=1)
-    # Masked Array, Zero-Mean, Zero Fill
-    elif data_gap_mode == 2:
-        st_all.merge(method=1)
-        st_all[0].data = st_all[0].data - np.mean(st_all[0].data)
+        print(f"Merging {len(st_all)} Traces...")
 
-        try:
-            st_all[0].data.fill_value = 0
-            st_all[0].data = np.ma.filled(st_all[0].data)
-        except Exception:
-            if verbose:
-                print("data has no minor gaps")
-
+    if len(st_all) < max_workers * 3:
+        # don't use multiprocessing if there are less than 3 traces per worker
+        st_all = st_all.merge()
     else:
-        if verbose:
-            print("Invalid Data Gap Mode")
-        return None
+        # break data into num_worker segments
+        num_segments = max_workers
+        segment_size = len(st_all) // num_segments
+        segments = [st_all[i : i + segment_size] for i in range(0, len(st_all), segment_size)]
+
+        with mp.Pool(max_workers) as p:
+            segments_merged = p.map(__merge_singlecore, segments)
+
+        # final pass with just 4 cores
+        if len(segments_merged) > 12:
+            with mp.Pool(4) as p:
+                segments_merged = p.map(__merge_singlecore, segments_merged)
+
+        # merge merged segments
+        for k, tr in enumerate(segments_merged):
+            if k == 0:
+                stream_merge = tr
+            else:
+                stream_merge += tr
+        st_all = stream_merge.merge()
+
     # Slice data to desired window
     st_all = st_all.slice(UTCDateTime(starttime), UTCDateTime(endtime))
 
@@ -525,6 +537,24 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
             data = future.result()
             results.append(data)
     return results
+
+
+def __merge_singlecore(ls: list, merge_method: int = 0):
+    """
+    merge a list of obspy traces into a single trace
+
+    Parameters
+    ----------
+    stream : list
+        list of obspy traces
+    merge_method : int
+        see `obspy.Stream.merge() <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.merge.html>`__ passed to obspy.merge
+    """
+
+    stream = obspy.Stream(ls)
+    stream_merge = stream.merge(method=merge_method)
+    stream_merge.id = ls[0].id
+    return stream_merge
 
 
 def __read_mseed(url):
