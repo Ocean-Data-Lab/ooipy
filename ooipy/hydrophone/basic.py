@@ -5,6 +5,7 @@ The HydrophoneData objects inherits from obspy.Trace. Furthermore,
 methods for computing spectrograms and power spectral densities are
 added.
 """
+
 import datetime
 import json
 import multiprocessing as mp
