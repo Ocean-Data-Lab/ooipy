@@ -7,7 +7,6 @@ import requests
 import ooipy.request.authentification
 from ooipy.ctd.basic import CtdData
 
-
 def get_ctd_data(
     start_datetime,
     end_datetime,
