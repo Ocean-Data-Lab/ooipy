@@ -20,8 +20,8 @@ def test_get_acoustic_data():
 
     data = hyd_request.get_acoustic_data(start_time, end_time, node)
 
-    assert type(data) is HydrophoneData
-    assert type(data.data) is np.ndarray
+    assert isinstance(data, HydrophoneData)
+    assert isinstance(data.data, (np.ndarray, np.ma.core.MaskedArray))
 
     diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
     diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
@@ -45,8 +45,8 @@ def test_get_acoustic_data():
 
     data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
 
-    assert type(data) is HydrophoneData
-    assert type(data.data) is np.ndarray
+    assert isinstance(data, HydrophoneData)
+    assert isinstance(data.data, (np.ndarray, np.ma.core.MaskedArray))
 
     diff_start = abs((start_time - data.stats.starttime.datetime).microseconds)
     diff_end = abs((end_time - data.stats.endtime.datetime).microseconds)
