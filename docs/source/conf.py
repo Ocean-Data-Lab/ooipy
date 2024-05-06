@@ -12,19 +12,17 @@
 #
 import os
 import sys
-
+import datetime
 sys.path.insert(0, sys.path.insert(0, os.path.dirname(os.path.abspath(".."))))
-
 
 # -- Project information -----------------------------------------------------
 
 project = "OOIPY"
-copyright = "2020, Felix Schwock, John Ragland"
+copyright = f"{datetime.date.today().year}, Felix Schwock, John Ragland"
 author = "Felix Schwock, John Ragland"
 
 # The full version, including alpha/beta/rc tags
-release = "1.0.4"
-
+release = "1.2.1dev0"
 
 # -- General configuration ---------------------------------------------------
 

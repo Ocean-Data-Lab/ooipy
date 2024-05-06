@@ -57,11 +57,11 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
     scalex :
         see matplotlib documentation
     scaley :
-        see matplotlib doccumentation
+        see matplotlib documentation
     data :
-        see matplotlib doccumentation
+        see matplotlib documentation
     kwargs :
-        see matplotlib doccumentation,
+        see matplotlib documentation,
         :func:`ooipy.tools.ooiplotlib.plot_spectrogram`, and
         :func:`ooipy.tools.ooiplotlib.plot_psd` for possible arguments
     """
@@ -94,7 +94,7 @@ def plot_spectrogram(spec_obj, **kwargs):
     spec_obj : :class:`ooipy.hydrophone.basic.Spectrogram`
         spectrogram object to be plotted
     kwargs :
-        See matplotlib doccumentation for list of arguments. Additional
+        See matplotlib documentation for list of arguments. Additional
         arguments are
 
         * plot : bool
@@ -276,7 +276,7 @@ def plot_psd(psd_obj, **kwargs):
     spec_obj : :class:`ooipy.hydrophone.basic.Psd`
         Psd object to be plotted
     kwargs :
-        See matplotlib doccumentation for list of arguments. Additional
+        See matplotlib documentation for list of arguments. Additional
         arguments are
 
         * plot : bool
@@ -380,7 +380,7 @@ def plot_timeseries(HydData_obj, **kwargs):
     HydData_obj : :class:`ooipy.hydrophone.basic.HydrophoneData`
         Hydrophone Data to be plotted
     kwargs :
-        See matplotlib doccumentation for list of arguments. Additional
+        See matplotlib documentation for list of arguments. Additional
         arguments are
 
         * plot : bool
@@ -489,7 +489,7 @@ def plot_ctd_profile(ctd_profile, **kwargs):
     ctd_profile : :class:`ooipy.ctd.basic.CtdProfile`
         CtdProfile object to be plotted
     kwargs :
-        See matplotlib doccumentation for list of arguments. Additional
+        See matplotlib documentation for list of arguments. Additional
         arguments are
 
         * plot : bool
