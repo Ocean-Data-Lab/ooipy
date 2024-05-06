@@ -12,6 +12,7 @@ Hydrophone Request Modules
 import concurrent.futures
 import multiprocessing as mp
 from datetime import datetime, timedelta
+from functools import partial
 
 import fsspec
 import numpy as np
@@ -20,7 +21,6 @@ import requests
 from obspy import Stream, Trace, read
 from obspy.core import UTCDateTime
 from tqdm import tqdm
-from functools import partial
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -350,7 +350,7 @@ def get_acoustic_data(
 
     if len(st_all) < max_workers * 3:
         # don't use multiprocessing if there are less than 3 traces per worker
-        st_all = st_all.merge(method = obspy_merge_method)
+        st_all = st_all.merge(method=obspy_merge_method)
     else:
         # break data into num_worker segments
         num_segments = max_workers
@@ -358,11 +358,15 @@ def get_acoustic_data(
         segments = [st_all[i : i + segment_size] for i in range(0, len(st_all), segment_size)]
 
         with mp.Pool(max_workers) as p:
-            segments_merged = p.map(partial(__merge_singlecore, merge_method=obspy_merge_method), segments)
+            segments_merged = p.map(
+                partial(__merge_singlecore, merge_method=obspy_merge_method), segments
+            )
         # final pass with just 4 cores
         if len(segments_merged) > 12:
             with mp.Pool(4) as p:
-                segments_merged = p.map(partial(__merge_singlecore, merge_method=obspy_merge_method), segments_merged)
+                segments_merged = p.map(
+                    partial(__merge_singlecore, merge_method=obspy_merge_method), segments_merged
+                )
 
         # merge merged segments
         for k, tr in enumerate(segments_merged):
