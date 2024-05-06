@@ -110,6 +110,8 @@ def get_acoustic_data(
         consideration of gaps will be attempted. This will only be done if there
         is full data coverage over 5 min file length, but could still result in
         unalligned data.
+        This is an experimental feature and should be used with 
+        caution.
 
     Returns
     -------
@@ -275,16 +277,12 @@ def get_acoustic_data(
             # if valid npts, merge traces w/o consideration to gaps
             if npts_total / sampling_rate in [
                 300,
-                # 299.999,
-                # 300.001,
+                299.999,
+                300.001,
             ]:  # must be 5 minutes of samples
                 # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
                 #   idea why, but am catching this here. Unknown what downstream effects this could have
-                #
-                # I have removed the 0.001 handles, since I don't understand them and don't know what
-                # future errors they could cause
 
-                # merge with no gap consideration (for fragmented hydrophone data)
                 if verbose:
                     print(f"gapless merge for {valid_data_url_list[k]}")
                 data = []
