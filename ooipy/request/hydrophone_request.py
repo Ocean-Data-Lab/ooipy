@@ -110,7 +110,7 @@ def get_acoustic_data(
         consideration of gaps will be attempted. This will only be done if there
         is full data coverage over 5 min file length, but could still result in
         unalligned data.
-        This is an experimental feature and should be used with 
+        This is an experimental feature and should be used with
         caution.
 
     Returns
