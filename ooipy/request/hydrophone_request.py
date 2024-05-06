@@ -20,6 +20,7 @@ import requests
 from obspy import Stream, Trace, read
 from obspy.core import UTCDateTime
 from tqdm import tqdm
+from functools import partial
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -34,9 +35,9 @@ def get_acoustic_data(
     max_workers: int = -1,
     append=True,
     verbose=False,
-    data_gap_mode=0,
     mseed_file_limit=None,
     large_gap_limit=1800.0,
+    obspy_merge_method=0,
     gapless_merge=False,
 ):
     """
@@ -101,6 +102,9 @@ def get_acoustic_data(
         the gap stretches beyond the requested time) or after (if the gap
         starts prior to the requested time) the gap, or not at all (if
         the gap is within the requested time).
+    obspy_merge_method : int, optional
+        either [0,1], see [obspy documentation](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html#handling-overlaps)
+        for description of merge methods
     gapless_merge: bool, optional
         OOI BB hydrophones have had problems with data fragmentation, where
         individual files are only fractions of seconds long. Before June 2023,
@@ -346,7 +350,7 @@ def get_acoustic_data(
 
     if len(st_all) < max_workers * 3:
         # don't use multiprocessing if there are less than 3 traces per worker
-        st_all = st_all.merge()
+        st_all = st_all.merge(method = obspy_merge_method)
     else:
         # break data into num_worker segments
         num_segments = max_workers
@@ -354,12 +358,11 @@ def get_acoustic_data(
         segments = [st_all[i : i + segment_size] for i in range(0, len(st_all), segment_size)]
 
         with mp.Pool(max_workers) as p:
-            segments_merged = p.map(__merge_singlecore, segments)
-
+            segments_merged = p.map(partial(__merge_singlecore, merge_method=obspy_merge_method), segments)
         # final pass with just 4 cores
         if len(segments_merged) > 12:
             with mp.Pool(4) as p:
-                segments_merged = p.map(__merge_singlecore, segments_merged)
+                segments_merged = p.map(partial(__merge_singlecore, merge_method=obspy_merge_method), segments_merged)
 
         # merge merged segments
         for k, tr in enumerate(segments_merged):
