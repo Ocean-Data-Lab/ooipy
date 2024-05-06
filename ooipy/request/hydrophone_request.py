@@ -275,10 +275,9 @@ def get_acoustic_data(
             # if valid npts, merge traces w/o consideration to gaps
             if npts_total / sampling_rate in [
                 300,
-                #299.999,
-                #300.001,
+                # 299.999,
+                # 300.001,
             ]:  # must be 5 minutes of samples
-                
                 # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
                 #   idea why, but am catching this here. Unknown what downstream effects this could have
                 #
