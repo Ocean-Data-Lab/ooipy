@@ -16,7 +16,7 @@ from datetime import timedelta
 import fsspec
 import numpy as np
 import requests
-from obspy import Stream, read
+from obspy import Stream, Trace, read
 from obspy.core import UTCDateTime
 from tqdm import tqdm
 
@@ -36,6 +36,7 @@ def get_acoustic_data(
     data_gap_mode=0,
     mseed_file_limit=None,
     large_gap_limit=1800.0,
+    gapless_merge=False,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -88,7 +89,8 @@ def get_acoustic_data(
         function returns None. For some days the mseed files contain
         only a few seconds or milli seconds of data and merging a huge
         amount of files can dramatically slow down the program. if None
-        (default), the number of mseed files will not be limited.
+        (default), the number of mseed files will not be limited. This also
+        limits the number of traces in a single file.
     large_gap_limit: float, optional
         Defines the length in second of large gaps in the data.
         Sometimes, large data gaps are present on particular days. This
@@ -98,6 +100,18 @@ def get_acoustic_data(
         the gap stretches beyond the requested time) or after (if the gap
         starts prior to the requested time) the gap, or not at all (if
         the gap is within the requested time).
+    gapless_merge: bool, optional
+        OOI BB hydrophones have had problems with data fragmentation, where
+        individual files are only fractions of seconds long. Before June 2023,
+        these were saved as separate mseed files. after 2023 (and in some cases,
+        but not all retroactively), 5 minute mseed files contain many fragmented
+        traces. These traces are essentially not possible to merge with
+        obspy.merge. If True, then experimental method to merge traces without
+        consideration of gaps will be attempted. This will only be done if there
+        is full data coverage over 5 min file length, but could still result in
+        unalligned data.
+        This is an experimental feature and should be used with
+        caution.
 
     Returns
     -------
@@ -202,6 +216,7 @@ def get_acoustic_data(
                     valid_data_url_list.append(data_url_list[i])
                 break
 
+    # Check if number of mseed files exceed limit
     if isinstance(mseed_file_limit, int):
         if len(valid_data_url_list) > mseed_file_limit:
             if verbose:
@@ -244,9 +259,60 @@ def get_acoustic_data(
     if verbose:
         print("Downloading mseed files...")
 
-    # Code Below from Landung Setiawan
     # removed max workers argument in following statement
     st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
+
+    # combine traces from single files into one trace if gapless merge is set to true
+    if gapless_merge:
+        for k, st in enumerate(st_list):
+            # check if multiple traces in stream
+            if len(st) == 1:
+                continue
+
+            # count total number of points in stream
+            npts_total = 0
+            for tr in st:
+                npts_total += tr.stats.npts
+
+            # if valid npts, merge traces w/o consideration to gaps
+            if npts_total / sampling_rate in [
+                300,
+                299.999,
+                300.001,
+            ]:  # must be 5 minutes of samples
+                # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
+                #   idea why, but am catching this here. Unknown what downstream effects this could have
+
+                if verbose:
+                    print(f"gapless merge for {valid_data_url_list[k]}")
+                data = []
+                for tr in st:
+                    data.append(tr.data)
+                data_cat = np.concatenate(data)
+
+                stats = dict(st[0].stats)
+                stats["starttime"] = UTCDateTime(valid_data_url_list[k][-33:-6])
+                stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
+                stats["npts"] = len(data_cat)
+
+                st_list[k] = Stream(traces=Trace(data_cat, header=stats))
+            else:
+                if verbose:
+                    print(
+                        f"Data segment {valid_data_url_list[k]}, with npts {npts_total}, is not compatible with gapless merge"
+                    )
+                _ = st_list.pop(k)
+
+    # check if number of traces in st_list exceeds limit
+    if mseed_file_limit is not None:
+        for k, st in enumerate(st_list):
+            if len(st) > mseed_file_limit:
+                if verbose:
+                    print(
+                        f"Number of traces in mseed file, {valid_data_url_list[k]}\n\
+                          exceed mseed_file_limit: {mseed_file_limit}."
+                    )
+                return None
 
     # combine list of single traces into stream of straces
     st_all = None
