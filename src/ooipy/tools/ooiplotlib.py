@@ -80,7 +80,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
                 scalex=scalex,
                 scaley=scaley,
                 **({"data": data} if data is not None else {}),
-                **kwargs
+                **kwargs,
             )
 
 
@@ -194,7 +194,9 @@ def plot_spectrogram(spec_obj, **kwargs):
     matplotlib.rc("font", **font)
 
     # reduce resolution in time and frequency
-    v = spec_obj.values[:: kwargs["res_reduction_time"], :: kwargs["res_reduction_freq"]]
+    v = spec_obj.values[
+        :: kwargs["res_reduction_time"], :: kwargs["res_reduction_freq"]
+    ]
     if len(spec_obj.time) != len(spec_obj.values):
         t = np.linspace(
             0,
@@ -213,7 +215,9 @@ def plot_spectrogram(spec_obj, **kwargs):
         f = spec_obj.freq[:: kwargs["res_reduction_freq"]]
 
     # plot spectrogram object
-    cbarticks = np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta"])
+    cbarticks = np.arange(
+        kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta"]
+    )
     fig, ax = plt.subplots(figsize=kwargs["figsize"])
     ax.contourf(
         t,
@@ -223,7 +227,7 @@ def plot_spectrogram(spec_obj, **kwargs):
         norm=Normalize(vmin=kwargs["vmin"], vmax=kwargs["vmax"]),
         cmap=plt.cm.jet,
         extend=kwargs["extend_type"],
-        **kwargs
+        **kwargs,
     )
     plt.ylabel(kwargs["ylabel"])
     plt.xlabel(kwargs["xlabel"])
@@ -243,11 +247,15 @@ def plot_spectrogram(spec_obj, **kwargs):
 
     # Build Colorbar
     cmap = matplotlib.cm.jet
-    norm = matplotlib.colors.BoundaryNorm(cbarticks, cmap.N, extend=kwargs["extend_type"])
+    norm = matplotlib.colors.BoundaryNorm(
+        cbarticks, cmap.N, extend=kwargs["extend_type"]
+    )
     plt.colorbar(
         matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
-        ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
+        ticks=np.arange(
+            kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]
+        ),
         label=r"spectral level (dB rel $1 \mathrm{\frac{μ Pa^2}{Hz}}$)",
         pad=0.03,
     )
