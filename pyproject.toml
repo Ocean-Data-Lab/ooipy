@@ -30,7 +30,8 @@ dependencies = [
     "obspy",
     "pandas",
     "numpy",
-    "tqdm",    
+    "tqdm",
+    "aiohttp",
 ]
 
 [project.urls]
@@ -67,4 +68,14 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+log_cli_level = "info"
+testpaths = [
+  "tests",
 ]
