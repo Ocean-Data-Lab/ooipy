@@ -1,16 +1,70 @@
 [build-system]
-requires = [
-    "setuptools >= 66",
-    "setuptools_scm >= 7.0.0",
-    "wheel >= 0.38.4",
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ooipy"
+dynamic = ["version"]
+description = 'toolbox for downloading and analyzing OOI hydrophone data'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+maintainers = [
+  { name = "John Ragland", email = "jhrag@uw.edu" },
 ]
-build-backend = 'setuptools.build_meta'
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "fsspec",
+    "xarray",
+    "obspy",
+    "pandas",
+    "numpy",
+    "tqdm",    
+]
 
-[tool.setuptools_scm]
-fallback_version = "unknown"
-local_scheme = "no-local-version"
-write_to = "_ooipy_version.py"
-write_to_template = 'version = "{version}"'
+[project.urls]
+Documentation = "https://ooipy.readthedocs.io"
+Issues = "https://github.com/Ocean-Data-Lab/ooipy/issues"
+Source = "https://github.com/Ocean-Data-Lab/ooipy"
 
-[tool.black]
-line-length = 100
+[tool.hatch]
+version.source = "vcs"
+build.hooks.vcs.version-file = "src/ooipy/version.py"
+
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/ooipy tests}"
+
+[tool.coverage.run]
+source_pkgs = ["ooipy", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/ooipy/__about__.py",
+]
+
+[tool.coverage.paths]
+ooipy = ["src/ooipy", "*/ooipy/src/ooipy"]
+tests = ["tests", "*/ooipy/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
