@@ -194,7 +194,9 @@ def plot_spectrogram(spec_obj, **kwargs):
     matplotlib.rc("font", **font)
 
     # reduce resolution in time and frequency
-    v = spec_obj.values[:: kwargs["res_reduction_time"], :: kwargs["res_reduction_freq"]]
+    v = spec_obj.values[
+        :: kwargs["res_reduction_time"], :: kwargs["res_reduction_freq"]
+    ]
     if len(spec_obj.time) != len(spec_obj.values):
         t = np.linspace(
             0,
@@ -213,7 +215,9 @@ def plot_spectrogram(spec_obj, **kwargs):
         f = spec_obj.freq[:: kwargs["res_reduction_freq"]]
 
     # plot spectrogram object
-    cbarticks = np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta"])
+    cbarticks = np.arange(
+        kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta"]
+    )
     fig, ax = plt.subplots(figsize=kwargs["figsize"])
     ax.contourf(
         t,
@@ -243,11 +247,17 @@ def plot_spectrogram(spec_obj, **kwargs):
 
     # Build Colorbar
     cmap = matplotlib.cm.jet
-    norm = matplotlib.colors.BoundaryNorm(cbarticks, cmap.N, extend=kwargs["extend_type"])
+    norm = matplotlib.colors.BoundaryNorm(
+        cbarticks, cmap.N, extend=kwargs["extend_type"]
+    )
     plt.colorbar(
         matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
-        ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
+        ticks=np.arange(
+            kwargs["vmin"],
+            kwargs["vmax"] + kwargs["vdelta"],
+            kwargs["vdelta_cbar"],
+        ),
         label=r"spectral level (dB rel $1 \mathrm{\frac{μ Pa^2}{Hz}}$)",
         pad=0.03,
     )
@@ -257,7 +267,9 @@ def plot_spectrogram(spec_obj, **kwargs):
     plt.tight_layout()
 
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
-        ax.xaxis.set_major_formatter(mdates.DateFormatter(kwargs["xlabel_format"]))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter(kwargs["xlabel_format"])
+        )
 
     if kwargs["save"]:
         plt.savefig(kwargs["filename"], bbox_inches="tight", dpi=kwargs["dpi"])
@@ -471,7 +483,9 @@ def plot_timeseries(HydData_obj, **kwargs):
     plt.tick_params(axis="y")
 
     if isinstance(t[0], datetime.datetime) or isinstance(t[0], UTCDateTime):
-        ax.xaxis.set_major_formatter(mdates.DateFormatter(kwargs["xlabel_format"]))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter(kwargs["xlabel_format"])
+        )
 
     if kwargs["save"]:
         plt.savefig(kwargs["filename"], bbox_inches="tight", dpi=kwargs["dpi"])
@@ -584,8 +598,12 @@ def plot_ctd_profile(ctd_profile, **kwargs):
         color=kwargs["color"],
     )
     if kwargs["show_variance"]:
-        y1 = ctd_profile.parameter_mean - 2 * np.sqrt(ctd_profile.parameter_var)
-        y2 = ctd_profile.parameter_mean + 2 * np.sqrt(ctd_profile.parameter_var)
+        y1 = ctd_profile.parameter_mean - 2 * np.sqrt(
+            ctd_profile.parameter_var
+        )
+        y2 = ctd_profile.parameter_mean + 2 * np.sqrt(
+            ctd_profile.parameter_var
+        )
         plt.fill_betweenx(
             ctd_profile.depth_mean,
             y1,

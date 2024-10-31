@@ -73,7 +73,9 @@ def get_ctd_data(
 
     USERNAME, TOKEN = ooipy.request.authentification.get_authentification()
     # Sensor Inventory
-    DATA_API_BASE_URL = "https://ooinet.oceanobservatories.org/api/m2m/12576/sensor/inv/"
+    DATA_API_BASE_URL = (
+        "https://ooinet.oceanobservatories.org/api/m2m/12576/sensor/inv/"
+    )
 
     # Oregon Shelf
     if location == "oregon_shelf":
@@ -161,7 +163,9 @@ def get_ctd_data(
             )
 
     elif location == "washington_shelf":
-        url_list = ["CE07SHSP/SP001/08-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?"]
+        url_list = [
+            "CE07SHSP/SP001/08-CTDPFJ000/recovered_cspp/ctdpf_j_cspp_instrument_recovered?"
+        ]
         if not only_profilers:
             url_list.extend(
                 [
@@ -267,7 +271,11 @@ def __get_instrument_id(url_str):
 
 
 def get_ctd_data_daily(
-    datetime_day, location, limit=10000, only_profilers=False, delivery_method="auto"
+    datetime_day,
+    location,
+    limit=10000,
+    only_profilers=False,
+    delivery_method="auto",
 ):
     """
     Requests CTD data for specified day and location. The day is split
@@ -338,7 +346,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
         max_workers = 2 * mp.cpu_count()
 
     results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=max_workers
+    ) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(func, i, **args): i for i in iterator}
         for future in concurrent.futures.as_completed(future_to_url):
@@ -347,7 +357,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1):
     return results
 
 
-def __get_ctd_data_concurrent(start_end_tuple, location, limit, only_profilers, delivery_method):
+def __get_ctd_data_concurrent(
+    start_end_tuple, location, limit, only_profilers, delivery_method
+):
     """
     Helper function to support multiprocessing for
     :func:`ooipy.ctd_request.get_ctd_data_daily

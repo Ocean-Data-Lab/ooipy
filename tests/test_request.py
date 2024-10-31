@@ -34,7 +34,9 @@ def test_get_acoustic_data():
     end_time = datetime.datetime(2017, 10, 10, 15, 35, 0)
     node = "LJ01C"
 
-    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
+    data = hyd_request.get_acoustic_data(
+        start_time, end_time, node, append=False
+    )
 
     assert data is None
 
@@ -43,7 +45,9 @@ def test_get_acoustic_data():
     end_time = datetime.datetime(2017, 10, 10, 15, 20, 0)
     node = "LJ01C"
 
-    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
+    data = hyd_request.get_acoustic_data(
+        start_time, end_time, node, append=False
+    )
 
     assert type(data) is HydrophoneData
     assert type(data.data) is np.ndarray
@@ -58,7 +62,9 @@ def test_get_acoustic_data():
     end_time = datetime.datetime(2019, 11, 1, 0, 5, 0)
     node = "LJ01D"
 
-    data = hyd_request.get_acoustic_data(start_time, end_time, node, append=False)
+    data = hyd_request.get_acoustic_data(
+        start_time, end_time, node, append=False
+    )
 
     assert data is None
 
@@ -91,7 +97,9 @@ def test_hydrophone_node_names():
     node_id_arr = ["HYSB1", "HYS14", "AXBA1", "AXCC1", "AXEC2"]
 
     for item in node_arr:
-        hyd_data = hyd_request.get_acoustic_data_LF(starttime, endtime, node=item)
+        hyd_data = hyd_request.get_acoustic_data_LF(
+            starttime, endtime, node=item
+        )
         assert hyd_data.stats.location in node_id_arr
 
 
