@@ -142,9 +142,7 @@ def get_acoustic_data(
 
     # get all urls for each day until endtime is reached
     while day_start < endtime:
-        urls_list_next_day = __get_mseed_urls(
-            day_start.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        urls_list_next_day = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
         if urls_list_next_day is None:
             day_start = day_start + 24 * 3600
         else:
@@ -154,16 +152,12 @@ def get_acoustic_data(
     if append:
         # Save last mseed of previous day to data_url_list if not None
         prev_day = starttime - timedelta(days=1)
-        data_url_list_prev_day = __get_mseed_urls(
-            prev_day.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node, verbose)
         if data_url_list_prev_day is not None:
             data_url_list = [data_url_list_prev_day[-1]] + data_url_list
 
         # get 1 more day of urls
-        data_url_last_day_list = __get_mseed_urls(
-            day_start.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
         if data_url_last_day_list is not None:
             data_url_list = data_url_list + [data_url_last_day_list[0]]
 
@@ -178,9 +172,7 @@ def get_acoustic_data(
     for i in range(len(data_url_list)):
         # get UTC time of current and next item in URL list
         # extract start time from ith file
-        utc_time_url_start = UTCDateTime(
-            data_url_list[i].split("YDH")[1][1:].split(".mseed")[0]
-        )
+        utc_time_url_start = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
 
         # this line assumes no gaps between current and next file
         if i != len(data_url_list) - 1:
@@ -188,9 +180,7 @@ def get_acoustic_data(
                 data_url_list[i + 1].split("YDH")[1][1:].split(".mseed")[0]
             )
         else:
-            utc_time_url_stop = UTCDateTime(
-                data_url_list[i].split("YDH")[1][1:].split(".mseed")[0]
-            )
+            utc_time_url_stop = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
             utc_time_url_stop.hour = 23
             utc_time_url_stop.minute = 59
             utc_time_url_stop.second = 59
@@ -302,9 +292,7 @@ def get_acoustic_data(
 
                 stats = dict(st[0].stats)
                 stats["starttime"] = UTCDateTime(valid_data_url_list[k][-33:-6])
-                stats["endtime"] = UTCDateTime(
-                    stats["starttime"] + timedelta(minutes=5)
-                )
+                stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
                 stats["npts"] = len(data_cat)
 
                 st_list[k] = Stream(traces=Trace(data_cat, header=stats))
@@ -672,11 +660,7 @@ def __get_mseed_urls(day_str, node, verbose):
             node_id = "/LJ03A"
 
         mainurl = (
-            "https://rawdata.oceanobservatories.org/files"
-            + array
-            + node_id
-            + instrument
-            + day_str
+            "https://rawdata.oceanobservatories.org/files" + array + node_id + instrument + day_str
         )
     except Exception:
         raise Exception(
