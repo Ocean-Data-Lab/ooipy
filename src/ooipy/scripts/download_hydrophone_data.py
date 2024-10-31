@@ -55,9 +55,7 @@ args = parser.parse_args()
 
 # Check if the --path_to_csv option is present
 if args.csv is None:
-    raise Exception(
-        "You must provide a path to the csv file, --csv <absolute file path>"
-    )
+    raise Exception("You must provide a path to the csv file, --csv <absolute file path>")
 if args.output_path is None:
     raise Exception(
         "You must provide a path to the output directory, --output_path <absolute file path>"
@@ -69,9 +67,7 @@ df = pd.read_csv(args.csv)
 # estimate total download size and ask to proceed
 total_time = 0
 for k, item in df.iterrows():
-    total_time += (
-        pd.Timestamp(item.end_time) - pd.Timestamp(item.start_time)
-    ).value / 1e9
+    total_time += (pd.Timestamp(item.end_time) - pd.Timestamp(item.start_time)).value / 1e9
 
 total_storage = total_time * 64e3 * 8  # 8 Bytes per sample
 
@@ -111,9 +107,7 @@ for k, item in tqdm(df.iterrows()):
         hdata = ooipy.get_acoustic_data(start_time_d, end_time_d, item.node)
 
     if hdata is None:
-        print(
-            f"no data found for {item.node} between {start_time_d} and {end_time_d}"
-        )
+        print(f"no data found for {item.node} between {start_time_d} and {end_time_d}")
         continue
     # downsample
     downsample_factor = item.downsample_factor

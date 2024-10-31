@@ -85,9 +85,7 @@ class CtdData:
         ntp_epoch = datetime.datetime(1900, 1, 1)
         unix_epoch = datetime.datetime(1970, 1, 1)
         ntp_delta = (unix_epoch - ntp_epoch).total_seconds()
-        return datetime.datetime.utcfromtimestamp(
-            ntp_seconds - ntp_delta
-        ).replace(microsecond=0)
+        return datetime.datetime.utcfromtimestamp(ntp_seconds - ntp_delta).replace(microsecond=0)
 
     def get_parameter_from_rawdata(self, parameter):
         """
@@ -141,9 +139,7 @@ class CtdData:
                     param_arr.append(item["conductivity"])
 
             if parameter == "time":
-                param_arr.append(
-                    self.ntp_seconds_to_datetime(item["pk"]["time"])
-                )
+                param_arr.append(self.ntp_seconds_to_datetime(item["pk"]["time"]))
 
         return np.array(param_arr)
 
@@ -343,9 +339,7 @@ class CtdData:
         param_var = np.array(param_var)[idx]
         n_samp = np.array(n_samp)[idx]
 
-        param_profile = CtdProfile(
-            param_mean, param_var, depth_mean, depth_var, n_samp
-        )
+        param_profile = CtdProfile(param_mean, param_var, depth_mean, depth_var, n_samp)
 
         if parameter == "temperature":
             self.temperature_profile = param_profile
@@ -382,9 +376,7 @@ class CtdProfile:
         number of samples within each 1-meter depth interval
     """
 
-    def __init__(
-        self, parameter_mean, parameter_var, depth_mean, depth_var, n_samp
-    ):
+    def __init__(self, parameter_mean, parameter_var, depth_mean, depth_var, n_samp):
         self.parameter_mean = parameter_mean
         self.parameter_var = parameter_var
         self.depth_mean = depth_mean

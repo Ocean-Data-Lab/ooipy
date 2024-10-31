@@ -81,10 +81,7 @@ class HydrophoneData(Trace):
             array with correction coefficient for every frequency
         """
         # Load calibation file and get appropriate calibration info
-        filename = (
-            os.path.dirname(ooipy.__file__)
-            + "/hydrophone/calibration_by_assetID.csv"
-        )
+        filename = os.path.dirname(ooipy.__file__) + "/hydrophone/calibration_by_assetID.csv"
         # Use deployment CSV to determine asset_ID
         assetID = self.get_asset_ID()
         # load calibration data as pandas dataframe
@@ -195,9 +192,7 @@ class HydrophoneData(Trace):
                 )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print(
-                            "Error while computing periodogram for segment", n
-                        )
+                        print("Error while computing periodogram for segment", n)
                     self.spectrogram = None
                     return None
                 else:
@@ -205,16 +200,13 @@ class HydrophoneData(Trace):
 
                     specgram.append(Pxx)
                     time.append(
-                        self.stats.starttime.datetime
-                        + datetime.timedelta(seconds=n * L / fs / 2)
+                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * L / fs / 2)
                     )
 
         else:
             for n in range(nbins - 1):
                 f, Pxx = signal.welch(
-                    x=self.data[
-                        n * int(fs * avg_time) : (n + 1) * int(fs * avg_time)
-                    ],  # noqa
+                    x=self.data[n * int(fs * avg_time) : (n + 1) * int(fs * avg_time)],  # noqa
                     fs=fs,
                     window=win,
                     nperseg=L,
@@ -226,8 +218,7 @@ class HydrophoneData(Trace):
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
                         print(
-                            "Error while computing "
-                            "Welch estimate for segment",
+                            "Error while computing " "Welch estimate for segment",
                             n,
                         )
                     self.spectrogram = None
@@ -236,8 +227,7 @@ class HydrophoneData(Trace):
                     Pxx = 10 * np.log10(Pxx * np.power(10, sense_corr / 10))
                     specgram.append(Pxx)
                     time.append(
-                        self.stats.starttime.datetime
-                        + datetime.timedelta(seconds=n * avg_time)
+                        self.stats.starttime.datetime + datetime.timedelta(seconds=n * avg_time)
                     )
 
             # compute PSD for residual segment
@@ -254,10 +244,7 @@ class HydrophoneData(Trace):
                 )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print(
-                            "Error while computing Welch "
-                            "estimate residual segment"
-                        )
+                        print("Error while computing Welch " "estimate residual segment")
                     self.spectrogram = None
                     return None
                 else:
@@ -345,27 +332,19 @@ class HydrophoneData(Trace):
         ooi_hyd_data_list = []
         seconds_per_process = (self.stats.endtime - self.stats.starttime) / N
         for k in range(N - 1):
-            starttime = self.stats.starttime + datetime.timedelta(
-                seconds=k * seconds_per_process
-            )
+            starttime = self.stats.starttime + datetime.timedelta(seconds=k * seconds_per_process)
             endtime = self.stats.starttime + datetime.timedelta(
                 seconds=(k + 1) * seconds_per_process
             )
-            temp_slice = self.slice(
-                starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime)
-            )
+            temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
             tmp_obj = HydrophoneData(
                 data=temp_slice.data,
                 header=temp_slice.stats,
                 node=self.stats.location,
             )
-            ooi_hyd_data_list.append(
-                (tmp_obj, win, L, avg_time, overlap, verbose, average_type)
-            )
+            ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
-        starttime = self.stats.starttime + datetime.timedelta(
-            seconds=(N - 1) * seconds_per_process
-        )
+        starttime = self.stats.starttime + datetime.timedelta(seconds=(N - 1) * seconds_per_process)
         temp_slice = self.slice(
             starttime=UTCDateTime(starttime),
             endtime=UTCDateTime(self.stats.endtime),
@@ -375,15 +354,11 @@ class HydrophoneData(Trace):
             header=temp_slice.stats,
             node=self.stats.location,
         )
-        ooi_hyd_data_list.append(
-            (tmp_obj, win, L, avg_time, overlap, verbose, average_type)
-        )
+        ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
         with mp.get_context("spawn").Pool(n_process) as p:
             try:
-                specgram_list = p.starmap(
-                    _spectrogram_mp_helper, ooi_hyd_data_list
-                )
+                specgram_list = p.starmap(_spectrogram_mp_helper, ooi_hyd_data_list)
                 # concatenate all small spectrograms to
                 # obtain final spectrogram
                 specgram = []
@@ -546,10 +521,7 @@ class HydrophoneData(Trace):
                 data = signal.resample(data, int(new_npts))
                 sampling_rate = new_sample_rate
             elif new_sample_rate == self.stats.sampling_rate:
-                warnings.warn(
-                    "New sample rate is same as original data. "
-                    "No resampling done."
-                )
+                warnings.warn("New sample rate is same as original data. " "No resampling done.")
                 sampling_rate = self.stats.sampling_rate
             elif new_sample_rate < self.stats.sampling_rate:
                 warnings.warn(
@@ -557,13 +529,9 @@ class HydrophoneData(Trace):
                     " rate. Chebychev 1 anti-aliasing filter used"
                 )
                 if self.stats.sampling_rate % new_sample_rate != 0:
-                    raise Exception(
-                        "New Sample Rate is not factor of original sample rate"
-                    )
+                    raise Exception("New Sample Rate is not factor of original sample rate")
                 else:
-                    data = signal.decimate(
-                        data, int(self.stats.sampling_rate / new_sample_rate)
-                    )
+                    data = signal.decimate(data, int(self.stats.sampling_rate / new_sample_rate))
                     sampling_rate = new_sample_rate
 
         wavfile.write(filename, int(sampling_rate), data)
@@ -631,8 +599,7 @@ class HydrophoneData(Trace):
                 asset_ID = df_ref["assetID"][df_ref.index.to_numpy()[-1]]
             else:
                 raise Exception(
-                    "Hydrophone Data involves multiple"
-                    "deployments. Feature to be added later"
+                    "Hydrophone Data involves multiple" "deployments. Feature to be added later"
                 )
         else:
             raise Exception("Invalid hydrophone sampling rate")
@@ -665,9 +632,7 @@ class HydrophoneData(Trace):
         try:
             self.data
         except AttributeError:
-            raise AttributeError(
-                "HydrophoneData object does not contain any data"
-            )
+            raise AttributeError("HydrophoneData object does not contain any data")
 
         if file_format == "pkl":
             # save HydrophoneData object as pickle file
@@ -678,12 +643,8 @@ class HydrophoneData(Trace):
         elif file_format == "nc":
             # save HydrophoneData object as netCDF file
             attrs = dict(self.stats)
-            attrs["starttime"] = self.stats.starttime.strftime(
-                "%Y-%m-%dT%H:%M:%S.%f"
-            )
-            attrs["endtime"] = self.stats.endtime.strftime(
-                "%Y-%m-%dT%H:%M:%S.%f"
-            )
+            attrs["starttime"] = self.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            attrs["endtime"] = self.stats.endtime.strftime("%Y-%m-%dT%H:%M:%S.%f")
             attrs["mseed"] = str(attrs["mseed"])
             hdata_x = xr.DataArray(self.data, dims=["time"], attrs=attrs)
             hdata_x.to_netcdf(filename + ".nc")
@@ -691,12 +652,8 @@ class HydrophoneData(Trace):
             # save HydrophoneData object as .mat file
             data_dict = dict(self.stats)
             data_dict["data"] = self.data
-            data_dict["starttime"] = self.stats.starttime.strftime(
-                "%Y-%m-%dT%H:%M:%S.%f"
-            )
-            data_dict["endtime"] = self.stats.endtime.strftime(
-                "%Y-%m-%dT%H:%M:%S.%f"
-            )
+            data_dict["starttime"] = self.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            data_dict["endtime"] = self.stats.endtime.strftime("%Y-%m-%dT%H:%M:%S.%f")
             savemat(filename + ".mat", {self.stats.location: data_dict})
 
         elif file_format == "wav":
@@ -816,27 +773,19 @@ def node_name(node):
         return ""
 
 
-def _spectrogram_mp_helper(
-    ooi_hyd_data_obj, win, L, avg_time, overlap, verbose, average_type
-):
+def _spectrogram_mp_helper(ooi_hyd_data_obj, win, L, avg_time, overlap, verbose, average_type):
     """
     Helper function for compute_spectrogram_mp
     """
-    ooi_hyd_data_obj.compute_spectrogram(
-        win, L, avg_time, overlap, verbose, average_type
-    )
+    ooi_hyd_data_obj.compute_spectrogram(win, L, avg_time, overlap, verbose, average_type)
     return ooi_hyd_data_obj.spectrogram
 
 
-def _psd_mp_helper(
-    ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale
-):
+def _psd_mp_helper(ooi_hyd_data_obj, win, L, overlap, avg_method, interpolate, scale):
     """
     Helper function for compute_psd_welch_mp
     """
-    ooi_hyd_data_obj.compute_psd_welch(
-        win, L, overlap, avg_method, interpolate, scale
-    )
+    ooi_hyd_data_obj.compute_psd_welch(win, L, overlap, avg_method, interpolate, scale)
     return ooi_hyd_data_obj.psd
 
 
@@ -922,8 +871,7 @@ class Spectrogram:
         import warnings
 
         raise warnings.warn(
-            "will be deprecated in future. Please see "
-            "ooipy.tools.ooiplotlib.plot_spectrogram()"
+            "will be deprecated in future. Please see " "ooipy.tools.ooiplotlib.plot_spectrogram()"
         )
         # set backend for plotting/saving:
         if not plot_spec:
@@ -974,15 +922,11 @@ class Spectrogram:
             plt.xlim(time_limits)
         plt.xticks(rotation=xlabel_rot)
         plt.title(title)
-        plt.colorbar(
-            im, ax=ax, ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar)
-        )
+        plt.colorbar(im, ax=ax, ticks=np.arange(vmin, vmax + vdelta, vdelta_cbar))
         plt.tick_params(axis="y")
 
         if type(t[0]) is datetime.datetime:
-            ax.xaxis.set_major_formatter(
-                mdates.DateFormatter("%y-%m-%d %H:%M")
-            )
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%y-%m-%d %H:%M"))
 
         if save_spec:
             plt.savefig(filename, dpi=dpi, bbox_inches="tight")
@@ -1086,8 +1030,7 @@ class Psd:
         import warnings
 
         raise warnings.warn(
-            "will be deprecated in future. Please see "
-            "ooipy.tools.ooiplotlib.plot_psd()"
+            "will be deprecated in future. Please see " "ooipy.tools.ooiplotlib.plot_psd()"
         )
         # set backend for plotting/saving:
         if not plot_psd:
@@ -1119,9 +1062,7 @@ class Psd:
         else:
             plt.close(fig)
 
-    def save(
-        self, filename="psd.json", ancillary_data=[], ancillary_data_label=[]
-    ):
+    def save(self, filename="psd.json", ancillary_data=[], ancillary_data_label=[]):
         """
         !!!!! This function will be moved into a different module in the
         future. The current documentation might not be accurate !!!!!

@@ -126,12 +126,8 @@ def get_acoustic_data(
         print("Fetching URLs...")
 
     # get URL for first day
-    day_start = UTCDateTime(
-        starttime.year, starttime.month, starttime.day, 0, 0, 0
-    )
-    data_url_list = __get_mseed_urls(
-        starttime.strftime("/%Y/%m/%d/"), node, verbose
-    )
+    day_start = UTCDateTime(starttime.year, starttime.month, starttime.day, 0, 0, 0)
+    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node, verbose)
 
     if data_url_list is None:
         if verbose:
@@ -146,9 +142,7 @@ def get_acoustic_data(
 
     # get all urls for each day until endtime is reached
     while day_start < endtime:
-        urls_list_next_day = __get_mseed_urls(
-            day_start.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        urls_list_next_day = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
         if urls_list_next_day is None:
             day_start = day_start + 24 * 3600
         else:
@@ -158,16 +152,12 @@ def get_acoustic_data(
     if append:
         # Save last mseed of previous day to data_url_list if not None
         prev_day = starttime - timedelta(days=1)
-        data_url_list_prev_day = __get_mseed_urls(
-            prev_day.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node, verbose)
         if data_url_list_prev_day is not None:
             data_url_list = [data_url_list_prev_day[-1]] + data_url_list
 
         # get 1 more day of urls
-        data_url_last_day_list = __get_mseed_urls(
-            day_start.strftime("/%Y/%m/%d/"), node, verbose
-        )
+        data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
         if data_url_last_day_list is not None:
             data_url_list = data_url_list + [data_url_last_day_list[0]]
 
@@ -182,9 +172,7 @@ def get_acoustic_data(
     for i in range(len(data_url_list)):
         # get UTC time of current and next item in URL list
         # extract start time from ith file
-        utc_time_url_start = UTCDateTime(
-            data_url_list[i].split("YDH")[1][1:].split(".mseed")[0]
-        )
+        utc_time_url_start = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
 
         # this line assumes no gaps between current and next file
         if i != len(data_url_list) - 1:
@@ -192,9 +180,7 @@ def get_acoustic_data(
                 data_url_list[i + 1].split("YDH")[1][1:].split(".mseed")[0]
             )
         else:
-            utc_time_url_stop = UTCDateTime(
-                data_url_list[i].split("YDH")[1][1:].split(".mseed")[0]
-            )
+            utc_time_url_stop = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
             utc_time_url_stop.hour = 23
             utc_time_url_stop.minute = 59
             utc_time_url_stop.second = 59
@@ -204,10 +190,7 @@ def get_acoustic_data(
         if (
             (utc_time_url_start >= starttime and utc_time_url_start < endtime)
             or (utc_time_url_stop >= starttime and utc_time_url_stop < endtime)
-            or (
-                utc_time_url_start <= starttime
-                and utc_time_url_stop >= endtime
-            )
+            or (utc_time_url_start <= starttime and utc_time_url_stop >= endtime)
         ):
             if append:
                 if i == 0:
@@ -252,9 +235,7 @@ def get_acoustic_data(
                 valid_data_url_list[i].split("YDH")[1][1:].split(".mseed")[0]
             )
             utc_time_url_second = UTCDateTime(
-                valid_data_url_list[i + 1]
-                .split("YDH")[1][1:]
-                .split(".mseed")[0]
+                valid_data_url_list[i + 1].split("YDH")[1][1:].split(".mseed")[0]
             )
             if utc_time_url_second - utc_time_url_first >= large_gap_limit:
                 gaps.append(i)
@@ -282,9 +263,7 @@ def get_acoustic_data(
         print("Downloading mseed files...")
 
     # removed max workers argument in following statement
-    st_list = __map_concurrency(
-        __read_mseed, valid_data_url_list, verbose=verbose
-    )
+    st_list = __map_concurrency(__read_mseed, valid_data_url_list, verbose=verbose)
 
     # combine traces from single files into one trace if gapless merge is set to true
     if gapless_merge:
@@ -315,12 +294,8 @@ def get_acoustic_data(
                 data_cat = np.concatenate(data)
 
                 stats = dict(st[0].stats)
-                stats["starttime"] = UTCDateTime(
-                    valid_data_url_list[k][-33:-6]
-                )
-                stats["endtime"] = UTCDateTime(
-                    stats["starttime"] + timedelta(minutes=5)
-                )
+                stats["starttime"] = UTCDateTime(valid_data_url_list[k][-33:-6])
+                stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
                 stats["npts"] = len(data_cat)
 
                 st_list[k] = Stream(traces=Trace(data_cat, header=stats))
@@ -525,9 +500,7 @@ def get_acoustic_data_LF(
 
     # raise Exception ('Problem Requesting Data from OOI Server')
 
-    hydrophone_data = HydrophoneData(
-        data_stream[0].data, data_stream[0].stats, node
-    )
+    hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
 
 
@@ -610,9 +583,7 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
         max_workers = 2 * mp.cpu_count()
 
     results = []
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=max_workers
-    ) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(func, i, *args): i for i in iterator}
         # Disable progress bar
@@ -692,11 +663,7 @@ def __get_mseed_urls(day_str, node, verbose):
             node_id = "/LJ03A"
 
         mainurl = (
-            "https://rawdata.oceanobservatories.org/files"
-            + array
-            + node_id
-            + instrument
-            + day_str
+            "https://rawdata.oceanobservatories.org/files" + array + node_id + instrument + day_str
         )
     except Exception:
         raise Exception(
@@ -791,9 +758,7 @@ def __build_LF_URL(
     if bandpass_range is None:
         band_url = ""
     else:
-        band_url = (
-            "bp=" + str(bandpass_range[0]) + "-" + str(bandpass_range[1]) + "&"
-        )
+        band_url = "bp=" + str(bandpass_range[0]) + "-" + str(bandpass_range[1]) + "&"
     if zero_mean:
         mean_url = "demean=true&"
     else:
