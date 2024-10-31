@@ -38,6 +38,10 @@ dependencies = [
 test = [
     "pytest >= 6.0",
 ]
+dev = [
+    "pre-commit",
+    "black",
+]
 
 [project.urls]
 Documentation = "https://ooipy.readthedocs.io"
