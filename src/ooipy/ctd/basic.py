@@ -85,7 +85,9 @@ class CtdData:
         ntp_epoch = datetime.datetime(1900, 1, 1)
         unix_epoch = datetime.datetime(1970, 1, 1)
         ntp_delta = (unix_epoch - ntp_epoch).total_seconds()
-        return datetime.datetime.utcfromtimestamp(ntp_seconds - ntp_delta).replace(microsecond=0)
+        return datetime.datetime.utcfromtimestamp(ntp_seconds - ntp_delta).replace(
+            microsecond=0
+        )
 
     def get_parameter_from_rawdata(self, parameter):
         """
