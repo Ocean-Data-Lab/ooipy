@@ -40,7 +40,7 @@ test = [
 ]
 dev = [
     "pre-commit",
-    "black"
+    "black",
 ]
 
 [project.urls]
@@ -48,6 +48,9 @@ Documentation = "https://ooipy.readthedocs.io"
 Issues = "https://github.com/Ocean-Data-Lab/ooipy/issues"
 Source = "https://github.com/Ocean-Data-Lab/ooipy"
 
+[project.scripts]
+download_hydrophone_data = "ooipy.scripts.download_hydrophone_data:main"
+    
 [tool.hatch]
 version.source = "vcs"
 build.hooks.vcs.version-file = "src/ooipy/version.py"
