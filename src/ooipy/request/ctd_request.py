@@ -267,7 +267,11 @@ def __get_instrument_id(url_str):
 
 
 def get_ctd_data_daily(
-    datetime_day, location, limit=10000, only_profilers=False, delivery_method="auto"
+    datetime_day,
+    location,
+    limit=10000,
+    only_profilers=False,
+    delivery_method="auto",
 ):
     """
     Requests CTD data for specified day and location. The day is split

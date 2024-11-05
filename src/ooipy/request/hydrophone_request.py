@@ -74,7 +74,8 @@ def get_acoustic_data(
     print_exceptions : bool, optional
         whether or not exceptions are printed in the terminal line
     max_workers : int, optional
-        number of maximum workers for concurrent processing. Default is -1 (uses number of available cores)
+        number of maximum workers for concurrent processing.
+        Default is -1 (uses number of available cores)
     append : bool, optional
         specifies if extra mseed files should be appended at beginning
         and end in case of boundary gaps in data. Default is True
@@ -103,7 +104,8 @@ def get_acoustic_data(
         starts prior to the requested time) the gap, or not at all (if
         the gap is within the requested time).
     obspy_merge_method : int, optional
-        either [0,1], see [obspy documentation](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html#handling-overlaps)
+        either [0,1], see [obspy documentation](https://docs.obspy.org/packages/autogen/\
+            obspy.core.trace.Trace.html#handling-overlaps)
         for description of merge methods
     gapless_merge: bool, optional
         OOI BB hydrophones have had problems with data fragmentation, where
@@ -207,7 +209,10 @@ def get_acoustic_data(
 
                 elif first_file:
                     first_file = False
-                    valid_data_url_list = [data_url_list[i - 1], data_url_list[i]]
+                    valid_data_url_list = [
+                        data_url_list[i - 1],
+                        data_url_list[i],
+                    ]
                 else:
                     valid_data_url_list.append(data_url_list[i])
             else:
@@ -291,7 +296,8 @@ def get_acoustic_data(
                 300.001,
             ]:  # must be 5 minutes of samples
                 # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
-                #   idea why, but am catching this here. Unknown what downstream effects this could have
+                #   idea why, but am catching this here. Unknown what downstream effects this could
+                #   have
 
                 if verbose:
                     print(f"gapless merge for {valid_data_url_list[k]}")
@@ -309,7 +315,8 @@ def get_acoustic_data(
             else:
                 if verbose:
                     print(
-                        f"Data segment {valid_data_url_list[k]}, with npts {npts_total}, is not compatible with gapless merge"
+                        f"Data segment {valid_data_url_list[k]}, \
+                            with npts {npts_total}, is not compatible with gapless merge"
                     )
                 _ = st_list.pop(k)
 
@@ -605,7 +612,9 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
         # Disable progress bar
         is_disabled = not verbose
         for future in tqdm(
-            concurrent.futures.as_completed(future_to_url), total=len(iterator), disable=is_disabled
+            concurrent.futures.as_completed(future_to_url),
+            total=len(iterator),
+            disable=is_disabled,
         ):
             data = future.result()
             results.append(data)
@@ -621,7 +630,8 @@ def __merge_singlecore(ls: list, merge_method: int = 0):
     stream : list
         list of obspy traces
     merge_method : int
-        see `obspy.Stream.merge() <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.merge.html>`__ passed to obspy.merge
+        see `obspy.Stream.merge() <https://docs.obspy.org/packages/autogen/obspy.core.\
+            stream.Stream.merge.html>`__ passed to obspy.merge
     """
 
     stream = obspy.Stream(ls)
@@ -733,7 +743,13 @@ def __get_mseed_urls(day_str, node, verbose):
 
 
 def __build_LF_URL(
-    node, starttime, endtime, bandpass_range=None, zero_mean=False, correct=False, channel=None
+    node,
+    starttime,
+    endtime,
+    bandpass_range=None,
+    zero_mean=False,
+    correct=False,
+    channel=None,
 ):
     """
     Build URL for Lowfrequency Data given the start time, end time, and

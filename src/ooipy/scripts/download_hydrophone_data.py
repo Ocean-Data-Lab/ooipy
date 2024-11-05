@@ -128,4 +128,8 @@ for k, item in tqdm(df.iterrows()):
     filename = f"{op_path}/{hdat_loc}_{hdat_start_time}_{hdat_end_time}"
 
     print(filename)
-    hdata_ds.save(filename=filename, file_format=item.file_format, wav_kwargs={"norm": True})
+    hdata_ds.save(
+        filename=filename,
+        file_format=item.file_format,
+        wav_kwargs={"norm": True},
+    )

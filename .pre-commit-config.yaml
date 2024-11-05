@@ -25,6 +25,7 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
+        args: ["--line-length", "100"]
 
   - repo: https://github.com/PyCQA/flake8
     rev: 7.1.1
@@ -37,3 +38,15 @@ repos:
       - id: codespell
         # Ignores `.ipynb` files, `_build` and `_static` folders
         args: ["--skip=*.ipynb,docs/source/_build,docs/source/_static", "--ignore-words-list=authentification", "-w", "docs", "ooipy"]
+
+ci:
+    autofix_commit_msg: |
+        [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+        for more information, see https://pre-commit.ci
+    autofix_prs: false
+    autoupdate_branch: ''
+    autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+    autoupdate_schedule: weekly
+    skip: []
+    submodules: false

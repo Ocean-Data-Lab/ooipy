@@ -115,7 +115,13 @@ class HydrophoneData(Trace):
         return f_calib
 
     def compute_spectrogram(
-        self, win="hann", L=4096, avg_time=None, overlap=0.5, verbose=True, average_type="median"
+        self,
+        win="hann",
+        L=4096,
+        avg_time=None,
+        overlap=0.5,
+        verbose=True,
+        average_type="median",
     ):
         """
         Compute spectrogram of acoustic signal. For each time step of the
@@ -180,7 +186,9 @@ class HydrophoneData(Trace):
             n_hop = int(L * (1 - overlap))
             for n in range(nbins):
                 f, Pxx = signal.periodogram(
-                    x=self.data[n * n_hop : n * n_hop + L], fs=fs, window=win  # noqa
+                    x=self.data[n * n_hop : n * n_hop + L],
+                    fs=fs,
+                    window=win,  # noqa
                 )
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
@@ -209,7 +217,10 @@ class HydrophoneData(Trace):
 
                 if len(Pxx) != int(L / 2) + 1:
                     if verbose:
-                        print("Error while computing " "Welch estimate for segment", n)
+                        print(
+                            "Error while computing " "Welch estimate for segment",
+                            n,
+                        )
                     self.spectrogram = None
                     return None
                 else:
@@ -327,16 +338,21 @@ class HydrophoneData(Trace):
             )
             temp_slice = self.slice(starttime=UTCDateTime(starttime), endtime=UTCDateTime(endtime))
             tmp_obj = HydrophoneData(
-                data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
+                data=temp_slice.data,
+                header=temp_slice.stats,
+                node=self.stats.location,
             )
             ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
         starttime = self.stats.starttime + datetime.timedelta(seconds=(N - 1) * seconds_per_process)
         temp_slice = self.slice(
-            starttime=UTCDateTime(starttime), endtime=UTCDateTime(self.stats.endtime)
+            starttime=UTCDateTime(starttime),
+            endtime=UTCDateTime(self.stats.endtime),
         )
         tmp_obj = HydrophoneData(
-            data=temp_slice.data, header=temp_slice.stats, node=self.stats.location
+            data=temp_slice.data,
+            header=temp_slice.stats,
+            node=self.stats.location,
         )
         ooi_hyd_data_list.append((tmp_obj, win, L, avg_time, overlap, verbose, average_type))
 
@@ -867,7 +883,11 @@ class Spectrogram:
         v = self.values[::res_reduction_time, ::res_reduction_freq]
 
         if len(self.time) != len(self.values):
-            t = np.linspace(0, len(self.values) - 1, int(len(self.values) / res_reduction_time))
+            t = np.linspace(
+                0,
+                len(self.values) - 1,
+                int(len(self.values) / res_reduction_time),
+            )
         else:
             t = self.time[::res_reduction_time]
 

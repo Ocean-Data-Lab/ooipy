@@ -80,7 +80,7 @@ def plot(*args, scalex=True, scaley=True, data=None, **kwargs):
                 scalex=scalex,
                 scaley=scaley,
                 **({"data": data} if data is not None else {}),
-                **kwargs
+                **kwargs,
             )
 
 
@@ -223,7 +223,7 @@ def plot_spectrogram(spec_obj, **kwargs):
         norm=Normalize(vmin=kwargs["vmin"], vmax=kwargs["vmax"]),
         cmap=plt.cm.jet,
         extend=kwargs["extend_type"],
-        **kwargs
+        **kwargs,
     )
     plt.ylabel(kwargs["ylabel"])
     plt.xlabel(kwargs["xlabel"])
@@ -247,7 +247,11 @@ def plot_spectrogram(spec_obj, **kwargs):
     plt.colorbar(
         matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
-        ticks=np.arange(kwargs["vmin"], kwargs["vmax"] + kwargs["vdelta"], kwargs["vdelta_cbar"]),
+        ticks=np.arange(
+            kwargs["vmin"],
+            kwargs["vmax"] + kwargs["vdelta"],
+            kwargs["vdelta_cbar"],
+        ),
         label=r"spectral level (dB rel $1 \mathrm{\frac{μ Pa^2}{Hz}}$)",
         pad=0.03,
     )
