@@ -48,7 +48,7 @@ print('Downloading Low Frequency Data:')
 hdata_lowfreq = ooipy.get_acoustic_data_LF(start_time, end_time, node2, verbose=True, zero_mean=True)
 ```
 
-The {py:func}`ooipy.hydrophone.basic.HydrophoneData` object has all of the functionality of the {py:func}`obspy.core.trace.Trace`, which includes plotting, resampling, filtering and more. See obspy documentation for more information.
+The {py:func}`ooipy.hydrophone.basic.HydrophoneData` object has all of the functionality of the {py:class}`obspy.core.trace.Trace`, which includes plotting, resampling, filtering and more. See obspy documentation for more information.
 
 ### Hydrophone nodes
 
@@ -165,5 +165,49 @@ AXBA1,2019-08-03T12:01:00,2019-08-03T12:02:00,mat,1
 ```
 
 ## Download CTD Data
+:::{warning}
+CTD downloads currently works, but are not actively supported. You should first look at the [OOI Data Explorer](https://dataexplorer.oceanobservatories.org/).
+:::
 
+import packages and initialize your api token
+```python
+import ooipy
+import datetime
+from matplotlib import pyplot as plt
 
+USERNAME = <'YOUR_USERNAME'>
+TOKEN =  <'YOUR_TOKEN'>
+ooipy.request.authentification.set_authentification(USERNAME, TOKEN)
+```
+request 1-hour of CTD data from the oregonoffshore location
+```python
+start = datetime.datetime(2016, 12, 12, 2, 0, 0)
+end = datetime.datetime(2016, 12, 12, 3, 0, 0)
+ctd_data = ooipy.request.ctd_request.get_ctd_data(start, end, 'oregon_offshore', limit=10000)
+print('CTD data object: ', ctd_data)
+print('number of data points: ', len(ctd_data.raw_data))
+print('first data point: ', ctd_data.raw_data[0])
+```
+
+request 1-day of CTD data from the oregonoffshore location
+```python
+import time
+day = datetime.datetime(2016, 12, 12)
+t = time.time()
+ctd_data = ooipy.request.ctd_request.get_ctd_data_daily(day, 'oregon_offshore')
+print(time.time() - t)
+print('CTD data object: ', ctd_data)
+print('number of data points: ', len(ctd_data.raw_data))
+print('first data point: ', ctd_data.raw_data[0])
+```
+
+compute sound speed profile for daily data
+```python
+c_profile = ctd_data.get_profile(600, 'sound_speed')
+```
+
+plot ctd profile mean and standard deviation
+```python
+c_profile.plot(xlabel='sound speed')
+```
+<img src="figures/ctd_profile.png" alt="Sound speed profile" width="400">
