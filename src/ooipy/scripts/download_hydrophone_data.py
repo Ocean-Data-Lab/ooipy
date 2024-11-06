@@ -1,5 +1,5 @@
 """
-download_broanband.py
+download_broadband.py
 John Ragland, June 2023
 
 download_broadband.py takes a csv file containing a list of
@@ -10,126 +10,134 @@ include ['.mat', '.pkl', '.nc', '.wav'].
 
 example csv file:
 -----------------
-node,start_time,end_time,file_format
-LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,pkl
-LJ03A,2019-08-03T12:01:00,2019-08-03T12:02:00,pkl
+```csv
+node,start_time,end_time,file_format,downsample_factor
+LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,wav,1
+AXBA1,2019-08-03T12:01:00,2019-08-03T12:02:00,wav,1
+```
 
-- create a csv file with the above contents and save it in your working path
-
-script usage:
--------------
-python download_broadband.py --csv path/to/csv --output_path path/to/output
+usage:
+```console
+download_hydrophone_data --csv path/to/csv --output_path path/to/output
+```
 """
 
 import argparse
 import sys
 
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
 import ooipy
 
-hyd_type = {
-    "LJ01D": "BB",
-    "LJ01A": "BB",
-    "PC01A": "BB",
-    "PC03A": "BB",
-    "LJ01C": "BB",
-    "LJ03A": "BB",
-    "AXBA1": "LF",
-    "AXCC1": "LF",
-    "AXEC2": "LF",
-    "HYS14": "LF",
-    "HYSB1": "LF",
-}
 
-# Create the argument parser
-parser = argparse.ArgumentParser()
+def main():
+    hyd_type = {
+        "LJ01D": "BB",
+        "LJ01A": "BB",
+        "PC01A": "BB",
+        "PC03A": "BB",
+        "LJ01C": "BB",
+        "LJ03A": "BB",
+        "AXBA1": "LF",
+        "AXCC1": "LF",
+        "AXEC2": "LF",
+        "HYS14": "LF",
+        "HYSB1": "LF",
+    }
 
-# Add command-line options
-parser.add_argument("--csv", help="file path to csv file")
-parser.add_argument("--output_path", help="file path to save files in")
+    # Create the argument parser
+    parser = argparse.ArgumentParser()
 
-# Parse the command-line arguments
-args = parser.parse_args()
+    # Add command-line options
+    parser.add_argument("--csv", help="file path to csv file")
+    parser.add_argument("--output_path", help="file path to save files in")
 
-# Check if the --path_to_csv option is present
-if args.csv is None:
-    raise Exception("You must provide a path to the csv file, --csv <absolute file path>")
-if args.output_path is None:
-    raise Exception(
-        "You must provide a path to the output directory, --output_path <absolute file path>"
-    )
+    # Parse the command-line arguments
+    args = parser.parse_args()
 
-# Access the values of the command-line options
-df = pd.read_csv(args.csv)
+    # Check if the --path_to_csv option is present
+    if args.csv is None:
+        raise Exception("You must provide a path to the csv file, --csv <absolute file path>")
+    if args.output_path is None:
+        raise Exception(
+            "You must provide a path to the output directory, --output_path <absolute file path>"
+        )
 
-# estimate total download size and ask to proceed
-total_time = 0
-for k, item in df.iterrows():
-    total_time += (pd.Timestamp(item.end_time) - pd.Timestamp(item.start_time)).value / 1e9
+    # Access the values of the command-line options
+    df = pd.read_csv(args.csv)
 
-total_storage = total_time * 64e3 * 8  # 8 Bytes per sample
+    # estimate total download size and ask to proceed
+    total_time = 0
+    for k, item in df.iterrows():
+        total_time += (pd.Timestamp(item.end_time) - pd.Timestamp(item.start_time)).value / 1e9
 
+    total_storage = total_time * 64e3 * 8  # 8 Bytes per sample
 
-def format_bytes(size):
-    power = 2**10  # Power of 2^10
-    n = 0
-    units = ["B", "KB", "MB", "GB", "TB"]
+    def format_bytes(size):
+        power = 2**10  # Power of 2^10
+        n = 0
+        units = ["B", "KB", "MB", "GB", "TB"]
 
-    while size >= power and n < len(units) - 1:
-        size /= power
-        n += 1
+        while size >= power and n < len(units) - 1:
+            size /= power
+            n += 1
 
-    formatted_size = "{:.2f} {}".format(size, units[n])
-    return formatted_size
+        formatted_size = "{:.2f} {}".format(size, units[n])
+        return formatted_size
 
+    print(f"total uncompressed download size: ~{format_bytes(total_storage)}")
+    proceed = input("Do you want to proceed? (y/n): ")
 
-print(f"total uncompressed download size: ~{format_bytes(total_storage)}")
-proceed = input("Do you want to proceed? (y/n): ")
+    if proceed.lower() != "y":
+        print("Exiting the script.")
+        sys.exit(0)
 
-if proceed.lower() != "y":
-    print("Exiting the script.")
-    sys.exit(0)
+    # download the data
+    for k, item in tqdm(df.iterrows()):
+        if item.node not in hyd_type.keys():
+            print(f"node {item.node} invalid, skipping")
+            continue
 
-# download the data
-for k, item in tqdm(df.iterrows()):
-    if item.node not in hyd_type.keys():
-        print(f"node {item.node} invalid, skipping")
-        continue
+        start_time_d = pd.Timestamp(item.start_time).to_pydatetime()
+        end_time_d = pd.Timestamp(item.end_time).to_pydatetime()
 
-    start_time_d = pd.Timestamp(item.start_time).to_pydatetime()
-    end_time_d = pd.Timestamp(item.end_time).to_pydatetime()
+        if hyd_type[item.node] == "LF":
+            hdata = ooipy.get_acoustic_data_LF(start_time_d, end_time_d, item.node)
+        else:
+            hdata = ooipy.get_acoustic_data(start_time_d, end_time_d, item.node)
 
-    if hyd_type[item.node] == "LF":
-        hdata = ooipy.get_acoustic_data_LF(start_time_d, end_time_d, item.node)
-    else:
-        hdata = ooipy.get_acoustic_data(start_time_d, end_time_d, item.node)
+        if hdata is None:
+            print(f"no data found for {item.node} between {start_time_d} and {end_time_d}")
+            continue
 
-    if hdata is None:
-        print(f"no data found for {item.node} between {start_time_d} and {end_time_d}")
-        continue
-    # downsample
-    downsample_factor = item.downsample_factor
-    if item.downsample_factor <= 16:
-        hdata_ds = hdata.decimate(item.downsample_factor)
-    else:
-        hdata_ds = hdata
-        while downsample_factor > 16:
-            hdata_ds = hdata_ds.decimate(16)
-            downsample_factor //= 16
-        hdata_ds = hdata_ds.decimate(downsample_factor)
+        # fill masked values with mean
+        hdata.data = np.ma.filled(hdata.data, np.mean(hdata.data.mean()))
 
-    # save
-    op_path = args.output_path
-    hdat_loc = hdata_ds.stats.location
-    hdat_start_time = hdata_ds.stats.starttime.strftime("%Y%m%dT%H%M%S")
-    hdat_end_time = hdata_ds.stats.endtime.strftime("%Y%m%dT%H%M%S")
-    filename = f"{op_path}/{hdat_loc}_{hdat_start_time}_{hdat_end_time}"
+        # downsample
+        downsample_factor = item.downsample_factor
+        if item.downsample_factor == 1:
+            hdata_ds = hdata
+        elif item.downsample_factor <= 16:
+            hdata_ds = hdata.decimate(item.downsample_factor)
+        else:
+            hdata_ds = hdata
+            while downsample_factor > 16:
+                hdata_ds = hdata_ds.decimate(16)
+                downsample_factor //= 16
+            hdata_ds = hdata_ds.decimate(downsample_factor)
 
-    print(filename)
-    hdata_ds.save(
-        filename=filename,
-        file_format=item.file_format,
-        wav_kwargs={"norm": True},
-    )
+        # save
+        op_path = args.output_path
+        hdat_loc = hdata_ds.stats.location
+        hdat_start_time = hdata_ds.stats.starttime.strftime("%Y%m%dT%H%M%S")
+        hdat_end_time = hdata_ds.stats.endtime.strftime("%Y%m%dT%H%M%S")
+        filename = f"{op_path}/{hdat_loc}_{hdat_start_time}_{hdat_end_time}"
+
+        print(filename)
+        hdata_ds.save(
+            filename=filename,
+            file_format=item.file_format,
+            wav_kwargs={"norm": True},
+        )

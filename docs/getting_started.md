@@ -151,17 +151,15 @@ spec1 = hdata_broadband.compute_spectrogram()
 
 There is a program for batch downloading ooi hydrophone data provided with the installation of ooipy. You can access it from your terminal:
 ```console
-download_ooi_hydrophone_data
+download_hydrophone_data --csv <path to csv> --output_path <path to save files>
 ```
-
-This script downloads hydrophone data that is specified in a csv.
 
 Here is an example csv file:
 
 ```csv
 node,start_time,end_time,file_format,downsample_factor
-LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,mat,64
-AXBA1,2019-08-03T12:01:00,2019-08-03T12:02:00,mat,1
+LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,wav,1
+AXBA1,2019-08-03T12:01:00,2019-08-03T12:02:00,wav,1
 ```
 
 ## Download CTD Data
