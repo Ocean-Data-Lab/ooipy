@@ -42,6 +42,14 @@ dev = [
     "pre-commit",
     "black"
 ]
+docs = [
+  "furo",
+  "myst_parser >=0.13",
+  "sphinx >=4.0",
+  "sphinx-copybutton",
+  "sphinx-autodoc-typehints",
+  "sphinxcontrib-bibtex"
+]
 
 [project.urls]
 Documentation = "https://ooipy.readthedocs.io"
