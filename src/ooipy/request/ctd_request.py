@@ -1,6 +1,9 @@
 """
-Tools for downloading CTD Data. The first place you should look is the ooi data explorer, but if the data you need is not available, then these tools may be helpful.
+Tools for downloading CTD Data.
+The first place you should look is the ooi data explorer,
+but if the data you need is not available, then these tools may be helpful.
 """
+
 import concurrent.futures
 import datetime
 import multiprocessing as mp

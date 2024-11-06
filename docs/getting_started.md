@@ -17,7 +17,7 @@ pip install -e .
 ```
 The -e flag allows you to edit the source code and not have to reinstall the package.
 
-The installation has several extras for different development cases ['dev','docs']. These optional dependancies can be installed with `pip install -e .[dev]` or `pip install -e .[docs]`.
+The installation has several extras for different development cases ['dev','docs']. These optional dependencies can be installed with `pip install -e .[dev]` or `pip install -e .[docs]`.
 
 ## Download Hydrophone Data
 
@@ -65,7 +65,7 @@ The {py:func}`ooipy.hydrophone.basic.HydrophoneData` object has all of the funct
     * 'LJ01C'
 * [Axial Base Seafloor (Fs = 64 kHz)](https://ooinet.oceanobservatories.org/data_access/?search=RS03AXBS-LJ03A-09-HYDBBA302)
     * 'LJ03A'
-    
+
 **Low Frequency Hydrophones**
 * [Axial Base Seaflor (Fs = 200 Hz)](https://ooinet.oceanobservatories.org/data_access/?search=RS03AXBS-MJ03A-05-HYDLFA301)
     * 'Axial_Base'
@@ -90,7 +90,7 @@ Here is a [map of hydrophones supported by OOIpy](https://www.google.com/maps/d/
 ## Compute PSDs and Spectrograms
 The {py:class}`ooipy.hydrophone.basic.HydrophoneData` data object, which is a wrapper for the {py:class}`obspy.core.trace.Trace` provides methods to compute Power Spectral Densities, and Spectrograms. The spectrograms are actually multiple power-spectral density estimates as a function of time, instead of a typical short-time fourier transform, such as {py:func}`scipy.signal.stft`.
 
-The OOI hydrophones often have colocated instruments that can corrupt tha ambient sound measurements. We've found that the welch method with median averaging {footcite}`schwock2021e` gives the best result for power spectral density estimates, and is what has been used for much research on spectral levels with OOI hydrophones {footcite}`ragland2022, schwock2021d, schwock2021b`
+The OOI hydrophones often have colocated instruments that can corrupt than ambient sound measurements. We've found that the welch method with median averaging {footcite}`schwock2021e` gives the best result for power spectral density estimates, and is what has been used for much research on spectral levels with OOI hydrophones {footcite}`ragland2022, schwock2021d, schwock2021b`
 
 ### Calibration
 ooipy also handles calibration of the hydrophones. The low-frequency hydrophones were calibrated before their deployment in 2014, and have not been calibrated since. The calibration information for the low frequency hydrophones can be found on the [IRIS website](http://ds.iris.edu/mda/OO/).

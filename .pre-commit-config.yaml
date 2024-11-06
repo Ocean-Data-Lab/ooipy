@@ -37,7 +37,7 @@ repos:
     hooks:
       - id: codespell
         # Ignores `.ipynb` files, `_build` and `_static` folders
-        args: ["--skip=*.ipynb,docs/source/_build,docs/source/_static", "--ignore-words-list=authentification", "-w", "docs", "ooipy"]
+        args: ["--skip=*.ipynb,docs", "--ignore-words-list=authentification", "-w", "docs", "ooipy"]
 
 ci:
     autofix_commit_msg: |

@@ -1,5 +1,6 @@
 """
-The :meth:`ooipy.get_acoustic_data` and :meth:`ooipy.get_acoustic_data_LF` functions return the :class:`ooipy.HydrophoneData` object.
+The {py:meth}`ooipy.get_acoustic_data` and {py:meth}`ooipy.get_acoustic_data_LF`
+functions return the {py:class}`ooipy.HydrophoneData` object.
 
 The :class:`ooipy.HydrophoneData` objects inherits from obspy.Trace, and methods for
 computing calibrated spectrograms and power spectral densities are added.
