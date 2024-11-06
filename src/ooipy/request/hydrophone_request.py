@@ -1,12 +1,8 @@
 """
 This modules handles the downloading of OOI Data. As of current, the supported
-OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
-frequency hydrophones (Fs = 200 Hz). All supported hydrophone nodes are listed
-in the Hydrophone Nodes section below. For a demo on how to use these tools, please
-see ooipy/hydrophone_demo.ipynb on the Github Repository
-
-Hydrophone Request Modules
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+OOI sensors include all broadband hydrophones (Fs = 64 kHz), all low
+frequency hydrophones (Fs = 200 Hz), and bottom mounted OBSs.
+All supported hydrophone nodes are listed in the Hydrophone Nodes section below.
 """
 
 import concurrent.futures
@@ -43,9 +39,7 @@ def get_acoustic_data(
     """
     Get broadband acoustic data for specific time frame and sensor node. The
     data is returned as a :class:`.HydrophoneData` object. This object is
-    based on the obspy data trace. Example usage is shown below. For a more in
-    depth tutorial, see the `Hydrophone Request Jupyter Notebook Example
-    <_static/test_request.html>`_.
+    based on the obspy data trace.
 
     >>> import ooipy
     >>> start_time = datetime.datetime(2017,3,10,0,0,0)
@@ -430,10 +424,8 @@ def get_acoustic_data_LF(
     Get low frequency acoustic data for specific time frame and sensor
     node. The data is returned as a :class:`.HydrophoneData` object.
     This object is based on the obspy data trace. Example usage is shown
-    below. For a more in depth tutorial, see the `Hydrophone Request
-    Jupyter Notebook Example <_static/test_request.html>`_. This
-    function does not include the full functionality provided by the
-    `IRIS data portal
+    below. This function does not include the full functionality
+    provided by the `IRIS data portal
     <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
 
     If there is no data for the specified time window, then None is returned
@@ -539,10 +531,10 @@ def ooipy_read(
     zero_mean=False,
 ):
     """
+    **this function is under development**
+
     General Purpose OOIpy read function. Parses input parameters to
-    appropriate, device specific, read function. This function is under
-    development but is included as is. There is no gurentee that this
-    function works as expected.
+    appropriate, device specific, read function.
 
     Parameters
     ----------
