@@ -1,12 +1,8 @@
 """
 This modules handles the downloading of OOI Data. As of current, the supported
-OOI sensors include all broadband hydrophones (Fs = 64 kHz) and all low
-frequency hydrophones (Fs = 200 Hz). All supported hydrophone nodes are listed
-in the Hydrophone Nodes section below. For a demo on how to use these tools, please
-see ooipy/hydrophone_demo.ipynb on the Github Repository
-
-Hydrophone Request Modules
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+OOI sensors include all broadband hydrophones (Fs = 64 kHz), all low
+frequency hydrophones (Fs = 200 Hz), and bottom mounted OBSs. All supported hydrophone nodes are listed
+in the Hydrophone Nodes section below.
 """
 
 import concurrent.futures
@@ -539,10 +535,10 @@ def ooipy_read(
     zero_mean=False,
 ):
     """
+    **this function is under development**
+    
     General Purpose OOIpy read function. Parses input parameters to
-    appropriate, device specific, read function. This function is under
-    development but is included as is. There is no gurentee that this
-    function works as expected.
+    appropriate, device specific, read function.
 
     Parameters
     ----------

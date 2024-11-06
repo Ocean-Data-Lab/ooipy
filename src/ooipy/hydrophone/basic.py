@@ -1,9 +1,8 @@
 """
-Module for hydrophone (acoustic) data objects
+The :meth:`ooipy.get_acoustic_data` and :meth:`ooipy.get_acoustic_data_LF` functions return the :class:`ooipy.HydrophoneData` object.
 
-The HydrophoneData objects inherits from obspy.Trace. Furthermore,
-methods for computing spectrograms and power spectral densities are
-added.
+The :class:`ooipy.HydrophoneData` objects inherits from obspy.Trace, and methods for
+computing calibrated spectrograms and power spectral densities are added.
 """
 
 import datetime
@@ -38,16 +37,6 @@ class HydrophoneData(Trace):
     type : str
         Either 'broadband' or 'low_frequency' specifies the type of hydrophone
         that the date is from.
-
-    Methods
-    ---------
-    frequency_calibration
-    compute_spectrogram
-    compute_spectrogram_mp
-    compute_psd_welch
-    wav_write
-    get_asset_ID
-    save
 
     """
 
