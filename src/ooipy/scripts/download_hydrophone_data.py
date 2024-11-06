@@ -10,23 +10,23 @@ include ['.mat', '.pkl', '.nc', '.wav'].
 
 example csv file:
 -----------------
-node,start_time,end_time,file_format
-LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,pkl
-LJ03A,2019-08-03T12:01:00,2019-08-03T12:02:00,pkl
+```csv
+node,start_time,end_time,file_format,downsample_factor
+LJ03A,2019-08-03T08:00:00,2019-08-03T08:01:00,wav,1
+AXBA1,2019-08-03T12:01:00,2019-08-03T12:02:00,wav,1
+```
 
-- create a csv file with the above contents and save it in your working path
-
-script usage:
--------------
-python download_broadband.py --csv path/to/csv --output_path path/to/output
+usage:
+```console
+download_hydrophone_data --csv path/to/csv --output_path path/to/output
+```
 """
 
 import argparse
 import sys
-
 import pandas as pd
 from tqdm import tqdm
-
+import numpy as np
 import ooipy
 
 
@@ -109,9 +109,15 @@ def main():
         if hdata is None:
             print(f"no data found for {item.node} between {start_time_d} and {end_time_d}")
             continue
+
+        # fill masked values with mean
+        hdata.data = np.ma.filled(hdata.data, np.mean(hdata.data.mean()))
+
         # downsample
         downsample_factor = item.downsample_factor
-        if item.downsample_factor <= 16:
+        if item.downsample_factor == 1:
+            hdata_ds = hdata
+        elif item.downsample_factor <= 16:
             hdata_ds = hdata.decimate(item.downsample_factor)
         else:
             hdata_ds = hdata
