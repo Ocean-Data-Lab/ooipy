@@ -48,6 +48,7 @@ docs = [
   "sphinx >=4.0",
   "sphinx-copybutton",
   "sphinx-autodoc-typehints",
+  "sphinxcontrib-bibtex"
 ]
 
 [project.urls]
