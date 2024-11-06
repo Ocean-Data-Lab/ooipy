@@ -24,9 +24,11 @@ download_hydrophone_data --csv path/to/csv --output_path path/to/output
 
 import argparse
 import sys
+
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import numpy as np
+
 import ooipy
 
 
