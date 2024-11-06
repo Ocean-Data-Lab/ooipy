@@ -58,7 +58,7 @@ Source = "https://github.com/Ocean-Data-Lab/ooipy"
 
 [project.scripts]
 download_hydrophone_data = "ooipy.scripts.download_hydrophone_data:main"
-    
+
 [tool.hatch]
 version.source = "vcs"
 build.hooks.vcs.version-file = "src/ooipy/version.py"

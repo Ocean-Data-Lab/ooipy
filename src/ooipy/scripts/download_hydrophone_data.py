@@ -23,9 +23,12 @@ python download_broadband.py --csv path/to/csv --output_path path/to/output
 
 import argparse
 import sys
+
 import pandas as pd
 from tqdm import tqdm
+
 import ooipy
+
 
 def main():
     hyd_type = {
@@ -70,7 +73,6 @@ def main():
 
     total_storage = total_time * 64e3 * 8  # 8 Bytes per sample
 
-
     def format_bytes(size):
         power = 2**10  # Power of 2^10
         n = 0
@@ -82,7 +84,6 @@ def main():
 
         formatted_size = "{:.2f} {}".format(size, units[n])
         return formatted_size
-
 
     print(f"total uncompressed download size: ~{format_bytes(total_storage)}")
     proceed = input("Do you want to proceed? (y/n): ")
