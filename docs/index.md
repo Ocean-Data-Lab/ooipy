@@ -1,6 +1,6 @@
 # ooipy
 
-<img src='../imgs/OOIPY_Logo.png' align="right" width=200>
+<img src='figures/OOIPY_Logo.png' align="right" width=200>
 
 ```{include} ../README.md
 :start-after: <!-- SPHINX-START -->
