@@ -282,8 +282,8 @@ def get_acoustic_data(
             # if valid npts, merge traces w/o consideration to gaps
             if npts_total / sampling_rate in [
                 300,
-            #    299.999,
-            #    300.001,
+                #    299.999,
+                #    300.001,
             ]:  # must be 5 minutes of samples
                 # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
                 #   idea why, but am catching this here. Unknown what downstream effects this could
@@ -314,10 +314,12 @@ def get_acoustic_data(
                     start_times.append(tr.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S"))
                 un_starttimes = set(start_times)
                 if len(un_starttimes) == len(st_list[k]):
-                    if verbose: print('file fragmented but timestamps are unique. Segment kept')
+                    if verbose:
+                        print("file fragmented but timestamps are unique. Segment kept")
                     st_list_new.append(st_list[k])
                 else:
-                    if verbose: print('file fragmented and timestamps are corrupt. Segment thrown out')
+                    if verbose:
+                        print("file fragmented and timestamps are corrupt. Segment thrown out")
                     pass
         st_list = st_list_new
 
