@@ -268,11 +268,9 @@ def get_acoustic_data(
     st_list_new = []
     # combine traces from single files into one trace if gapless merge is set to true
     # if a single 5 minute file is is not compatible with gapless merge, it is currently removed
+    print(gapless_merge, verbose)
     if gapless_merge:
         for k, st in enumerate(st_list):
-            # check if multiple traces in stream
-            if len(st) == 1:
-                continue
 
             # count total number of points in stream
             npts_total = 0
