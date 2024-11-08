@@ -21,6 +21,7 @@ ooi_auth.txt
 _ooipy_version.py
 *.nc
 src/ooipy/version.py
+dev/
 
 # Environments
 .env
