@@ -61,7 +61,6 @@ download_hydrophone_data = "ooipy.scripts.download_hydrophone_data:main"
 
 [tool.hatch.version]
 source = "vcs"
-fallback-version = "0.0.1"
 
 [tool.hatch.version.raw-options]
 local_scheme = "no-local-version"
