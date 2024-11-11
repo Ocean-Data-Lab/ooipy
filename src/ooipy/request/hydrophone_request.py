@@ -17,6 +17,7 @@ import requests
 from obspy import Stream, Trace, read
 from obspy.core import UTCDateTime
 from tqdm import tqdm
+import sys
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -287,8 +288,9 @@ def get_acoustic_data(
                 #   idea why, but am catching this here. Unknown what downstream effects this could
                 #   have
 
-                if verbose:
-                    print(f"gapless merge for {valid_data_url_list[k]}")
+                #if verbose:
+                #    print(f"gapless merge for {valid_data_url_list[k]}")
+                
                 data = []
                 for tr in st:
                     data.append(tr.data)
@@ -300,11 +302,11 @@ def get_acoustic_data(
                 stats["npts"] = len(data_cat)
                 st_list_new.append(Stream(traces=Trace(data_cat, header=stats)))
             else:
-                if verbose:
-                    print(
-                        f"Data segment {valid_data_url_list[k]}, \
-                            with npts {npts_total}, is not compatible with gapless merge"
-                    )
+                #if verbose:
+                #    print(
+                #        f"Data segment {valid_data_url_list[k]}, \
+                #            with npts {npts_total}, is not compatible with gapless merge"
+                #    )
 
                 # check if start times contain unique values
                 start_times = []
@@ -614,6 +616,7 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
             concurrent.futures.as_completed(future_to_index),
             total=len(iterator),
             disable=is_disabled,
+            file=sys.stdout,
         ):
             idx = future_to_index[future]
             results[idx] = future.result()
