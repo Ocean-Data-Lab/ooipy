@@ -35,7 +35,7 @@ def get_acoustic_data(
     mseed_file_limit=None,
     large_gap_limit=1800.0,
     obspy_merge_method=0,
-    gapless_merge=False,
+    gapless_merge=True,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -102,12 +102,10 @@ def get_acoustic_data(
         these were saved as separate mseed files. after 2023 (and in some cases,
         but not all retroactively), 5 minute mseed files contain many fragmented
         traces. These traces are essentially not possible to merge with
-        obspy.merge. If True, then experimental method to merge traces without
+        obspy.merge. If True, then method to merge traces without
         consideration of gaps will be attempted. This will only be done if there
         is full data coverage over 5 min file length, but could still result in
-        unalligned data.
-        This is an experimental feature and should be used with
-        caution.
+        unalligned data. Default value is True.
 
     Returns
     -------
@@ -269,7 +267,6 @@ def get_acoustic_data(
     st_list_new = []
     # combine traces from single files into one trace if gapless merge is set to true
     # if a single 5 minute file is is not compatible with gapless merge, it is currently removed
-    print(gapless_merge, verbose)
     if gapless_merge:
         for k, st in enumerate(st_list):
 
