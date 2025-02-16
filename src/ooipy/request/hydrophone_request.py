@@ -7,6 +7,7 @@ All supported hydrophone nodes are listed in the Hydrophone Nodes section below.
 
 import concurrent.futures
 import multiprocessing as mp
+import sys
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -17,7 +18,6 @@ import requests
 from obspy import Stream, Trace, read
 from obspy.core import UTCDateTime
 from tqdm import tqdm
-import sys
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
@@ -285,9 +285,9 @@ def get_acoustic_data(
                 #   idea why, but am catching this here. Unknown what downstream effects this could
                 #   have
 
-                #if verbose:
+                # if verbose:
                 #    print(f"gapless merge for {valid_data_url_list[k]}")
-                
+
                 data = []
                 for tr in st:
                     data.append(tr.data)
@@ -299,7 +299,7 @@ def get_acoustic_data(
                 stats["npts"] = len(data_cat)
                 st_list_new.append(Stream(traces=Trace(data_cat, header=stats)))
             else:
-                #if verbose:
+                # if verbose:
                 #    print(
                 #        f"Data segment {valid_data_url_list[k]}, \
                 #            with npts {npts_total}, is not compatible with gapless merge"
