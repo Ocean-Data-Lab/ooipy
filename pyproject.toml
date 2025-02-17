@@ -95,10 +95,14 @@ exclude_lines = [
 ]
 
 [tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore:pkg_resources is deprecated as an API:DeprecationWarning"
+]
+# adding catch for pkg_resources API deprecation warning until obspy updates
 minversion = "6.0"
 addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
 xfail_strict = true
-filterwarnings = ["error"]
 log_cli_level = "info"
 testpaths = [
   "tests",
