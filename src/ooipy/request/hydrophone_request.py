@@ -7,6 +7,7 @@ All supported hydrophone nodes are listed in the Hydrophone Nodes section below.
 
 import concurrent.futures
 import multiprocessing as mp
+import sys
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -34,7 +35,7 @@ def get_acoustic_data(
     mseed_file_limit=None,
     large_gap_limit=1800.0,
     obspy_merge_method=0,
-    gapless_merge=False,
+    gapless_merge=True,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -75,12 +76,6 @@ def get_acoustic_data(
         and end in case of boundary gaps in data. Default is True
     verbose : bool, optional
         specifies whether print statements should occur or not
-    data_gap_mode : int, optional
-        How gaps in the raw data will be handled. Options are:
-        '0': gaps will be linearly interpolated
-        '1': no interpolation; mask array is returned
-        '2': subtract mean of data and fill gap with zeros; mask array
-        is returned
     mseed_file_limit: int, optional
         If the number of mseed traces to be merged exceed this value, the
         function returns None. For some days the mseed files contain
@@ -107,12 +102,11 @@ def get_acoustic_data(
         these were saved as separate mseed files. after 2023 (and in some cases,
         but not all retroactively), 5 minute mseed files contain many fragmented
         traces. These traces are essentially not possible to merge with
-        obspy.merge. If True, then experimental method to merge traces without
+        obspy.merge. If True, then method to merge traces without
         consideration of gaps will be attempted. This will only be done if there
         is full data coverage over 5 min file length, but could still result in
-        unalligned data.
-        This is an experimental feature and should be used with
-        caution.
+        unalligned data. Default value is True. You should probably not use
+        this method for data before June 2023 because it will likely cause an error.
 
     Returns
     -------
@@ -184,11 +178,16 @@ def get_acoustic_data(
                 data_url_list[i + 1].split("YDH")[1][1:].split(".mseed")[0]
             )
         else:
-            utc_time_url_stop = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
-            utc_time_url_stop.hour = 23
-            utc_time_url_stop.minute = 59
-            utc_time_url_stop.second = 59
-            utc_time_url_stop.microsecond = 999999
+            base_time = UTCDateTime(data_url_list[i].split("YDH")[1][1:].split(".mseed")[0])
+            utc_time_url_stop = UTCDateTime(
+                year=base_time.year,
+                month=base_time.month,
+                day=base_time.day,
+                hour=23,
+                minute=59,
+                second=59,
+                microsecond=999999,
+            )
 
         # if current segment contains desired data, store data segment
         if (
@@ -271,12 +270,11 @@ def get_acoustic_data(
         __read_mseed, valid_data_url_list, verbose=verbose, max_workers=max_workers
     )
 
+    st_list_new = []
     # combine traces from single files into one trace if gapless merge is set to true
+    # if a single 5 minute file is is not compatible with gapless merge, it is currently removed
     if gapless_merge:
         for k, st in enumerate(st_list):
-            # check if multiple traces in stream
-            if len(st) == 1:
-                continue
 
             # count total number of points in stream
             npts_total = 0
@@ -286,15 +284,16 @@ def get_acoustic_data(
             # if valid npts, merge traces w/o consideration to gaps
             if npts_total / sampling_rate in [
                 300,
-                299.999,
-                300.001,
+                #    299.999,
+                #    300.001,
             ]:  # must be 5 minutes of samples
                 # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
                 #   idea why, but am catching this here. Unknown what downstream effects this could
                 #   have
 
-                if verbose:
-                    print(f"gapless merge for {valid_data_url_list[k]}")
+                # if verbose:
+                #    print(f"gapless merge for {valid_data_url_list[k]}")
+
                 data = []
                 for tr in st:
                     data.append(tr.data)
@@ -304,15 +303,28 @@ def get_acoustic_data(
                 stats["starttime"] = UTCDateTime(valid_data_url_list[k][-33:-6])
                 stats["endtime"] = UTCDateTime(stats["starttime"] + timedelta(minutes=5))
                 stats["npts"] = len(data_cat)
-
-                st_list[k] = Stream(traces=Trace(data_cat, header=stats))
+                st_list_new.append(Stream(traces=Trace(data_cat, header=stats)))
             else:
-                if verbose:
-                    print(
-                        f"Data segment {valid_data_url_list[k]}, \
-                            with npts {npts_total}, is not compatible with gapless merge"
-                    )
-                _ = st_list.pop(k)
+                # if verbose:
+                #    print(
+                #        f"Data segment {valid_data_url_list[k]}, \
+                #            with npts {npts_total}, is not compatible with gapless merge"
+                #    )
+
+                # check if start times contain unique values
+                start_times = []
+                for tr in st_list[k]:
+                    start_times.append(tr.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S"))
+                un_starttimes = set(start_times)
+                if len(un_starttimes) == len(st_list[k]):
+                    if verbose:
+                        print("file fragmented but timestamps are unique. Segment kept")
+                    st_list_new.append(st_list[k])
+                else:
+                    if verbose:
+                        print("file fragmented and timestamps are corrupt. Segment thrown out")
+                    pass
+        st_list = st_list_new
 
     # check if number of traces in st_list exceeds limit
     if mseed_file_limit is not None:
@@ -597,19 +609,20 @@ def __map_concurrency(func, iterator, args=(), max_workers=-1, verbose=False):
     if max_workers == -1:
         max_workers = 2 * mp.cpu_count()
 
-    results = []
+    results = [None] * len(iterator)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Start the load operations and mark each future with its URL
-        future_to_url = {executor.submit(func, i, *args): i for i in iterator}
+        # Start the load operations and mark each future with its index
+        future_to_index = {executor.submit(func, i, *args): idx for idx, i in enumerate(iterator)}
         # Disable progress bar
         is_disabled = not verbose
         for future in tqdm(
-            concurrent.futures.as_completed(future_to_url),
+            concurrent.futures.as_completed(future_to_index),
             total=len(iterator),
             disable=is_disabled,
+            file=sys.stdout,
         ):
-            data = future.result()
-            results.append(data)
+            idx = future_to_index[future]
+            results[idx] = future.result()
     return results
 
 
