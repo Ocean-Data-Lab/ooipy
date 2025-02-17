@@ -105,7 +105,7 @@ def get_acoustic_data(
         obspy.merge. If True, then method to merge traces without
         consideration of gaps will be attempted. This will only be done if there
         is full data coverage over 5 min file length, but could still result in
-        unalligned data. Default value is True. You should probably not use 
+        unalligned data. Default value is True. You should probably not use
         this method for data before June 2023 because it will likely cause an error.
 
     Returns
@@ -186,7 +186,7 @@ def get_acoustic_data(
                 hour=23,
                 minute=59,
                 second=59,
-                microsecond=999999
+                microsecond=999999,
             )
 
         # if current segment contains desired data, store data segment
