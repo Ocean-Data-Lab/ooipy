@@ -5,17 +5,9 @@ function.
 """
 
 # Import all dependencies
-import datetime
-
 import matplotlib
-import matplotlib.dates as mdates
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize
-from obspy.core import UTCDateTime
-
-from ooipy.ctd.basic import CtdProfile
-from ooipy.hydrophone.basic import HydrophoneData
 
 
 def plot_ctd_profile(ctd_profile, **kwargs):

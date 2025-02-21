@@ -7,21 +7,14 @@ computing calibrated spectrograms and power spectral densities are added.
 """
 
 import datetime
-import json
-import multiprocessing as mp
 import os
 import pickle
 import warnings
 
-import matplotlib
-import matplotlib.colors as colors
-import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib import pyplot as plt
 from obspy import Trace
-from obspy.core import UTCDateTime
 from scipy import signal
 from scipy.interpolate import interp1d
 from scipy.io import savemat, wavfile
