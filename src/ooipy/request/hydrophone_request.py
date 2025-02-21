@@ -30,12 +30,13 @@ def get_acoustic_data(
     fmin: float = None,
     fmax: float = None,
     max_workers: int = -1,
-    append=True,
-    verbose=False,
-    mseed_file_limit=None,
-    large_gap_limit=1800.0,
-    obspy_merge_method=0,
-    gapless_merge=True,
+    append : bool =True,
+    verbose : bool =False,
+    mseed_file_limit : int = None,
+    large_gap_limit : float =1800.0,
+    obspy_merge_method : int =0,
+    gapless_merge : bool =True,
+    single_ms_buffer : bool=False,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -93,7 +94,7 @@ def get_acoustic_data(
         starts prior to the requested time) the gap, or not at all (if
         the gap is within the requested time).
     obspy_merge_method : int, optional
-        either [0,1], see [obspy documentation](https://docs.obspy.org/packages/autogen/\
+        either [0,1], see [obspy documentation](https://docs.obspy.org/packages/autogen/
             obspy.core.trace.Trace.html#handling-overlaps)
         for description of merge methods
     gapless_merge: bool, optional
@@ -107,6 +108,9 @@ def get_acoustic_data(
         is full data coverage over 5 min file length, but could still result in
         unalligned data. Default value is True. You should probably not use
         this method for data before June 2023 because it will likely cause an error.
+    single_ms_buffer : bool
+        If true, than 5 minute samples that have ± 1ms of data will also be allowed when using gapless merge.
+        There is an issue in the broadband hydrophone data where there is occasionally ± 1 ms of data for a 5 minute segment (64 samples). This is likely due to the GPS clock errors that cause the data fragmentation in the first place. 
 
     Returns
     -------
@@ -282,14 +286,12 @@ def get_acoustic_data(
                 npts_total += tr.stats.npts
 
             # if valid npts, merge traces w/o consideration to gaps
-            if npts_total / sampling_rate in [
-                300,
-                #    299.999,
-                #    300.001,
-            ]:  # must be 5 minutes of samples
-                # NOTE it appears that npts_total is nondeterminstically off by ± 64 samples. I have
-                #   idea why, but am catching this here. Unknown what downstream effects this could
-                #   have
+            if single_ms_buffer:
+                allowed_lengths = [300, 299.999, 300.001]
+            else:
+                allowed_lengths = [300]
+            if npts_total / sampling_rate in allowed_lengths:
+                # NOTE npts_total is nondeterminstically off by ± 64 samples. I have
 
                 # if verbose:
                 #    print(f"gapless merge for {valid_data_url_list[k]}")
