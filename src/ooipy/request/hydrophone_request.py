@@ -109,8 +109,11 @@ def get_acoustic_data(
         unalligned data. Default value is True. You should probably not use
         this method for data before June 2023 because it will likely cause an error.
     single_ms_buffer : bool
-        If true, than 5 minute samples that have ± 1ms of data will also be allowed when using gapless merge.
-        There is an issue in the broadband hydrophone data where there is occasionally ± 1 ms of data for a 5 minute segment (64 samples). This is likely due to the GPS clock errors that cause the data fragmentation in the first place.
+        If true, than 5 minute samples that have ± 1ms of data will also be allowed
+        when using gapless merge. There is an issue in the broadband hydrophone
+        data where there is occasionally ± 1 ms of data for a 5 minute segment
+        (64 samples). This is likely due to the GPS clock errors that cause the
+        data fragmentation in the first place.
 
     Returns
     -------
