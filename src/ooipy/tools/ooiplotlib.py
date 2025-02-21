@@ -17,6 +17,7 @@ from obspy.core import UTCDateTime
 from ooipy.ctd.basic import CtdProfile
 from ooipy.hydrophone.basic import HydrophoneData
 
+
 def plot_ctd_profile(ctd_profile, **kwargs):
     """
     Plot a :class:`ooipy.ctd.basic.CtdProfile` object using the
