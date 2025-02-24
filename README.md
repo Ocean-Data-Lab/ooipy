@@ -1,5 +1,5 @@
 # OOIPY
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![unit test](https://github.com/Ocean-Data-Lab/ooipy/actions/workflows/unit_test.yml/badge.svg)) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4276862.svg)](https://doi.org/10.5281/zenodo.4276862) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Ocean-Data-Lab/ooipy/master.svg)](https://results.pre-commit.ci/latest/github/Ocean-Data-Lab/ooipy/master) [![Documentation](https://readthedocs.org/projects/ooipy/badge/?version=latest)](https://ooipy.readthedocs.io/en/latest/?badge=latest)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![unit test](https://github.com/Ocean-Data-Lab/ooipy/actions/workflows/unit_test.yml/badge.svg) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4276862.svg)](https://doi.org/10.5281/zenodo.4276862) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Ocean-Data-Lab/ooipy/master.svg)](https://results.pre-commit.ci/latest/github/Ocean-Data-Lab/ooipy/master) [![Documentation](https://readthedocs.org/projects/ooipy/badge/?version=latest)](https://ooipy.readthedocs.io/en/latest/?badge=latest)
 
 <img src='imgs/OOIPY_Logo.png' align="right" width=150>
 
