@@ -698,7 +698,7 @@ def __get_mseed_urls(day_str, node, verbose):
             node_id = "/PC01A"
         if node == "PC03A" or node == "Axial_Base_Shallow":
             array = "/RS03AXPS"
-            instrument = "/08-HYDBBA303"
+            instrument = "/HYDBBA303"
             node_id = "/PC03A"
         if node == "LJ01C" or node == "Oregon_Offshore_Base_Seafloor":
             array = "/CE04OSBP"
@@ -706,7 +706,7 @@ def __get_mseed_urls(day_str, node, verbose):
             node_id = "/LJ01C"
         if node == "LJ03A" or node == "Axial_Base_Seafloor":
             array = "/RS03AXBS"
-            instrument = "/09-HYDBBA302"
+            instrument = "/HYDBBA302"
             node_id = "/LJ03A"
 
         mainurl = (
