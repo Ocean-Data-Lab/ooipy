@@ -81,30 +81,28 @@ def test_get_acoustic_data_LF():
 
 
 def test_hydrophone_node_names():
-   node_arr = [
-       "Oregon_Shelf_Base_Seafloor",
-       "Oregon_Slope_Base_Seafloor",
-       "Oregon_Slope_Base_Shallow",
-       "Axial_Base_Shallow",
-       "Oregon_Offshore_Base_Seafloor",
-       "Axial_Base_Seafloor",
-   ]
-   node_id_arr = ["LJ01D", "LJ01A", "PC01A", "PC03A", "LJ01C", "LJ03A"]
-   starttime = datetime.datetime(2017, 3, 20, 0, 0, 0)  # time of first sample
-   endtime = datetime.datetime(2017, 3, 20, 0, 0, 1)  # time of last sample
-   for item in node_arr:
-       hyd_data = hyd_request.get_acoustic_data(starttime, endtime,
-node=item, gapless_merge=False)
-       assert hyd_data.stats.location in node_id_arr
-   node_arr = [
-       "Slope_Base",
-       "Southern_Hydrate",
-       "Axial_Base",
-       "Central_Caldera",
-       "Eastern_Caldera",
-   ]
-   node_id_arr = ["HYSB1", "HYS14", "AXBA1", "AXCC1", "AXEC2"]
-   for item in node_arr:
-       hyd_data = hyd_request.get_acoustic_data_LF(starttime, endtime, node=item)
-       assert hyd_data.stats.location in node_id_arr
-
+    node_arr = [
+        "Oregon_Shelf_Base_Seafloor",
+        "Oregon_Slope_Base_Seafloor",
+        "Oregon_Slope_Base_Shallow",
+        "Axial_Base_Shallow",
+        "Oregon_Offshore_Base_Seafloor",
+        "Axial_Base_Seafloor",
+    ]
+    node_id_arr = ["LJ01D", "LJ01A", "PC01A", "PC03A", "LJ01C", "LJ03A"]
+    starttime = datetime.datetime(2017, 3, 20, 0, 0, 0)  # time of first sample
+    endtime = datetime.datetime(2017, 3, 20, 0, 0, 1)  # time of last sample
+    for item in node_arr:
+        hyd_data = hyd_request.get_acoustic_data(starttime, endtime, node=item, gapless_merge=False)
+        assert hyd_data.stats.location in node_id_arr
+    node_arr = [
+        "Slope_Base",
+        "Southern_Hydrate",
+        "Axial_Base",
+        "Central_Caldera",
+        "Eastern_Caldera",
+    ]
+    node_id_arr = ["HYSB1", "HYS14", "AXBA1", "AXCC1", "AXEC2"]
+    for item in node_arr:
+        hyd_data = hyd_request.get_acoustic_data_LF(starttime, endtime, node=item)
+        assert hyd_data.stats.location in node_id_arr
