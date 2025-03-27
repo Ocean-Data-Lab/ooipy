@@ -88,8 +88,8 @@ class HydrophoneData(Trace):
                 sens_calib = 20 * np.log10(sens_calib)
                 # units for seismograms are in dB rel to m/s^2
         elif round(self.stats.sampling_rate) == 64000:
-            #NOTE OOI broadband hydrophone output is 24-bit ADC with maximum 3 volts. 
-            # So, there are 8388608 / 3 = 2796202 counts per volt which is equivalent 
+            # NOTE OOI broadband hydrophone output is 24-bit ADC with maximum 3 volts.
+            # So, there are 8388608 / 3 = 2796202 counts per volt which is equivalent
             # to 128.9 dB (=20log10(2796202)).
             sens_calib = sens_calib + 128.9
         else:
