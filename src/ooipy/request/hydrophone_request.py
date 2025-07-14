@@ -116,7 +116,7 @@ def get_acoustic_data(
         (64 samples). This is likely due to the GPS clock errors that cause the
         data fragmentation in the first place.
     jupyter_hub : bool
-        If true, ooipy uses local directory structure of the jupyter hub to 
+        If true, ooipy uses local directory structure of the jupyter hub to
         access the data. This should be set to true if you are using the
         ooi jupyter hub. Default is false, which accesses data through the
         http raw data server.
@@ -153,7 +153,9 @@ def get_acoustic_data(
 
     # get all urls for each day until endtime is reached
     while day_start < endtime:
-        urls_list_next_day = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub)
+        urls_list_next_day = __get_mseed_urls(
+            day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if urls_list_next_day is None:
             day_start = day_start + 24 * 3600
         else:
@@ -163,12 +165,16 @@ def get_acoustic_data(
     if append:
         # Save last mseed of previous day to data_url_list if not None
         prev_day = starttime - timedelta(days=1)
-        data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub)
+        data_url_list_prev_day = __get_mseed_urls(
+            prev_day.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if data_url_list_prev_day is not None:
             data_url_list = [data_url_list_prev_day[-1]] + data_url_list
 
         # get 1 more day of urls
-        data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub)
+        data_url_last_day_list = __get_mseed_urls(
+            day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if data_url_last_day_list is not None:
             data_url_list = data_url_list + [data_url_last_day_list[0]]
 
@@ -730,14 +736,16 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
             node_id = "/LJ03A"
 
         if jupyter_hub:
-            mainurl = (
-                f"/home/jovyan/ooi/san_data{array}-{node_id[1:]}{instrument_jh[1:]}{day_str}"
-            )
+            mainurl = f"/home/jovyan/ooi/san_data{array}-{node_id[1:]}{instrument_jh[1:]}{day_str}"
         else:
             mainurl = (
-                "https://rawdata.oceanobservatories.org/files" + array + node_id + instrument + day_str
+                "https://rawdata.oceanobservatories.org/files"
+                + array
+                + node_id
+                + instrument
+                + day_str
             )
-    
+
     except Exception:
         raise Exception(
             "Invalid Location String "
