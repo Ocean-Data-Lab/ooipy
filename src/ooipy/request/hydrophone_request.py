@@ -247,7 +247,7 @@ def get_acoustic_data(
             if verbose:
                 print("Number of mseed files to be merged exceed limit.")
             return None
-
+    
     # handle large data gaps within one day
     if len(valid_data_url_list) >= 2:
         # find gaps
@@ -736,7 +736,7 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
             node_id = "/LJ03A"
 
         if jupyter_hub:
-            mainurl = f"/home/jovyan/ooi/san_data{array}-{node_id[1:]}{instrument_jh[1:]}{day_str}"
+            mainurl = f"/home/jovyan/ooi/san_data{array}-{node_id[1:]}-{instrument_jh[1:]}{day_str}"
         else:
             mainurl = (
                 "https://rawdata.oceanobservatories.org/files"
@@ -762,19 +762,20 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
 
     if jupyter_hub:
         FS = fsspec.filesystem("")
+        data_url_list = sorted(FS.glob(f'{mainurl}*.mseed'))
     else:
         FS = fsspec.filesystem("http")
-
-    try:
-        data_url_list = sorted(
-            f["name"]
-            for f in FS.ls(mainurl)
-            if f["type"] == "file" and f["name"].endswith(".mseed")
-        )
-    except Exception as e:
-        if verbose:
-            print("Client response: ", e)
-        return None
+        try:
+            data_url_list = sorted(
+                f["name"]
+                for f in FS.ls(mainurl)
+                if f["type"] == "file" and f["name"].endswith(".mseed")
+            )
+            
+        except Exception as e:
+            if verbose:
+                print("Client response: ", e)
+            return None
 
     if not data_url_list:
         if verbose:
