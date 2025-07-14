@@ -37,6 +37,7 @@ def get_acoustic_data(
     obspy_merge_method: int = 0,
     gapless_merge: bool = True,
     single_ms_buffer: bool = False,
+    jupyter_hub: bool = False,
 ):
     """
     Get broadband acoustic data for specific time frame and sensor node. The
@@ -114,6 +115,11 @@ def get_acoustic_data(
         data where there is occasionally ± 1 ms of data for a 5 minute segment
         (64 samples). This is likely due to the GPS clock errors that cause the
         data fragmentation in the first place.
+    jupyter_hub : bool
+        If true, ooipy uses local directory structure of the jupyter hub to
+        access the data. This should be set to true if you are using the
+        ooi jupyter hub. Default is false, which accesses data through the
+        http raw data server.
 
     Returns
     -------
@@ -132,7 +138,7 @@ def get_acoustic_data(
 
     # get URL for first day
     day_start = UTCDateTime(starttime.year, starttime.month, starttime.day, 0, 0, 0)
-    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node, verbose)
+    data_url_list = __get_mseed_urls(starttime.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub)
 
     if data_url_list is None:
         if verbose:
@@ -147,7 +153,9 @@ def get_acoustic_data(
 
     # get all urls for each day until endtime is reached
     while day_start < endtime:
-        urls_list_next_day = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
+        urls_list_next_day = __get_mseed_urls(
+            day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if urls_list_next_day is None:
             day_start = day_start + 24 * 3600
         else:
@@ -157,12 +165,16 @@ def get_acoustic_data(
     if append:
         # Save last mseed of previous day to data_url_list if not None
         prev_day = starttime - timedelta(days=1)
-        data_url_list_prev_day = __get_mseed_urls(prev_day.strftime("/%Y/%m/%d/"), node, verbose)
+        data_url_list_prev_day = __get_mseed_urls(
+            prev_day.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if data_url_list_prev_day is not None:
             data_url_list = [data_url_list_prev_day[-1]] + data_url_list
 
         # get 1 more day of urls
-        data_url_last_day_list = __get_mseed_urls(day_start.strftime("/%Y/%m/%d/"), node, verbose)
+        data_url_last_day_list = __get_mseed_urls(
+            day_start.strftime("/%Y/%m/%d/"), node, verbose, jupyter_hub
+        )
         if data_url_last_day_list is not None:
             data_url_list = data_url_list + [data_url_last_day_list[0]]
 
@@ -667,7 +679,7 @@ def __read_mseed(url):
         return None
 
 
-def __get_mseed_urls(day_str, node, verbose):
+def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
     """
     get URLs for a specific day from OOI raw data server
 
@@ -680,6 +692,9 @@ def __get_mseed_urls(day_str, node, verbose):
         identifier or name of the hydrophone node
     verbose : bool
         print exceptions if True
+    jupyter_hub : bool
+        whether to access data from jupyter hub file structure
+        or to use raw data http server.
 
     Returns
     -------
@@ -692,31 +707,45 @@ def __get_mseed_urls(day_str, node, verbose):
         if node == "LJ01D" or node == "Oregon_Shelf_Base_Seafloor":
             array = "/CE02SHBP"
             instrument = "/HYDBBA106"
+            instrument_jh = "/11-HYDBBA106"
             node_id = "/LJ01D"
         if node == "LJ01A" or node == "Oregon_Slope_Base_Seafloor":
             array = "/RS01SLBS"
             instrument = "/HYDBBA102"
+            instrument_jh = "/HYDBBA102"
             node_id = "/LJ01A"
         if node == "PC01A" or node == "Oregon_Slope_Base_Shallow":
             array = "/RS01SBPS"
             instrument = "/HYDBBA103"
+            instrument_jh = "/09-HYDBBA103"
             node_id = "/PC01A"
         if node == "PC03A" or node == "Axial_Base_Shallow":
             array = "/RS03AXPS"
             instrument = "/HYDBBA303"
+            instrument_jh = "/08-HYDBBA303"
             node_id = "/PC03A"
         if node == "LJ01C" or node == "Oregon_Offshore_Base_Seafloor":
             array = "/CE04OSBP"
             instrument = "/HYDBBA105"
+            instrument_jh = "/11-HYDBBA105"
             node_id = "/LJ01C"
         if node == "LJ03A" or node == "Axial_Base_Seafloor":
             array = "/RS03AXBS"
             instrument = "/HYDBBA302"
+            instrument_jh = "/09-HYDBBA302"
             node_id = "/LJ03A"
 
-        mainurl = (
-            "https://rawdata.oceanobservatories.org/files" + array + node_id + instrument + day_str
-        )
+        if jupyter_hub:
+            mainurl = f"/home/jovyan/ooi/san_data{array}-{node_id[1:]}-{instrument_jh[1:]}{day_str}"
+        else:
+            mainurl = (
+                "https://rawdata.oceanobservatories.org/files"
+                + array
+                + node_id
+                + instrument
+                + day_str
+            )
+
     except Exception:
         raise Exception(
             "Invalid Location String "
@@ -731,18 +760,22 @@ def __get_mseed_urls(day_str, node, verbose):
             "'Axial_Base_Seafloor' ('LJ03A')",
         )
 
-    FS = fsspec.filesystem("http")
+    if jupyter_hub:
+        FS = fsspec.filesystem("")
+        data_url_list = sorted(FS.glob(f"{mainurl}*.mseed"))
+    else:
+        FS = fsspec.filesystem("http")
+        try:
+            data_url_list = sorted(
+                f["name"]
+                for f in FS.ls(mainurl)
+                if f["type"] == "file" and f["name"].endswith(".mseed")
+            )
 
-    try:
-        data_url_list = sorted(
-            f["name"]
-            for f in FS.ls(mainurl)
-            if f["type"] == "file" and f["name"].endswith(".mseed")
-        )
-    except Exception as e:
-        if verbose:
-            print("Client response: ", e)
-        return None
+        except Exception as e:
+            if verbose:
+                print("Client response: ", e)
+            return None
 
     if not data_url_list:
         if verbose:
