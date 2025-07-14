@@ -247,7 +247,7 @@ def get_acoustic_data(
             if verbose:
                 print("Number of mseed files to be merged exceed limit.")
             return None
-    
+
     # handle large data gaps within one day
     if len(valid_data_url_list) >= 2:
         # find gaps
@@ -762,7 +762,7 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
 
     if jupyter_hub:
         FS = fsspec.filesystem("")
-        data_url_list = sorted(FS.glob(f'{mainurl}*.mseed'))
+        data_url_list = sorted(FS.glob(f"{mainurl}*.mseed"))
     else:
         FS = fsspec.filesystem("http")
         try:
@@ -771,7 +771,7 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
                 for f in FS.ls(mainurl)
                 if f["type"] == "file" and f["name"].endswith(".mseed")
             )
-            
+
         except Exception as e:
             if verbose:
                 print("Client response: ", e)
