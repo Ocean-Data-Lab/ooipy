@@ -448,6 +448,7 @@ def get_acoustic_data_LF(
     zero_mean=False,
     channel="HDH",
     correct=False,
+    merge_traces=False,
 ):
     """
     Get low frequency acoustic data for specific time frame and sensor
@@ -498,6 +499,8 @@ def get_acoustic_data_LF(
     correct : bool
         whether or not to use IRIS calibration code. NOTE: when this is true,
         computing PSDs is currently broken as calibration is computed twice
+    merge_traces : bool
+        if true will merge all traces within start_time and end_time returned from Earthscope
 
     Returns
     -------
@@ -525,24 +528,30 @@ def get_acoustic_data_LF(
 
     try:
         data_stream = read(url)
+
     except requests.HTTPError:
         if verbose:
             print("   error loading data from OOI server.")
             print("      likely that time window doesn't have data")
         return None
 
-    # removing this (John 9/29/22) not sure if this will caused unknown errors...
-    # Try downloading data 5 times. If fails every time raise exception
-    # for k in range(5):
-    #    try:
-    #        data_stream = read(url)
-    #        break
-    #    except Exception:
-    #        if k == 4:
-    #            print("   Specific Time window timed out.")
-    #            return None
+    if not merge_traces:
+        # TODO default behavior currently only returns first trace which is counter-intuitive
+        if len(data_stream) > 1:
+            print(
+                "WARNING: Multiple traces in stream, returning only first trace. "
+                "Set merge_traces=True to merge all traces."
+            )
 
-    # raise Exception ('Problem Requesting Data from OOI Server')
+    if merge_traces:
+        if len(data_stream) > 1:
+            print("Merging multiple traces in stream. obspy method=0, fill_value=None")
+            for tr in data_stream:
+                # traces coming from Earthscope that overlap time bound sometimes have
+                # non-integer sampling rates ie 199.999938 Hz vs 200 Hz
+                tr.stats.sampling_rate = round(tr.stats.sampling_rate)
+
+            data_stream = data_stream.merge(method=0, fill_value=None)
 
     hydrophone_data = HydrophoneData(data_stream[0].data, data_stream[0].stats, node)
     return hydrophone_data
