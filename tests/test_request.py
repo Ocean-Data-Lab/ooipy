@@ -80,6 +80,40 @@ def test_get_acoustic_data_LF():
     assert type(hdata.data) is np.ndarray
 
 
+def test_get_acoustic_data_LF_after_irisws_retirement():
+    """Data past the 2026-08-26 irisws-timeseries retirement must still load."""
+    start_time = datetime.datetime(2026, 8, 31, 0, 0, 0)
+    end_time = datetime.datetime(2026, 8, 31, 0, 5, 0)
+
+    hdata = hyd_request.get_acoustic_data_LF(start_time, end_time, "AXBA1")
+
+    assert type(hdata) is HydrophoneData
+    assert hdata.stats.sampling_rate == 200.0
+    assert len(hdata.data) > 0
+
+
+def test_get_acoustic_data_LF_no_data():
+    """A window EarthScope genuinely has no data for returns None, not an error."""
+    start_time = datetime.datetime(2025, 10, 22, 0, 0, 0)
+    end_time = datetime.datetime(2025, 10, 22, 0, 5, 0)
+
+    assert hyd_request.get_acoustic_data_LF(start_time, end_time, "AXBA1") is None
+
+
+def test_get_acoustic_data_LF_client_side_processing():
+    """zero_mean and one-sided fmin/fmax are applied client-side by obspy."""
+    start_time = datetime.datetime(2026, 8, 31, 0, 0, 0)
+    end_time = datetime.datetime(2026, 8, 31, 0, 1, 0)
+
+    raw = hyd_request.get_acoustic_data_LF(start_time, end_time, "AXBA1")
+    demeaned = hyd_request.get_acoustic_data_LF(start_time, end_time, "AXBA1", zero_mean=True)
+    assert abs(demeaned.data.mean()) < abs(raw.data.mean())
+
+    # only fmin given -> highpass rather than a malformed two-sided request
+    highpassed = hyd_request.get_acoustic_data_LF(start_time, end_time, "AXBA1", fmin=10.0)
+    assert len(highpassed.data) == len(raw.data)
+
+
 def test_hydrophone_node_names():
     node_arr = [
         "Oregon_Shelf_Base_Seafloor",

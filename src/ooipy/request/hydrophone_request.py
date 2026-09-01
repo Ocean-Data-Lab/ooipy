@@ -6,8 +6,10 @@ All supported hydrophone nodes are listed in the Hydrophone Nodes section below.
 """
 
 import concurrent.futures
+import io
 import multiprocessing as mp
 import sys
+import warnings
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -16,11 +18,19 @@ import numpy as np
 import obspy
 import requests
 from obspy import Stream, Trace, read
+from obspy.clients.fdsn import Client
 from obspy.core import UTCDateTime
 from tqdm import tqdm
 
 # Import all dependencies
 from ooipy.hydrophone.basic import HydrophoneData
+
+# EarthScope retired irisws-timeseries (and its server-side DSP microservices)
+# on 2026-08-26. Low frequency data now comes as raw miniseed from
+# fdsnws-dataselect, and demeaning / filtering / sensitivity correction are
+# applied client-side with obspy.
+LF_BASE_URL = "https://service.earthscope.org/fdsnws/dataselect/1/query"
+LF_FDSN_CLIENT = "EARTHSCOPE"
 
 
 def get_acoustic_data(
@@ -454,9 +464,9 @@ def get_acoustic_data_LF(
     Get low frequency acoustic data for specific time frame and sensor
     node. The data is returned as a :class:`.HydrophoneData` object.
     This object is based on the obspy data trace. Example usage is shown
-    below. This function does not include the full functionality
-    provided by the `IRIS data portal
-    <https://service.iris.edu/irisws/timeseries/docs/1/builder/>`_.
+    below. Data are fetched as raw miniseed from `EarthScope fdsnws-dataselect
+    <https://service.earthscope.org/fdsnws/dataselect/1/>`_ and any demeaning,
+    filtering or sensitivity correction is applied client-side with obspy.
 
     If there is no data for the specified time window, then None is returned
 
@@ -482,11 +492,13 @@ def get_acoustic_data_LF(
     node : str
         hydrophone
     fmin : float, optional
-        lower cutoff frequency of hydrophone's bandpass filter. Default
-        is None which results in no filtering.
+        lower cutoff frequency of the obspy filter applied to the data.
+        Default is None. If only fmin is given a highpass is applied, if
+        only fmax is given a lowpass, if both a bandpass, and if neither
+        no filtering.
     fmax : float, optional
-        higher cutoff frequency of hydrophones bandpass filter. Default
-        is None which results in no filtering.
+        higher cutoff frequency of the obspy filter applied to the data.
+        Default is None. See fmin.
     verbose : bool, optional
         specifies whether print statements should occur or not
     zero_mean : bool, optional
@@ -497,8 +509,10 @@ def get_acoustic_data_LF(
         seismometer, 'HNZ' - z seismometer. NOTE calibration is only valid for
         'HDH' channel. All other channels are for raw data only at this time.
     correct : bool
-        whether or not to use IRIS calibration code. NOTE: when this is true,
-        computing PSDs is currently broken as calibration is computed twice
+        whether to remove the instrument response using station metadata from
+        EarthScope fdsnws-station. NOTE: when this is true, computing PSDs or
+        spectrograms is broken as calibration is then applied twice; a warning
+        is raised.
     merge_traces : bool
         if true will merge all traces within start_time and end_time returned from Earthscope
 
@@ -509,31 +523,54 @@ def get_acoustic_data_LF(
         is returned
     """
 
-    if fmin is None and fmax is None:
-        bandpass_range = None
-    else:
-        bandpass_range = [fmin, fmax]
-
-    url = __build_LF_URL(
-        node,
-        starttime,
-        endtime,
-        bandpass_range=bandpass_range,
-        zero_mean=zero_mean,
-        channel=channel,
-        correct=correct,
-    )
+    url = __build_LF_URL(node, starttime, endtime, channel=channel)
     if verbose:
         print("Downloading mseed file...")
 
-    try:
-        data_stream = read(url)
+    response = requests.get(url)
 
-    except requests.HTTPError:
+    # fdsnws-dataselect answers an empty time window with 204/404. Anything
+    # else is a transport or service failure and must raise rather than be
+    # reported as absent data - the retired irisws-timeseries endpoint returned
+    # 410, which the old code could not tell apart from a data gap.
+    if response.status_code in (204, 404):
         if verbose:
-            print("   error loading data from OOI server.")
-            print("      likely that time window doesn't have data")
+            print("   no data available for the requested time window.")
         return None
+    response.raise_for_status()
+
+    data_stream = read(io.BytesIO(response.content))
+
+    # Processing that irisws-timeseries used to do server-side. Applied per
+    # trace before any merge, since obspy cannot filter the masked arrays a
+    # gappy merge produces.
+    if zero_mean:
+        data_stream.detrend("demean")
+
+    if correct:
+        inventory = Client(LF_FDSN_CLIENT).get_stations(
+            network=data_stream[0].stats.network,
+            station=data_stream[0].stats.station,
+            location=data_stream[0].stats.location,
+            channel=channel,
+            starttime=UTCDateTime(starttime),
+            endtime=UTCDateTime(endtime),
+            level="response",
+        )
+        data_stream.remove_response(inventory=inventory, output="DEF")
+        warnings.warn(
+            "correct=True removes the instrument response here, and "
+            "compute_spectrogram / compute_psd_welch apply calibration a "
+            "second time. Do not combine the two.",
+            stacklevel=2,
+        )
+
+    if fmin is not None and fmax is not None:
+        data_stream.filter("bandpass", freqmin=fmin, freqmax=fmax)
+    elif fmin is not None:
+        data_stream.filter("highpass", freq=fmin)
+    elif fmax is not None:
+        data_stream.filter("lowpass", freq=fmax)
 
     if not merge_traces:
         # TODO default behavior currently only returns first trace which is counter-intuitive
@@ -794,18 +831,26 @@ def __get_mseed_urls(day_str, node, verbose, jupyter_hub):
     return data_url_list
 
 
+# The URL is built by hand to keep the fdsnws query structure visible. The
+# eventual consolidation is obspy's FDSN client, which would replace this
+# function and the request in get_acoustic_data_LF with
+# Client("EARTHSCOPE").get_waveforms(net, sta, loc, cha, starttime, endtime).
+# It also swaps the 204/404 status check for FDSNNoDataException, which stays
+# distinct from FDSNNoServiceException, so a dead service still cannot be
+# mistaken for a data gap.
 def __build_LF_URL(
     node,
     starttime,
     endtime,
-    bandpass_range=None,
-    zero_mean=False,
-    correct=False,
     channel=None,
 ):
     """
-    Build URL for Lowfrequency Data given the start time, end time, and
-    node
+    Build fdsnws-dataselect URL for low frequency data given the start time,
+    end time, and node.
+
+    Returns raw miniseed. Any filtering, demeaning or sensitivity correction
+    must be applied client-side by the caller - the server-side processing
+    formerly offered by irisws-timeseries was retired 2026-08-26.
 
     Parameters
     ----------
@@ -816,13 +861,6 @@ def __build_LF_URL(
         start of data segment requested
     endtime : datetime.datetime
         end of data segment requested
-    bandpass_range : list
-        list of length two specifying [flow, fhigh] in Hertz. If None
-        are given, no bandpass will be added to data.
-    zero_mean : bool
-        specified whether mean should be removed from data
-    correct : bool
-        specifies whether to do sensitivity correction on hydrophone data
     channel : str
         channel string specifier ('HDH', 'HNE', 'HNN', 'HNZ')
 
@@ -834,43 +872,12 @@ def __build_LF_URL(
 
     network, station, location = __get_LF_locations_stats(node, channel)
 
-    starttime = starttime.strftime("%Y-%m-%dT%H:%M:%S")
-    endtime = endtime.strftime("%Y-%m-%dT%H:%M:%S")
-    base_url = "http://service.iris.edu/irisws/timeseries/1/query?"
-    netw_url = "net=" + network + "&"
-    stat_url = "sta=" + station + "&"
-    chan_url = "cha=" + channel + "&"
-    strt_url = "start=" + starttime + "&"
-    end_url = "end=" + endtime + "&"
-    form_url = "format=miniseed&"
-    loca_url = "loc=" + location
-    if correct:
-        corr_url = "&correct=true"
-    else:
-        corr_url = ""
-
-    if bandpass_range is None:
-        band_url = ""
-    else:
-        band_url = "bp=" + str(bandpass_range[0]) + "-" + str(bandpass_range[1]) + "&"
-    if zero_mean:
-        mean_url = "demean=true&"
-    else:
-        mean_url = ""
-    url = (
-        base_url
-        + netw_url
-        + stat_url
-        + chan_url
-        + strt_url
-        + end_url
-        + mean_url
-        + band_url
-        + form_url
-        + loca_url
-        + corr_url
+    return (
+        f"{LF_BASE_URL}?net={network}&sta={station}&cha={channel}&loc={location}"
+        f"&starttime={starttime.strftime('%Y-%m-%dT%H:%M:%S')}"
+        f"&endtime={endtime.strftime('%Y-%m-%dT%H:%M:%S')}"
+        "&format=miniseed"
     )
-    return url
 
 
 def __get_LF_locations_stats(node, channel):
